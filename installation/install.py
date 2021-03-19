@@ -22,6 +22,7 @@ AIX = ["aix"]
 
 SUPPORTED_OS = [MAC, WINDOWS]
 
+
 def get_consent(message: str) -> bool:
     put = input(f"[ATTENTION] {message} - [Y|N]: ")
     while not (put.lower() == "n" or put.lower() == "y" or put.lower() == "no" or put.lower() == "yes"):
@@ -32,7 +33,7 @@ def get_consent(message: str) -> bool:
 
 
 if __name__ == "__main__":
-    
+
     OS = sys.platform # Get the user's OS
     if OS not in SUPPORTED_OS:
         print("[WARNING] Your operating system is not officially supported..")
@@ -53,10 +54,23 @@ if __name__ == "__main__":
         # Begin installation - Phase 1: XCode tools
         print("[INFO] Installing XCode tools.. please accept the following prompts to install the neccessary XCode tools.")
         print("[WARNING] This may take some time, please ensure you address any prompts to complete the installation")
-        xcode_install = subprocess.run(["xcode-select", "--install"])
+        xcode_install = subprocess.run(["xcode-select", "--install"], capture_output = True)
 
         # Phase 2: Conda
-        activate_conda = subprocess.run(["source" $HOME/anaconda/bin/activate
-        conda init
-        conda init zsh
+        CONDA_PATH = subprocess.run("where conda".split(" "), capture_output = True)
+        activate_conda = subprocess.run(["source", CONDA_PATH], capture_output = True)
+        conda_init = subprocess.run("conda init".split(" "), capture_output = True)
+        conda_init_zsh = subprocess.run("conda init zsh".split(" "), capture_output = True)
+
+        print("[INFO] Installing HomeBrew...")
+        brew_install = subprocess.run('echo | ruby -e "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install)" brew install git'.split(" "), capture_output = True)
+
+        if xcode_install.returncode != 0:
+            print(f"[ERROR] There was an error installing xcode tools.. Got error:\n{xcode_install.stderr}")
+            exit()
         
+        if CONDA_PATH.returncode != 0:
+            print(f"[ERROR] Could not locate conda.. Ensure you have Anaconda installed! Got error:\n{CONDA_PATH.stderr}")
+            exit()
+        if activate_conda.returncode != 0:
+            print(f"[ERROR] ")
