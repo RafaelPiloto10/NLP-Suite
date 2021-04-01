@@ -16,7 +16,7 @@ def count_frequency_two_svo(open_ie_csv, senna_csv, inputFilename, inputDir, out
 
         return key
 
-    df = pd.DataFrame(columns=['Same SVO', 'Same SV', 'Different SVO', 'Different SV'])
+    df = pd.DataFrame(columns=['Same SVO', 'Same SV', 'Different SVO', 'Different SV', 'Total SVO', 'Total SV'])
     openIE_df = pd.read_csv(open_ie_csv)
     senna_df = pd.read_csv(senna_csv)
     open_ie_svo, open_ie_sv, senna_svo, senna_sv = set(), set(), set(), set()
@@ -32,26 +32,63 @@ def count_frequency_two_svo(open_ie_csv, senna_csv, inputFilename, inputDir, out
             open_ie_sv.add(generate_key(S='', V=openIE_df.iloc[i, 4], O=''))
 
     for i in range(len(senna_df)):
-        if not pd.isnull(senna_df.iloc[i, 3]) and not pd.isnull(senna_df.iloc[i, 5]):       # Has S, V, O
+        if not pd.isnull(senna_df.iloc[i, 3]) and not pd.isnull(senna_df.iloc[i, 5]):  # Has S, V, O
             senna_svo.add(generate_key(S=senna_df.iloc[i, 3], V=senna_df.iloc[i, 4], O=senna_df.iloc[i, 5]))
-        elif not pd.isnull(senna_df.iloc[i, 3]):                                            # Has S, V
+        elif not pd.isnull(senna_df.iloc[i, 3]):  # Has S, V
             senna_sv.add(generate_key(S=senna_df.iloc[i, 3], V=senna_df.iloc[i, 4], O=''))
-        elif not pd.isnull(senna_df.iloc[i, 5]):                                            # Has V, O
+        elif not pd.isnull(senna_df.iloc[i, 5]):  # Has V, O
             senna_sv.add(generate_key(S='', V=senna_df.iloc[i, 4], O=senna_df.iloc[i, 5]))
-        else:                                                                               # Has V
+        else:  # Has V
             senna_sv.add(generate_key(S='', V=senna_df.iloc[i, 4], O=''))
 
+    # Generating the stats csv
     same_svo = open_ie_svo.intersection(senna_svo)
     same_sv = open_ie_sv.intersection(senna_sv)
     diff_svo = open_ie_svo.symmetric_difference(senna_svo)
     diff_sv = open_ie_sv.symmetric_difference(senna_sv)
+    total_svo = len(same_svo) + len(diff_svo)
+    total_sv = len(same_sv) + len(diff_sv)
 
-    df = df.append(pd.DataFrame([[len(same_svo), len(same_sv), len(diff_svo), len(diff_sv)]],
-                                columns=['Same SVO', 'Same SV', 'Different SVO', 'Different SV']), ignore_index=True)
-    output_name = IO_files_util.generate_output_file_name(inputFilename, inputDir, outputDir, '.csv',
-                                                          'SENNA_OPENIE_SVO_COMBINE')
-    df.to_csv(output_name, index=False)
-    return output_name
+    df = df.append(pd.DataFrame([[len(same_svo), len(same_sv), len(diff_svo), len(diff_sv), total_svo, total_sv]],
+                                columns=['Same SVO', 'Same SV', 'Different SVO', 'Different SV', 'Total SVO',
+                                         'Total SV']), ignore_index=True)
+    freq_output_name = IO_files_util.generate_output_file_name(inputFilename, inputDir, outputDir, '.csv',
+                                                          'SENNA_OPENIE_SVO_FREQ')
+    df.to_csv(freq_output_name, index=False)
+
+    # Listing all same and diff SV and SVOs
+    compare_df = pd.DataFrame(columns=['Same', 'S', 'V', 'O'])
+
+    for svo in same_svo:
+        splitted_svo = svo.split(',')
+        s, v, o = splitted_svo[0], splitted_svo[1], splitted_svo[2]
+        compare_df = compare_df.append(pd.DataFrame([['', s, v, o]], columns=['Same', 'S', 'V', 'O']), ignore_index=True)
+
+    for sv in same_sv:
+        splitted_sv = sv.split(',')
+        s, v = splitted_sv[0], splitted_sv[1]
+        compare_df = compare_df.append(pd.DataFrame([['', s, v, '']], columns=['Same', 'S', 'V', 'O']), ignore_index=True)
+
+    compare_df = compare_df.append(pd.DataFrame([['', '', '', '']], columns=['Same', 'S', 'V', 'O']), ignore_index=True)
+    compare_df = compare_df.append(pd.DataFrame([['Different', 'S', 'V', 'O']], columns=['Same', 'S', 'V', 'O']), ignore_index=True)
+
+    for svo in diff_svo:
+        splitted_svo = svo.split(',')
+        s, v, o = splitted_svo[0], splitted_svo[1], splitted_svo[2]
+        source = 'OpenIE' if svo in open_ie_svo else 'Senna'
+        compare_df = compare_df.append(pd.DataFrame([[source, s, v, o]], columns=['Same', 'S', 'V', 'O']), ignore_index=True)
+
+    for sv in diff_sv:
+        splitted_sv = sv.split(',')
+        s, v = splitted_sv[0], splitted_sv[1]
+        source = 'OpenIE' if svo in open_ie_svo else 'Senna'
+        compare_df = compare_df.append(pd.DataFrame([[source, s, v, '']], columns=['Same', 'S', 'V', 'O']), ignore_index=True)
+
+    compare_outout_name = IO_files_util.generate_output_file_name(inputFilename, inputDir, outputDir, '.csv',
+                                                                  'SENNA_OPENIE_SVO_COMPARE')
+    compare_df.to_csv(compare_outout_name, index=False)
+
+    return [freq_output_name, compare_outout_name]
 
 
 def combine_two_svo(open_ie_svo, senna_svo, inputFilename, inputDir, outputDir):
@@ -70,8 +107,9 @@ def combine_two_svo(open_ie_svo, senna_svo, inputFilename, inputDir, outputDir):
 
     combined_df.sort_values(by=['Document ID', 'Sentence ID'], inplace=True)
     output_name = IO_files_util.generate_output_file_name(inputFilename, inputDir, outputDir, '.csv',
-                                                          'SENNA_OPENIE_SVO_FREQ')
+                                                          'SENNA_OPENIE_SVO_COMBINE')
     combined_df.to_csv(output_name, index=False)
+
     return output_name
 
 

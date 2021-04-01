@@ -520,7 +520,8 @@ def run(inputFilename, inputDir, outputDir,
         open_ie_file = SVOfilename if isFile else svo_merge_filename
         freq_csv = SVO_util.count_frequency_two_svo(open_ie_file, senna_file, inputFilename, inputDir, outputDir)
         combined_csv = SVO_util.combine_two_svo(open_ie_file, senna_file, inputFilename, inputDir, outputDir)
-        filesToOpen.extend([freq_csv, combined_csv])
+        filesToOpen.extend(freq_csv)
+        filesToOpen.append(combined_csv)
 
     # you can visualize data using an svo.csv file in input
     if (inputFilename[-8:] == '-svo.csv') or (len(svo_result_list) > 0):
