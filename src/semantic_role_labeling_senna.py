@@ -3,13 +3,13 @@ import platform
 import re
 import subprocess
 
-import GUI_IO_util
+import pandas as pd
+
 import GUI_util
+import IO_csv_util
 import IO_files_util
 import IO_libraries_util
 import IO_user_interface_util
-import pandas as pd
-import IO_csv_util
 
 
 def check_system():
@@ -29,7 +29,9 @@ def run_senna(inputFilename=None, inputDir=None, outputDir=None, openOutputFiles
     :param inputFilename: name of the input text file
     :param inputDir: name of the input directory
     :param outputDir: name of the output file
-    :return:
+    :param createExcelCharts: whether to create excel charts right after running
+    :param filter_svo: a tuple with three strings, each representing a dictionary file for filtering s, v or o
+    :return: a list of the files to be opened
     """
     formatted_table = []
     document_lengths = []
@@ -90,6 +92,7 @@ def run_senna(inputFilename=None, inputDir=None, outputDir=None, openOutputFiles
 def senna_single_file(SENNAdir, inputFilename: str) -> list:
     """
     Run senna-osx using the input from the inputFilename
+    :param SENNAdir: the directory of Senna
     :param inputFilename: the name of a text file
     :return: a list of lists where each list is a row in the output senna table
     """
@@ -145,7 +148,9 @@ def convert_to_svo(input_df: pd.DataFrame, output_file_name: str, createExcelCha
     Converts a csv file with SRL results to SVO results
     :param input_df: a df file with SRL results
     :param output_file_name: the path of the output file
-    :return:
+    :param createExcelCharts: whether to create excel charts right after running
+    :param filter_svo: a tuple with three strings, each representing a dictionary file for filtering s, v or o
+    :return: the path of the output file
     """
     end_signs = {'.', '?', '!'}
 

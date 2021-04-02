@@ -3,8 +3,25 @@ import pandas as pd
 import IO_files_util
 
 
-def count_frequency_two_svo(open_ie_csv, senna_csv, inputFilename, inputDir, outputDir):
+def count_frequency_two_svo(open_ie_csv, senna_csv, inputFilename, inputDir, outputDir) -> list:
+    """
+    Only triggered when both Senna and OpenIE options are chosen.
+    Counts the frequency of same and different SVOs and SVs in the Senna and OpenIE results and lists them
+    :param open_ie_csv: the path of the stanford core Open IE csv file
+    :param senna_csv: the path of the Senna csv file
+    :param inputFilename: the input file name; used for generating output file name
+    :param inputDir: the input directory name; used for generating output file name
+    :param outputDir: the output directory name; used for generating output file name
+    :return: [Freq table, Comparison table], where Freq table counts the frequency of same/different SVOs, and
+        Comparison table lists all the same/different SVOs
+    """
     def generate_key(S, V, O):
+        """
+        Converts strings S, V, O to a key with the format "{S}, {V}, {O}".
+        If it is a S-V combination, the key would be "{S}, {V}"
+        If it is a V-O combination, the key would be "{V}, {O}"
+        :return:
+        """
         key = ''
         if S:
             key += S.strip().lower() + ','
@@ -21,6 +38,7 @@ def count_frequency_two_svo(open_ie_csv, senna_csv, inputFilename, inputDir, out
     senna_df = pd.read_csv(senna_csv)
     open_ie_svo, open_ie_sv, senna_svo, senna_sv = set(), set(), set(), set()
 
+    # Adding each row of SVO into the corresponding sets
     for i in range(len(openIE_df)):
         if not pd.isnull(openIE_df.iloc[i, 5]) and not pd.isnull(openIE_df.iloc[i, 3]):
             open_ie_svo.add(generate_key(S=openIE_df.iloc[i, 3], V=openIE_df.iloc[i, 4], O=openIE_df.iloc[i, 5]))
@@ -41,7 +59,7 @@ def count_frequency_two_svo(open_ie_csv, senna_csv, inputFilename, inputDir, out
         else:  # Has V
             senna_sv.add(generate_key(S='', V=senna_df.iloc[i, 4], O=''))
 
-    # Generating the stats csv
+    # Generating the stats
     same_svo = open_ie_svo.intersection(senna_svo)
     same_sv = open_ie_sv.intersection(senna_sv)
     diff_svo = open_ie_svo.symmetric_difference(senna_svo)
@@ -84,6 +102,7 @@ def count_frequency_two_svo(open_ie_csv, senna_csv, inputFilename, inputDir, out
         source = 'OpenIE' if svo in open_ie_svo else 'Senna'
         compare_df = compare_df.append(pd.DataFrame([[source, s, v, '']], columns=['Same', 'S', 'V', 'O']), ignore_index=True)
 
+    # Outputing the file
     compare_outout_name = IO_files_util.generate_output_file_name(inputFilename, inputDir, outputDir, '.csv',
                                                                   'SENNA_OPENIE_SVO_COMPARE')
     compare_df.to_csv(compare_outout_name, index=False)
@@ -91,7 +110,16 @@ def count_frequency_two_svo(open_ie_csv, senna_csv, inputFilename, inputDir, out
     return [freq_output_name, compare_outout_name]
 
 
-def combine_two_svo(open_ie_svo, senna_svo, inputFilename, inputDir, outputDir):
+def combine_two_svo(open_ie_svo, senna_svo, inputFilename, inputDir, outputDir) -> str:
+    """
+    Combine the OpenIE results and Senna SVO results into one table; sorted by document ID then sentence ID
+    :param open_ie_svo: the path of the stanford core Open IE csv file
+    :param senna_svo: the path of the Senna csv file
+    :param inputFilename: the input file name; used for generating output file name
+    :param inputDir: the input directory name; used for generating output file name
+    :param outputDir: the output directory name; used for generating output file name
+    :return: the name of the output csv file
+    """
     columns = ['Tool', 'Document ID', 'Sentence ID', 'Document', 'S', 'V', 'O/A', 'LOCATION', 'TIME', 'Sentence']
     combined_df = pd.DataFrame(
         columns=columns)
