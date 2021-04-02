@@ -22,7 +22,8 @@ def check_system():
         return "mac"
 
 
-def run_senna(inputFilename=None, inputDir=None, outputDir=None, openOutputFiles=False, createExcelCharts=False) -> list:
+def run_senna(inputFilename=None, inputDir=None, outputDir=None, openOutputFiles=False, createExcelCharts=False,
+              filter_svo=('', '', '')) -> list:
     """
     Run the senna-osx with input type either file or directory
     :param inputFilename: name of the input text file
@@ -79,7 +80,7 @@ def run_senna(inputFilename=None, inputDir=None, outputDir=None, openOutputFiles
 
     senna_df = pd.DataFrame(formatted_table, columns=['Col %s' % i for i in range(len(formatted_table[0]))])
 
-    convert_to_svo(senna_df, SENNA_output_file_name, createExcelCharts)
+    convert_to_svo(senna_df, SENNA_output_file_name, createExcelCharts, filter_svo)
     filesToOpen.append(SENNA_output_file_name)
     IO_user_interface_util.timed_alert(GUI_util.window, 3000, 'Analysis end',
                                        'Finished running SENNA to extract SVOs at', True)
@@ -139,7 +140,7 @@ def senna_single_file(SENNAdir, inputFilename: str) -> list:
     return result
 
 
-def convert_to_svo(input_df: pd.DataFrame, output_file_name: str, createExcelCharts: bool) -> str:
+def convert_to_svo(input_df: pd.DataFrame, output_file_name: str, createExcelCharts: bool, filter_svo: tuple) -> str:
     """
     Converts a csv file with SRL results to SVO results
     :param input_df: a df file with SRL results
@@ -150,8 +151,21 @@ def convert_to_svo(input_df: pd.DataFrame, output_file_name: str, createExcelCha
 
     sentence_start_index = []
     df = input_df
-    new_df = pd.DataFrame(columns=['Document ID', 'Sentence ID', 'Document', 'S', 'V', 'O/A', 'LOCATION', 'TIME', 'Sentence'])
+    new_df = pd.DataFrame(
+        columns=['Document ID', 'Sentence ID', 'Document', 'S', 'V', 'O/A', 'LOCATION', 'TIME', 'Sentence'])
     document_id, sent_id = 0, 0
+    filter_s, filter_v, filter_o = filter_svo
+
+    # Generating filter dicts
+    if filter_s:
+        s_dict = open(filter_s, 'r', encoding='utf-8-sig', errors='ignore').read().split('\n')
+        s_dict = set(s_dict)
+    if filter_v:
+        v_dict = open(filter_v, 'r', encoding='utf-8-sig', errors='ignore').read().split('\n')
+        v_dict = set(v_dict)
+    if filter_o:
+        o_dict = open(filter_o, 'r', encoding='utf-8-sig', errors='ignore').read().split('\n')
+        o_dict = set(o_dict)
 
     # Identifying sentences
     for i in range(0, len(df)):
@@ -210,14 +224,14 @@ def convert_to_svo(input_df: pd.DataFrame, output_file_name: str, createExcelCha
                         for key in temp.keys():
                             word = df.iloc[key, 2]
                             postag = df.iloc[key, 3]
-                            if temp[key] != 'V':    # S
+                            if temp[key] != 'V':  # S
                                 if postag in noun_postag and (not s_has_noun or s_cont_noun):
                                     s_has_noun = s_cont_noun = True
                                     SVO['S'].append(word)
                                     SVO.update({'S': SVO['S']})
                                 else:
                                     s_cont_noun = False
-                            else:      # V
+                            else:  # V
                                 SVO['V'].append(word)
                                 SVO.update({'V': SVO['V']})
 
@@ -236,12 +250,12 @@ def convert_to_svo(input_df: pd.DataFrame, output_file_name: str, createExcelCha
 
                             if temp_keys.index(key) < verb_index[0]:
                                 if postag in noun_postag:
-                                    if before_verb > after_verb:   # O
+                                    if before_verb > after_verb:  # O
                                         if not o_has_noun or o_cont_noun:
                                             o_has_noun = o_cont_noun = True
                                             SVO['O'].append(word)
                                             SVO.update({'O': SVO['O']})
-                                    else:   # S
+                                    else:  # S
                                         if not s_has_noun or s_cont_noun:
                                             s_has_noun = s_cont_noun = True
                                             SVO['S'].append(word)
@@ -276,6 +290,13 @@ def convert_to_svo(input_df: pd.DataFrame, output_file_name: str, createExcelCha
                 SVO['O'] = ' '.join(SVO['O'])
                 SVO['LOCATION'] = ' '.join(SVO['LOCATION'])
                 SVO['TIME'] = ' '.join(SVO['TIME'])
+
+                if filter_s and SVO['S'] not in s_dict:
+                    break
+                if filter_v and SVO['V'] not in v_dict:
+                    break
+                if filter_o and SVO['O'] not in o_dict:
+                    break
 
                 formatted_input_file_name = IO_csv_util.dressFilenameForCSVHyperlink(df.iloc[a, 1])
                 new_row = pd.DataFrame(

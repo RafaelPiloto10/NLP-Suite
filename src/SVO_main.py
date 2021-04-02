@@ -333,7 +333,7 @@ def run(inputFilename, inputDir, outputDir,
         if not isFile and not os.path.exists(outputSVODir):
             os.makedirs(outputSVODir)
         senna_files = []
-        senna_file = semantic_role_labeling_senna.run_senna(inputFilename, inputDir, os.path.join(outputDir, outputSVODir), openOutputFiles, createExcelCharts=True)
+        senna_file = semantic_role_labeling_senna.run_senna(inputFilename, inputDir, os.path.join(outputDir, outputSVODir), openOutputFiles, createExcelCharts=True, filter_svo=(subjects_dict_var, verbs_dict_var, objects_dict_var))
         senna_file = senna_file[0]
 
         if save_intermediate_file:
