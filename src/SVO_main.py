@@ -80,7 +80,7 @@ def extract_svo(svo_triplets, svo_result, svo_merge_filename, subject_list, verb
     for svo in svo_triplets:
         # RF if len(svo[2]) == 0 or len(svo[3]) == 0:
         if len(svo[2]) == 0 or len(svo[3]) == 0 or len(svo[4]) == 0:
-                continue
+            continue
         # check if the triple needs to be included
         flag = False
         # RF if len(subject_list) == 0 and len(verb_list) == 0:
@@ -310,7 +310,6 @@ def run(inputFilename, inputDir, outputDir,
                                                             'normalized-date', False, memory_var)
         filesToOpen.extend(files)
 
-
     if SENNA_SVO_extractor_var or CoreNLP_SVO_extractor_var:
         if isFile:
             inputFileBase = os.path.basename(inputFilename)[0:-4]  # without .txt
@@ -326,18 +325,25 @@ def run(inputFilename, inputDir, outputDir,
 
     # SENNA _____________________________________________________
     if SENNA_SVO_extractor_var:
-        # TODO must filter SVO results by social actors if the user selected that option
-        #   both options run correctly for OpenIE
         senna_files = []
-        senna_file = semantic_role_labeling_senna.run_senna(inputFilename, inputDir, outputDir, openOutputFiles, createExcelCharts=True)
 
-        senna_file = senna_file[0]
+        # Getting the output first
+        senna_file = semantic_role_labeling_senna.run_senna(inputFilename, inputDir, outputDir, openOutputFiles, createExcelCharts=True)
+        senna_file = senna_file[0]      # Used when generating the combined frequency tables
 
         if save_intermediate_file:
-            for file in IO_files_util.getFileList(inputFile=inputFilename, inputDir=inputDir, fileType='.txt'):
-                senna_files += semantic_role_labeling_senna.run_senna(inputFilename=file, inputDir='', outputDir=os.path.join(outputDir, outputSVODir), openOutputFiles=openOutputFiles, createExcelCharts=createExcelCharts)
+            # List of files
+            for text_file in IO_files_util.getFileList(inputFile=inputFilename, inputDir=inputDir, fileType='.txt'):
+                senna_files += semantic_role_labeling_senna.run_senna(inputFilename=text_file, inputDir='', outputDir=os.path.join(outputDir, outputSVODir), openOutputFiles=openOutputFiles, createExcelCharts=createExcelCharts)
         else:
+            # One Merged file
             senna_files = [senna_file]
+
+        # Filtering SVO
+        if subjects_dict_var or verbs_dict_var or objects_dict_var:
+            for file in senna_files:
+                SVO_util.filter_svo(file, subjects_dict_var, verbs_dict_var, objects_dict_var)
+
         filesToOpen.extend(senna_files)
 
         for file in senna_files:
@@ -499,7 +505,7 @@ def run(inputFilename, inputDir, outputDir,
             filesToOpen.append(CoreNLPSVOfilename)
             inputFilename = CoreNLPSVOfilename
 
-        if SVOerror>0:
+        if SVOerror > 0:
             print("\n\nErrors were encountered in extracting SVOs from " + str(SVOerror) + " files out of "+str(len(toProcess_list)) +" files processed.")
             mb.showwarning("SVO extraction error", "Errors were encountered in extracting SVOs from " + str(SVOerror) + " files out of " +str(len(toProcess_list))+" files processed.\n\nPlease, check the command line to see the files.")
 
@@ -513,7 +519,7 @@ def run(inputFilename, inputDir, outputDir,
 
     # next lines create summaries of comparative results from CoreNLP and SENNA
     if SENNA_SVO_extractor_var and CoreNLP_SVO_extractor_var:
-        if CoreNLPSVOfilename!='' and senna_file!='':
+        if CoreNLPSVOfilename != '' and senna_file != '':
             open_ie_file = CoreNLPSVOfilename if isFile else svo_merge_filename
             freq_csv = SVO_util.count_frequency_two_svo(open_ie_file, senna_file, inputFileBase, inputDir, outputDir)
             combined_csv = SVO_util.combine_two_svo(open_ie_file, senna_file, inputFileBase, inputDir, outputDir)

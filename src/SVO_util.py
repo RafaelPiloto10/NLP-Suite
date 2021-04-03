@@ -2,6 +2,7 @@ import pandas as pd
 
 import IO_files_util
 
+
 def count_frequency_two_svo(open_ie_csv, senna_csv, inputFilename, inputDir, outputDir) -> list:
     """
     Only triggered when both Senna and OpenIE options are chosen.
@@ -14,6 +15,7 @@ def count_frequency_two_svo(open_ie_csv, senna_csv, inputFilename, inputDir, out
     :return: [Freq table, Comparison table], where Freq table counts the frequency of same/different SVOs, and
         Comparison table lists all the same/different SVOs
     """
+
 
 def count_frequency_two_svo(open_ie_csv, senna_csv, inputFilename, inputDir, outputDir):
     def generate_key(S, V, O):
@@ -72,7 +74,7 @@ def count_frequency_two_svo(open_ie_csv, senna_csv, inputFilename, inputDir, out
                                 columns=['Same SVO', 'Same SV', 'Different SVO', 'Different SV', 'Total SVO',
                                          'Total SV']), ignore_index=True)
     freq_output_name = IO_files_util.generate_output_file_name(inputFilename, inputDir, outputDir, '.csv',
-                                                          'SENNA_OPENIE_SVO_FREQ')
+                                                               'SENNA_OPENIE_SVO_FREQ')
     df.to_csv(freq_output_name, index=False)
 
     # Listing all same and diff SV and SVOs
@@ -81,27 +83,32 @@ def count_frequency_two_svo(open_ie_csv, senna_csv, inputFilename, inputDir, out
     for svo in same_svo:
         splitted_svo = svo.split(',')
         s, v, o = splitted_svo[0], splitted_svo[1], splitted_svo[2]
-        compare_df = compare_df.append(pd.DataFrame([['', s, v, o]], columns=['Same', 'S', 'V', 'O']), ignore_index=True)
+        compare_df = compare_df.append(pd.DataFrame([['', s, v, o]], columns=['Same', 'S', 'V', 'O']),
+                                       ignore_index=True)
 
     for sv in same_sv:
         splitted_sv = sv.split(',')
         s, v = splitted_sv[0], splitted_sv[1]
-        compare_df = compare_df.append(pd.DataFrame([['', s, v, '']], columns=['Same', 'S', 'V', 'O']), ignore_index=True)
+        compare_df = compare_df.append(pd.DataFrame([['', s, v, '']], columns=['Same', 'S', 'V', 'O']),
+                                       ignore_index=True)
 
     compare_df = compare_df.append(pd.DataFrame([['', '', '', '']], columns=['Same', 'S', 'V', 'O']), ignore_index=True)
-    compare_df = compare_df.append(pd.DataFrame([['Different', 'S', 'V', 'O']], columns=['Same', 'S', 'V', 'O']), ignore_index=True)
+    compare_df = compare_df.append(pd.DataFrame([['Different', 'S', 'V', 'O']], columns=['Same', 'S', 'V', 'O']),
+                                   ignore_index=True)
 
     for svo in diff_svo:
         splitted_svo = svo.split(',')
         s, v, o = splitted_svo[0], splitted_svo[1], splitted_svo[2]
         source = 'OpenIE' if svo in open_ie_svo else 'Senna'
-        compare_df = compare_df.append(pd.DataFrame([[source, s, v, o]], columns=['Same', 'S', 'V', 'O']), ignore_index=True)
+        compare_df = compare_df.append(pd.DataFrame([[source, s, v, o]], columns=['Same', 'S', 'V', 'O']),
+                                       ignore_index=True)
 
     for sv in diff_sv:
         splitted_sv = sv.split(',')
         s, v = splitted_sv[0], splitted_sv[1]
         source = 'OpenIE' if svo in open_ie_svo else 'Senna'
-        compare_df = compare_df.append(pd.DataFrame([[source, s, v, '']], columns=['Same', 'S', 'V', 'O']), ignore_index=True)
+        compare_df = compare_df.append(pd.DataFrame([[source, s, v, '']], columns=['Same', 'S', 'V', 'O']),
+                                       ignore_index=True)
 
     # Outputing the file
     compare_outout_name = IO_files_util.generate_output_file_name(inputFilename, inputDir, outputDir, '.csv',
@@ -122,8 +129,7 @@ def combine_two_svo(open_ie_svo, senna_svo, inputFilename, inputDir, outputDir) 
     :return: the name of the output csv file
     """
     columns = ['Tool', 'Document ID', 'Sentence ID', 'Document', 'S', 'V', 'O/A', 'LOCATION', 'TIME', 'Sentence']
-    combined_df = pd.DataFrame(
-        columns=columns)
+    combined_df = pd.DataFrame(columns=columns)
     dfs = [(pd.read_csv(open_ie_svo), 'Open IE'), (pd.read_csv(senna_svo), 'Senna')]
 
     for df, df_name in dfs:
@@ -140,6 +146,39 @@ def combine_two_svo(open_ie_svo, senna_svo, inputFilename, inputDir, outputDir) 
     combined_df.to_csv(output_name, index=False)
 
     return output_name
+
+
+def filter_svo(svo_file_name, filter_s, filter_v, filter_o):
+    """
+    Filters a svo csv file based on the dictionaries given, and replaces the original output csv file
+    :param svo_file_name: the name of the svo csv file
+    :param filter_s: the subject dict file path
+    :param filter_v: the verb dict file path
+    :param filter_o: the object dict file path
+    """
+    df = pd.read_csv(svo_file_name)
+    filtered_df = pd.DataFrame(columns=df.columns)
+
+    # Generating filter dicts
+    if filter_s:
+        s_dict = open(filter_s, 'r', encoding='utf-8-sig', errors='ignore').read().split('\n')
+        s_dict = set(s_dict)
+    if filter_v:
+        v_dict = open(filter_v, 'r', encoding='utf-8-sig', errors='ignore').read().split('\n')
+        v_dict = set(v_dict)
+    if filter_o:
+        o_dict = open(filter_o, 'r', encoding='utf-8-sig', errors='ignore').read().split('\n')
+        o_dict = set(o_dict)
+
+    # Adding rows to filtered df
+    for i in range(len(df)):
+        if filter_s and df.loc[i, 'S'] not in s_dict or filter_v and df.loc[i, 'V'] not in v_dict or filter_o and \
+                df.loc[i, 'O/A'] not in o_dict:
+            continue
+        filtered_df.append(df.loc[i, :], ignore_index=True)
+
+    # Replacing the original csv file
+    filtered_df.to_csv(svo_file_name, index=False)
 
 
 if __name__ == '__main__':
