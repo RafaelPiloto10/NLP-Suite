@@ -276,9 +276,11 @@ def CoreNLP_annotate(inputFilename,
                 annotator_start_time = time.time()
                 CoreNLP_output = nlp.annotate(text, properties=params)
                 errorFound, filesError, CoreNLP_output = IO_user_interface_util.process_CoreNLP_error(GUI_util.window,
-                                                      CoreNLP_output,
-                                                      doc, nDocs,
-                                                      filesError, text)
+                                                    CoreNLP_output,
+                                                    doc,
+                                                    nDocs,
+                                                    filesError,
+                                                    text)
                 if errorFound: continue  # move to next document
                 annotator_time_elapsed = time.time() - annotator_start_time
                 file_length=len(text)

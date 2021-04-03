@@ -2,7 +2,6 @@ import pandas as pd
 
 import IO_files_util
 
-
 def count_frequency_two_svo(open_ie_csv, senna_csv, inputFilename, inputDir, outputDir) -> list:
     """
     Only triggered when both Senna and OpenIE options are chosen.
@@ -15,6 +14,8 @@ def count_frequency_two_svo(open_ie_csv, senna_csv, inputFilename, inputDir, out
     :return: [Freq table, Comparison table], where Freq table counts the frequency of same/different SVOs, and
         Comparison table lists all the same/different SVOs
     """
+
+def count_frequency_two_svo(open_ie_csv, senna_csv, inputFilename, inputDir, outputDir):
     def generate_key(S, V, O):
         """
         Converts strings S, V, O to a key with the format "{S}, {V}, {O}".

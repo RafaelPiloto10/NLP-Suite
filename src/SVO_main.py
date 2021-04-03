@@ -272,7 +272,6 @@ def run(inputFilename, inputDir, outputDir,
             inputDirBase = os.path.basename(inputDir)
             outputCorefedDir = os.path.join(outputDir, inputDirBase + "_CoRefed_files")
             inputDir = outputCorefedDir
-
         # outputDir=outputCorefedDir
 
         if not os.path.exists(outputCorefedDir):
@@ -362,7 +361,7 @@ def run(inputFilename, inputDir, outputDir,
         field_names = ['Document ID', 'Sentence ID', 'Document', 'S', 'V', 'O/A', 'LOCATION', 'PERSON', 'TIME', 'TIME_STAMP', 'Sentence']
         if isFile & Coref:
             # NLP_CoreNLP_coref_The Three Little Pigs - Copy-svoResult-woFilter.txt
-            toProcess_list.append(os.path.join(outputDir, inputFileBase + "-CoRefed-svoResult-woFilter.txt"))
+            toProcess_list.append(os.path.join(outputDir, "NLP_CoreNLP_" + inputFileBase + "-svoResult-woFilter.txt"))
         elif isFile:
             toProcess_list.append(os.path.join(outputDir, inputFileBase + "-svoResult-woFilter.txt"))
         else:
@@ -401,8 +400,8 @@ def run(inputFilename, inputDir, outputDir,
         SVOerror=0
         for proc_file in toProcess_list:
             # check if svo file is empty
-            if isFile:
-                outputSVODir = outputDir
+            # if isFile:
+            #     outputSVODir = outputDir
             if not os.path.exists(os.path.join(outputSVODir, proc_file)):
                 error_msg = "Stanford OpenIE throws an error while processing your document: " + original_toProcess[proc_file] + \
                             "\n\nPlease refer to command line prompt (or terminal) for more details. Most likely, your laptop runs out of memory."
@@ -516,8 +515,8 @@ def run(inputFilename, inputDir, outputDir,
     if SENNA_SVO_extractor_var and CoreNLP_SVO_extractor_var:
         if CoreNLPSVOfilename!='' and senna_file!='':
             open_ie_file = CoreNLPSVOfilename if isFile else svo_merge_filename
-            freq_csv = SVO_util.count_frequency_two_svo(open_ie_file, senna_file, inputFilename, inputDir, outputDir)
-            combined_csv = SVO_util.combine_two_svo(open_ie_file, senna_file, inputFilename, inputDir, outputDir)
+            freq_csv = SVO_util.count_frequency_two_svo(open_ie_file, senna_file, inputFileBase, inputDir, outputDir)
+            combined_csv = SVO_util.combine_two_svo(open_ie_file, senna_file, inputFileBase, inputDir, outputDir)
             filesToOpen.extend([freq_csv, combined_csv])
 
 
