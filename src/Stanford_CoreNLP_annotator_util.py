@@ -226,7 +226,8 @@ def CoreNLP_annotate(inputFilename,
         POS_WordNet=False
 
     # params = {'annotators':param_string}
-    params = {'annotators':param_string, 'parse.model': 'edu/stanford/nlp/models/lexparser/englishPCFG.ser.gz','outputFormat': 'json', 'outputDirectory': outputDir, 'replaceExtension': True}
+    params = {'annotators': param_string, 'parse.model': 'edu/stanford/nlp/models/lexparser/englishPCFG.ser.gz','outputFormat': 'json', 'outputDirectory': outputDir, 'replaceExtension': True}
+
     if DoCleanXML:
         params['annotators'] = params['annotators'] + ',cleanXML'
         param_string_NN = param_string_NN + ',cleanXML'
@@ -268,7 +269,7 @@ def CoreNLP_annotate(inputFilename,
             print("Processing file " + str(docID) + "/" + str(nDocs) + ' ' + tail)
             text = open(doc, 'r', encoding='utf-8', errors='ignore').read().replace("\n", " ")
             nlp = StanfordCoreNLP('http://localhost:9000')
-            #if there's only one annotator and it uses neural nerwork model, skip annoatiting with PCFG to save time
+            # if there's only one annotator and it uses neural network model, skip annotating with PCFG to save time
             if param_string != '':
                 # text = open(doc, 'r', encoding='utf-8', errors='ignore').read().replace("\n", " ")
                 # nlp = StanfordCoreNLP('http://localhost:9000')
@@ -277,7 +278,7 @@ def CoreNLP_annotate(inputFilename,
                 errorFound, filesError, CoreNLP_output = IO_user_interface_util.process_CoreNLP_error(GUI_util.window,
                                                       CoreNLP_output,
                                                       doc, nDocs,
-                                                      filesError)
+                                                      filesError, text)
                 if errorFound: continue  # move to next document
                 annotator_time_elapsed = time.time() - annotator_start_time
                 file_length=len(text)
@@ -303,7 +304,7 @@ def CoreNLP_annotate(inputFilename,
                     NN_start_time = time.time()
                     CoreNLP_output = nlp.annotate(text, properties=params_NN)
                     errorFound, filesError, CoreNLP_output = IO_user_interface_util.process_CoreNLP_error(
-                        GUI_util.window, CoreNLP_output, doc, nDocs, filesError)
+                        GUI_util.window, CoreNLP_output, doc, nDocs, filesError, text)
                     if errorFound: continue  # move to next document
                     NN_time_elapsed = time.time() - NN_start_time
                     file_length = len(text)
@@ -347,7 +348,8 @@ def CoreNLP_annotate(inputFilename,
                     else:
                         run_output.extend(sub_result)
             # print("Corenlp Output: ", CoreNLP_output)
-            sentenceID += len(CoreNLP_output["sentences"])#update the sentenceID of the first sentence of the next split file
+            if CoreNLP_output:
+                sentenceID += len(CoreNLP_output["sentences"])# update the sentenceID of the first sentence of the next split file
     #generate output csv files and write output
     output_start_time = time.time()
     for run in routine_list:
@@ -414,7 +416,7 @@ def CoreNLP_annotate(inputFilename,
             if not file_df.empty:
                 if 'gender' in str(filesToVisualize[j]):
                     filesToOpen = visualize_html_file(inputFilename, inputDir, outputDir, filesToVisualize[j], filesToOpen)
-    
+
                     filesToOpen = visualize_Excel_chart(createExcelCharts, filesToVisualize[j], outputDir, filesToOpen,
                                                         [[1, 1]], 'bar',
                                                         'Frequency Distribution of Gender Types', 1, [],
