@@ -16,8 +16,6 @@ def count_frequency_two_svo(open_ie_csv, senna_csv, inputFilename, inputDir, out
         Comparison table lists all the same/different SVOs
     """
 
-
-def count_frequency_two_svo(open_ie_csv, senna_csv, inputFilename, inputDir, outputDir):
     def generate_key(S, V, O):
         """
         Converts strings S, V, O to a key with the format "{S}, {V}, {O}".
