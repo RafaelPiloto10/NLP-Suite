@@ -161,7 +161,7 @@ def convert_to_svo(input_df: pd.DataFrame, output_file_name: str, createExcelCha
     sentence_start_index = []
     df = input_df
     new_df = pd.DataFrame(
-        columns=['Document ID', 'Sentence ID', 'Document', 'S', 'V', 'O/A', 'LOCATION', 'TIME', 'Sentence'])
+        columns=['Document ID', 'Sentence ID', 'Document', 'S', 'V', 'O/A', 'S(NP)', 'O(NP)', 'LOCATION', 'TIME', 'Sentence'])
     document_id, sent_id = 0, 0
     filter_s, filter_v, filter_o = filter_svo
 
@@ -195,7 +195,7 @@ def convert_to_svo(input_df: pd.DataFrame, output_file_name: str, createExcelCha
 
         # Iterating each column
         for i in range(4, len(df.iloc[1, :])):
-            SVO = {'S': [], 'V': [], 'O': [], 'LOCATION': [], 'TIME': []}
+            SVO = {'S': [], 'V': [], 'O': [], 'LOCATION': [], 'TIME': [], 'S(NP)': [], 'O(NP)': []}
             noun_postag = {'PRP', 'NN', 'NNS', 'NNP', 'WP'}
 
             sent_col = df.iloc[sentence_start_index[a]:sentence_start_index[a + 1], i]
@@ -237,12 +237,11 @@ def convert_to_svo(input_df: pd.DataFrame, output_file_name: str, createExcelCha
                                 if postag in noun_postag and (not s_has_noun or s_cont_noun):
                                     s_has_noun = s_cont_noun = True
                                     SVO['S'].append(word)
-                                    SVO.update({'S': SVO['S']})
                                 else:
                                     s_cont_noun = False
+                                SVO['S(NP)'].append(word)
                             else:  # V
                                 SVO['V'].append(word)
-                                SVO.update({'V': SVO['V']})
 
                     # S-V-O or O-V-S Structures
                     else:
@@ -263,31 +262,34 @@ def convert_to_svo(input_df: pd.DataFrame, output_file_name: str, createExcelCha
                                         if not o_has_noun or o_cont_noun:
                                             o_has_noun = o_cont_noun = True
                                             SVO['O'].append(word)
-                                            SVO.update({'O': SVO['O']})
                                     else:  # S
                                         if not s_has_noun or s_cont_noun:
                                             s_has_noun = s_cont_noun = True
                                             SVO['S'].append(word)
-                                            SVO.update({'S': SVO['S']})
                                 else:
                                     o_cont_noun = s_cont_noun = False
+                                if before_verb > after_verb:  # O
+                                    SVO['O(NP)'].append(word)
+                                else:
+                                    SVO['S(NP)'].append(word)
                             elif temp_keys.index(key) > verb_index[1]:
                                 if postag in noun_postag:
                                     if before_verb > after_verb:
                                         if not s_has_noun or s_cont_noun:
                                             s_has_noun = s_cont_noun = True
                                             SVO['S'].append(word)
-                                            SVO.update({'S': SVO['S']})
                                     else:
                                         if not o_has_noun or o_cont_noun:
                                             o_has_noun = o_cont_noun = True
                                             SVO['O'].append(word)
-                                            SVO.update({'O': SVO['O']})
                                 else:
                                     s_cont_noun = o_cont_noun = False
+                                if before_verb > after_verb:
+                                    SVO['S(NP)'].append(word)
+                                else:
+                                    SVO['O(NP)'].append(word)
                             else:
                                 SVO['V'].append(word)
-                                SVO.update({'V': SVO['V']})
 
             for key in temp.keys():
                 df.iloc[key, i] = temp[key]
@@ -299,6 +301,8 @@ def convert_to_svo(input_df: pd.DataFrame, output_file_name: str, createExcelCha
                 SVO['O'] = ' '.join(SVO['O'])
                 SVO['LOCATION'] = ' '.join(SVO['LOCATION'])
                 SVO['TIME'] = ' '.join(SVO['TIME'])
+                SVO['S(NP)'] = ' '.join(SVO['S(NP)'])
+                SVO['O(NP)'] = ' '.join(SVO['O(NP)'])
 
                 if filter_s and SVO['S'] not in s_dict:
                     break
@@ -309,9 +313,9 @@ def convert_to_svo(input_df: pd.DataFrame, output_file_name: str, createExcelCha
 
                 formatted_input_file_name = IO_csv_util.dressFilenameForCSVHyperlink(df.iloc[a, 1])
                 new_row = pd.DataFrame(
-                    [[document_id, sent_id, formatted_input_file_name, SVO['S'], SVO['V'], SVO['O'],
+                    [[document_id, sent_id, formatted_input_file_name, SVO['S'], SVO['V'], SVO['O'], SVO['S(NP)'], SVO['O(NP)'],
                       SVO['LOCATION'], SVO['TIME'], sentence]],
-                    columns=['Document ID', 'Sentence ID', 'Document', 'S', 'V', 'O/A', 'LOCATION', 'TIME', 'Sentence'])
+                    columns=['Document ID', 'Sentence ID', 'Document', 'S', 'V', 'O/A', 'S(NP)', 'O(NP)','LOCATION', 'TIME', 'Sentence'])
                 new_df = new_df.append(new_row, ignore_index=True)
 
         sent_id += 1
