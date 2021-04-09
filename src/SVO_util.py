@@ -41,24 +41,26 @@ def count_frequency_two_svo(open_ie_csv, senna_csv, inputFilename, inputDir, out
 
     # Adding each row of SVO into the corresponding sets
     for i in range(len(openIE_df)):
-        if not pd.isnull(openIE_df.iloc[i, 5]) and not pd.isnull(openIE_df.iloc[i, 3]):
-            open_ie_svo.add(generate_key(S=openIE_df.iloc[i, 3], V=openIE_df.iloc[i, 4], O=openIE_df.iloc[i, 5]))
-        elif not pd.isnull(openIE_df.iloc[i, 3]):
-            open_ie_sv.add(generate_key(S=openIE_df.iloc[i, 3], V=openIE_df.iloc[i, 4], O=''))
-        elif not pd.isnull(openIE_df.iloc[i, 5]):
-            open_ie_sv.add(generate_key(S='', V=openIE_df.iloc[i, 4], O=openIE_df.iloc[i, 5]))
-        else:
-            open_ie_sv.add(generate_key(S='', V=openIE_df.iloc[i, 4], O=''))
+        if pd.notnull(openIE_df.iloc[i, 4]):
+            if not pd.isnull(openIE_df.iloc[i, 5]) and not pd.isnull(openIE_df.iloc[i, 3]):
+                open_ie_svo.add(generate_key(S=openIE_df.iloc[i, 3], V=openIE_df.iloc[i, 4], O=openIE_df.iloc[i, 5]))
+            elif not pd.isnull(openIE_df.iloc[i, 3]):
+                open_ie_sv.add(generate_key(S=openIE_df.iloc[i, 3], V=openIE_df.iloc[i, 4], O=''))
+            elif not pd.isnull(openIE_df.iloc[i, 5]):
+                open_ie_sv.add(generate_key(S='', V=openIE_df.iloc[i, 4], O=openIE_df.iloc[i, 5]))
+            else:
+                open_ie_sv.add(generate_key(S='', V=openIE_df.iloc[i, 4], O=''))
 
     for i in range(len(senna_df)):
-        if not pd.isnull(senna_df.iloc[i, 3]) and not pd.isnull(senna_df.iloc[i, 5]):  # Has S, V, O
-            senna_svo.add(generate_key(S=senna_df.iloc[i, 3], V=senna_df.iloc[i, 4], O=senna_df.iloc[i, 5]))
-        elif not pd.isnull(senna_df.iloc[i, 3]):  # Has S, V
-            senna_sv.add(generate_key(S=senna_df.iloc[i, 3], V=senna_df.iloc[i, 4], O=''))
-        elif not pd.isnull(senna_df.iloc[i, 5]):  # Has V, O
-            senna_sv.add(generate_key(S='', V=senna_df.iloc[i, 4], O=senna_df.iloc[i, 5]))
-        else:  # Has V
-            senna_sv.add(generate_key(S='', V=senna_df.iloc[i, 4], O=''))
+        if pd.notnull(senna_df.iloc[i, 4]):
+            if not pd.isnull(senna_df.iloc[i, 3]) and not pd.isnull(senna_df.iloc[i, 5]):  # Has S, V, O
+                senna_svo.add(generate_key(S=senna_df.iloc[i, 3], V=senna_df.iloc[i, 4], O=senna_df.iloc[i, 5]))
+            elif not pd.isnull(senna_df.iloc[i, 3]):  # Has S, V
+                senna_sv.add(generate_key(S=senna_df.iloc[i, 3], V=senna_df.iloc[i, 4], O=''))
+            elif not pd.isnull(senna_df.iloc[i, 5]):  # Has V, O
+                senna_sv.add(generate_key(S='', V=senna_df.iloc[i, 4], O=senna_df.iloc[i, 5]))
+            else:  # Has V
+                senna_sv.add(generate_key(S='', V=senna_df.iloc[i, 4], O=''))
 
     # Generating the stats
     same_svo = open_ie_svo.intersection(senna_svo)
