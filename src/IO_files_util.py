@@ -93,9 +93,9 @@ def getFileList_SubDir(inputFilename, inputDir, fileType='.*', silent=False):
 
 
 # inputFile contains a file name with full path;
-#   can also be blank 
+#   can also be blank
 # inputDir is the full path of an input directory
-#   can also be blank 
+#   can also be blank
 # fileType can be * (for any fileType), .pdf, .csv, .txt, ...
 # returns a list of either a single file or all files in a directory
 #   examples of calls
@@ -288,7 +288,7 @@ def open_kmlFile(window,filePath):
 
 
 # opens a filename with its path
-# if a file with the same name is already open, it throws an error 
+# if a file with the same name is already open, it throws an error
 def openFile(window, filePath):
 	if len(filePath) == 0:
 		tk.messagebox.showinfo("Input file error", "The filename is blank. No file can be opened.")
@@ -336,6 +336,8 @@ def OpenOutputFiles(window, openOutputFiles, filesToOpen):
 		timed_alert(window, 2000, 'Warning',
 					'Opening ' + str(len(filesToOpen)) + ' output ' + singularPlural + '... Please wait...', False)
 		for file in filesToOpen:
+			# file IS A LIST?
+			print(file)
 			if os.path.isfile(file):
 				if file.endswith('.kml'):
 					open_kmlFile(window, file)
