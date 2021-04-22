@@ -40,7 +40,8 @@ def run_senna(inputFilename=None, inputDir=None, outputDir=None, openOutputFiles
 
     # check that the SENNA dir as been setup
     SENNAdir = IO_libraries_util.get_external_software_dir('SVO SENNA', 'SENNA')
-    if SENNAdir == None:
+
+    if SENNAdir is None:
         return filesToOpen
 
     # record the time consumption before annotating text in each file
@@ -73,7 +74,11 @@ def run_senna(inputFilename=None, inputDir=None, outputDir=None, openOutputFiles
         formatted_table += [[os.path.join(inputDir, inputFilename)] + row for row in result]
         document_lengths.append(len(result))
 
-    max_length = max([len(row) for row in formatted_table])
+    try:
+        max_length = max([len(row) for row in formatted_table])
+    except ValueError:
+        print('Error occurred when trying to read the input file. Please select "check utf-8 encoding" and try again')
+        return []
 
     document_index = 0
 

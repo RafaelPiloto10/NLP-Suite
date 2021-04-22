@@ -337,7 +337,6 @@ def OpenOutputFiles(window, openOutputFiles, filesToOpen):
 					'Opening ' + str(len(filesToOpen)) + ' output ' + singularPlural + '... Please wait...', False)
 		for file in filesToOpen:
 			# file IS A LIST?
-			print(file)
 			if os.path.isfile(file):
 				if file.endswith('.kml'):
 					open_kmlFile(window, file)
