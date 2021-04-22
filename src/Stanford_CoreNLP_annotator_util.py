@@ -101,7 +101,7 @@ def CoreNLP_annotate(inputFilename,
             date_position_var = value
 
     produce_split_files=False
-
+    
     params_option = {
         'tokenize': {'annotators':['tokenize']},
         'ssplit': {'annotators':['tokenize', 'ssplit']},
@@ -117,7 +117,7 @@ def CoreNLP_annotate(inputFilename,
         'gender': {'annotators': ['coref']},
         'sentiment': {'annotators':['sentiment']},
         'normalized-date': {'annotators': ['tokenize','ssplit','ner']},
-        'openIE':{"annotators": ['tokenize','ssplit','pos','depparse','natlog','openie']},
+        'openIE':{"annotators": ['tokenize','ssplit','pos','depparse','natlog','openie', 'ner']},
         'parser (pcfg)':{"annotators": ['tokenize','ssplit','pos','lemma','ner', 'parse','regexner']},
         'parser (nn)' :{"annotators": ['tokenize','ssplit','pos','lemma','ner','depparse','regexner']}
     }
@@ -142,7 +142,7 @@ def CoreNLP_annotate(inputFilename,
         'NER': ['Word', 'NER Value', 'Sentence ID', 'Sentence', 'tokenBegin', 'tokenEnd', 'Document ID','Document'],
         # TODO NER with date for dynamic GIS; modified below
         # 'NER': ['Word', 'NER Value', 'Sentence ID', 'Sentence', 'tokenBegin', 'tokenEnd', 'Document ID','Document', 'Date'],
-        'sentiment': ['Document ID', 'Document','Sentence ID', 'Sentence', 'Sentiment number', 'Sentiment label'],
+        'sentiment': ['Document ID', 'Document','Sentence ID', 'Sentence', 'Sentiment score', 'Sentiment label'],
         'All POS':["ID", "Form", "Lemma", "POStag", "Record ID", "Sentence ID", "Document ID", "Document"],
         'DepRel': ["ID", "Form", "Head", "DepRel", "Record ID", "Sentence ID", "Document ID", "Document"],
         'quote': ['Document ID', 'Document', 'Sentence ID', 'Sentence', 'Number of Quotes'],
@@ -151,7 +151,7 @@ def CoreNLP_annotate(inputFilename,
         'normalized-date':["Word", "Normalized date", "tid","Information","Sentence ID", "Sentence", "Document ID", "Document"],
         #  Document ID, Sentence ID, Document, S, V, O/A, Sentence
         # Dec. 21
-        'openIE':['Document ID', 'Sentence ID', 'Document', 'S', 'V', 'O/A', 'Sentence'],
+        'openIE':['Document ID', 'Sentence ID', 'Document', 'S', 'V', 'O/A', "NEGATION","LOCATION",'PERSON','TIME','TIME_STAMP','Sentence'],
         'parser (pcfg)':["ID", "Form", "Lemma", "POStag", "NER", "Head", "DepRel", "Clause Tag", "Record ID", "Sentence ID", "Document ID", "Document"],
         'parser (nn)':["ID", "Form", "Lemma", "POStag", "NER", "Head", "DepRel", "Clause Tag", "Record ID", "Sentence ID", "Document ID", "Document"]
     }
@@ -256,7 +256,9 @@ def CoreNLP_annotate(inputFilename,
     errorFound=False
     total_length = 0
     # record the time consumption before annotating text in each file
+    processing_doc = ''
     for docName in inputDocs:
+        docTitle = os.path.basename(docName)
         docID = docID + 1
         sentenceID = 0
         split_file = file_splitter_ByLength_util.splitDocument_byLength(GUI_util.window,'Stanford CoreNLP',docName) #if the file is too long, it needs spliting to be able to processed by the Stanford CoreNLP
@@ -313,32 +315,38 @@ def CoreNLP_annotate(inputFilename,
                     speed_assessment.append(
                         [docID, IO_csv_util.dressFilenameForCSVHyperlink(doc), NN_time_elapsed, file_length,
                          param_string_NN, param_number_NN])
-                if isinstance(routine_list[0][2][0], list):
-                    run_output = [[], []]
-                    POS_WordNet = True
-                else:
-                    run_output = run[3] # []
-                    POS_WordNet = False
+                # if isinstance(routine_list[0][2][0], list):
+                #     run_output = [[], []]
+                #     POS_WordNet = True
+                # else:
+                #     run_output = run[3] # []
+                #     POS_WordNet = False
 
                 # run_output = run[3]
 
                 #generating output from json file for specific annotators
                 if "parser" in annotator_chosen:
                     if "pcfg" in annotator_chosen:
-                        sub_result = routine(docID, docName, sentenceID, recordID, True,CoreNLP_output, **kwargs)
+                        sub_result, recordID = routine(docID, docName, sentenceID, recordID, True,CoreNLP_output, **kwargs)
                     else:
-                        sub_result = routine(docID, docName, sentenceID, recordID, False,CoreNLP_output, **kwargs)
+                        sub_result, recordID = routine(docID, docName, sentenceID, recordID, False,CoreNLP_output, **kwargs)
                 elif "DepRel" in annotator_chosen or "All POS" in annotator_chosen:
-                     sub_result = routine(docID, docName, sentenceID, recordID, CoreNLP_output, **kwargs)
+                     sub_result, recordID = routine(docID, docName, sentenceID, recordID, CoreNLP_output, **kwargs)
                 else:
-                    sub_result = routine(docID, docName, sentenceID, CoreNLP_output, **kwargs) #the sentenceID records the start sentence's ID in the whole file just in case that the original file was split
+                    sub_result = routine(docID, docName, sentenceID, CoreNLP_output, **kwargs)
+                
                 # sentenceID = new_sentenceID
                 #write html file from txt input
                 if output_format == 'text':
-                    outputFilename = IO_files_util.generate_output_file_name(docName, '', outputDir, '.txt', 'CoreNLP_'+annotator_chosen)
+                
+                    outputFilename = IO_files_util.generate_output_file_name(docName, inputDir, outputDir, '.txt', 'CoreNLP_'+annotator_chosen)
                     with open(outputFilename, "a+") as text_file:
+                        if processing_doc != docTitle:
+                            text_file.write("\n<@#" + docTitle + "@#>\n")
+                            processing_doc = docTitle
                         text_file.write(sub_result)
-                    filesToOpen.append(outputFilename)
+                    if outputFilename not in filesToOpen: 
+                        filesToOpen.append(outputFilename)
                 else:
                     # add output to the output storage list in routine_list
                     # for the special case of POS values of a double list [['Verbs'],[Nouns']] you need special handling
@@ -347,12 +355,13 @@ def CoreNLP_annotate(inputFilename,
                             for j in sub_result[i]:
                                 run_output[i].append(j)
                     else:
-                        run_output.extend(sub_result)
+                        run[3].extend(sub_result)
             # print("Corenlp Output: ", CoreNLP_output)
             if CoreNLP_output:
                 sentenceID += len(CoreNLP_output["sentences"])# update the sentenceID of the first sentence of the next split file
     #generate output csv files and write output
     output_start_time = time.time()
+    # print("Length of Files to Open after generating output: ", len(filesToOpen))
     for run in routine_list:
         annotator_chosen = run[0]
         routine = run[1]
@@ -365,10 +374,10 @@ def CoreNLP_annotate(inputFilename,
         if isinstance(output_format[0],list): # multiple outputs
             for index, sub_output in enumerate(output_format):
                 if POS_WordNet:
-                    outputFilename = IO_files_util.generate_output_file_name(inputFilename, '', outputDir, '.csv',
+                    outputFilename = IO_files_util.generate_output_file_name(inputFilename, inputDir, outputDir, '.csv',
                                                                              'CoreNLP_'+annotator_chosen+'_lemma_'+output_format[index][0])
                 else:
-                    outputFilename = IO_files_util.generate_output_file_name(str(doc), '', outputDir,'.csv',
+                    outputFilename = IO_files_util.generate_output_file_name(str(doc), inputDir, outputDir,'.csv',
                                                                               'CoreNLP_'+annotator_chosen+'_lemma'+output_format[index][0])
                 filesToOpen.append(outputFilename)
                 df = pd.DataFrame(run_output[index], columns=output_format[index])
@@ -387,13 +396,15 @@ def CoreNLP_annotate(inputFilename,
                 elif len(ner)>10: # if all NER tags have been selected the filename would become way too long!
                     outputFilename_tag='tags'
 
-                outputFilename = IO_files_util.generate_output_file_name(inputFilename, '', outputDir, '.csv',
+                outputFilename = IO_files_util.generate_output_file_name(inputFilename, inputDir, outputDir, '.csv',
                                                                                  'CoreNLP_NER_'+outputFilename_tag)
             elif "parser" in annotator_chosen:#CoNLL
-                outputFilename = IO_files_util.generate_output_file_name(inputFilename, '', outputDir, '.csv', 'CoreNLP', 'CoNLL')
+                outputFilename = IO_files_util.generate_output_file_name(inputFilename, inputDir, outputDir, '.csv', 'CoreNLP', 'CoNLL')
 
             elif output_format != 'text':
-                outputFilename = IO_files_util.generate_output_file_name(inputFilename, '', outputDir, '.csv',
+                # TODO any changes in the way the CoreNLP_annotator generates output filenames for sentiment analysis
+                #    will affect the shape of stories algorithms (search TODO there)
+                outputFilename = IO_files_util.generate_output_file_name(inputFilename, inputDir, outputDir, '.csv',
                                                                              'CoreNLP_'+annotator_chosen)
             filesToOpen.append(outputFilename)
             if output_format != 'text' and not isinstance(output_format[0],list): # output is csv file
@@ -406,7 +417,7 @@ def CoreNLP_annotate(inputFilename,
                 #     df = Excel_util.add_missing_IDs(df)
                 df = pd.DataFrame(run_output, columns=output_format)
                 df.to_csv(outputFilename, index=False)
-
+    # print("Length of Files to Open after generating files: ", len(filesToOpen))
     # set filesToVisualize because filesToOpen will include xlsx files otherwise
     filesToVisualize=filesToOpen
     #generate visualization output
@@ -433,6 +444,7 @@ def CoreNLP_annotate(inputFilename,
                                           'Frequency Distribution of NER Tags', 1, [], 'NER_tag_bar','NER tag')
 
     p.kill()
+    # print("Length of Files to Open after visualization: ", len(filesToOpen))
     if len(filesError)>0:
         mb.showwarning("Stanford CoreNLP Error", 'Stanford CoreNLP ' +annotator_chosen+ ' annotator has found '+str(len(filesError)-1)+' files that could not be processed by Stanford CoreNLP.\n\nPlease, read the error output file carefully to see the errors generated by CoreNLP.')
         errorFile = os.path.join(outputDir,
@@ -445,7 +457,7 @@ def CoreNLP_annotate(inputFilename,
     total_time_elapsed = time.time() - start_time
     # speed_assessment.append(["Total Operation", -1, total_time_elapsed,'', '', 0])
     speed_assessment.append([-1, "Total Operation", total_time_elapsed,total_length, ", ".join(annotator_params), len(annotator_params)])
-    speed_csv = IO_files_util.generate_output_file_name(inputFilename, '', outputDir, '.csv',
+    speed_csv = IO_files_util.generate_output_file_name(inputFilename, inputDir, outputDir, '.csv',
                                                                            'CoreNLP_speed_assessment')
     df = pd.DataFrame(speed_assessment, columns=speed_assessment_format)
     df.to_csv(speed_csv, index=False)
@@ -797,7 +809,7 @@ def process_json_gender(documentID, document, start_sentenceID, json, **kwargs):
     for key, value in kwargs.items():
         if key == 'extract_date_from_filename_var' and value == True:
             extract_date_from_filename_var = True
-
+            
     # get date string of this sub file
     date_str = date_in_filename(document, **kwargs)
     result = []
@@ -885,7 +897,266 @@ def process_json_quote(documentID, document, sentenceID, json, **kwargs):
 
 
 # Dec. 21
+def openIE_sent_data_reorg(sentence):
+    result = {}
+    tokens = sentence['tokens']
+    dependencies = sentence["enhancedDependencies"]
+    openie = sentence['openie']
+    for token in tokens:
+        idx = token["index"]
+        result[idx] = {}
+        result[idx]["word"] = token["word"]
+        result[idx]["pos"] = token["pos"]
+        result[idx]["ner"] = token["ner"]
+        if result[idx]["ner"] == 'TIME' or result[idx]["ner"] == 'DATE':
+            result[idx]['normalizedNER'] = token['normalizedNER']
+        dep_rel, dep_govern = dep_dict(idx, dependencies)
+        result[idx]["deprel"] = dep_rel
+        result[idx]["govern_dict"] = dep_govern
+    return result
+
+def dep_dict(idx, dependencies):
+    dep_rel = ""
+    dep_govern = {}
+    for dep in dependencies:
+        if dep['dependent'] == idx:
+            dep_rel = dep['dep']
+        if dep['governor'] == idx:
+            if dep['dep'] in dep_govern.keys():
+                if isinstance(dep_govern[dep['dep']], list):
+                    dep_govern[dep['dep']].append(dep['dependent'])
+                else: 
+                    nodes_ = [dep_govern[dep['dep']]]
+                    nodes_.append(dep['dependent'])
+                    dep_govern[dep['dep']] = nodes_
+            else:
+                dep_govern[dep['dep']] = dep['dependent']
+    return dep_rel, dep_govern
+
+
+def s_o_formation (subjectives, sent_data):
+    if isinstance(subjectives, list):
+        return conj_string(subjectives, sent_data)
+    else:
+        return sent_data[subjectives]['word']
+
+def conj_string(subjectives, sent_data): 
+    subj = subjectives[0]
+    result = sent_data[subj]['word']
+    subj_gov = sent_data[subj]["govern_dict"]
+    for key in subj_gov.keys():
+        if "conj" in key:
+            conj = key[5:]
+            if isinstance(subj_gov[key], list):
+                if subj_gov[key] == subjectives[1:]:
+                    for i in range(1, len(subjectives) - 1):
+                        result = result +  ", " + sent_data[subjectives[i]]['word']
+                    result = result + ", " + conj + " " + sent_data[subjectives[-1]]['word']
+                    break
+            else:
+                if len(subjectives) == 2 and subjectives[-1] == subj_gov[key]:
+                    result = result +  " " + conj + " " + sent_data[subjectives[-1]]['word']
+                    break
+    return result
+
+def token_connect(keys, sent_data):
+    if isinstance(keys, list):
+        tokens = []
+        for k in keys:
+            tokens.append(sent_data[k]['word'])
+        return " ".join(tokens)
+    else:
+        return sent_data[keys]['word']
+
+# def 
+    
+def verb_root(token, gov_dict, sent_data):
+    s = 'Someone?'
+    v = ''
+    o = ''
+    v = token["word"]
+    if 'aux' in gov_dict.keys():
+        v = token_connect(gov_dict["aux"], sent_data) + " " +v 
+    # if 'compound:prt' in gov_dict.keys() and not isinstance(gov_dict['compound:prt'], list):
+    if 'compound:prt' in gov_dict.keys():
+        v = v + " "  +sent_data[gov_dict['compound:prt']]['word']
+    # if "advmod" in gov_dict.keys() and not isinstance(gov_dict["advmod"], list):
+    # if "advmod" in gov_dict.keys():
+    #     v = sent_data[gov_dict["advmod"]]['word'] + " " + v 
+    if "nsubj" in gov_dict.keys():
+        s = s_o_formation(gov_dict["nsubj"], sent_data)
+        
+    if 'nsubj:pass' in gov_dict.keys():
+        o = s_o_formation(gov_dict['nsubj:pass'], sent_data)#sent_data[gov_dict['nsubj:pass']]['word']
+        if 'obl:agent' in gov_dict.keys():
+            s = s_o_formation(gov_dict['obl:agent'], sent_data)
+    elif "iobj" in gov_dict.keys():
+        o = s_o_formation(gov_dict["iobj"], sent_data)
+    elif "obj" in gov_dict.keys():
+        o = s_o_formation(gov_dict["obj"], sent_data)
+    else:
+        for gov_key in gov_dict.keys():
+            if "obl" in gov_key :
+                if gov_key[4:] != "tmod" and gov_key[4:] != "agent":
+                    v = v + " " + gov_key[4:]
+                o = s_o_formation(gov_dict[gov_key], sent_data)#sent_data[gov_dict["obj"]]['word']#gov_dict[gov_key]['word']
+                # else:
+                    # o = s_o_formation(gov_dict[gov_key], sent_data)
+    return s, v, o
+
+
+def pred_root(token, gov_dict, sent_data):
+    s = 'Someone?'
+    v = ''
+    o = ''
+    if "nsubj" in gov_dict.keys():
+        s = s_o_formation(gov_dict["nsubj"], sent_data)
+    # if "aux" in gov_dict.keys():
+         # v = token_connect(gov_dict["aux", sent_data]) + " " +v 
+    #     v = sent_data[gov_dict["cop"]]['word'] + v
+    if "cop" in gov_dict.keys():
+        # v = sent_data[gov_dict["cop"]]['word']
+        v = token_connect(gov_dict["cop"], sent_data) + " " +v 
+    if "aux" in gov_dict.keys():
+        v = token_connect(gov_dict["aux"], sent_data) + " " +v 
+    o = token["word"]
+    if "case" in gov_dict.keys():
+        v = v + " " + sent_data[gov_dict["case"]]['word'] 
+    # if "advmod" in gov_dict.keys() and not isinstance(gov_dict["advmod"], list):
+    #     o =  o + " " + sent_data[gov_dict["advmod"]]['word'] 
+    return s, v, o
+
+def be_pos(token, gov_dict, sent_data):
+    s = 'Someone?'
+    v = ''
+    o = ''
+    if "nsubj" in gov_dict.keys():
+        s = s_o_formation(gov_dict["nsubj"], sent_data)
+    for gov_key in gov_dict.keys():
+        if "obl" in gov_key :
+            if gov_key[4:] != "tmod":
+                v = v + " " + gov_key[4:]
+                # o = gov_key[4:] + " " + s_o_formation(gov_dict[gov_key], sent_data)#sent_data[gov_dict["obj"]]['word']#gov_dict[gov_key]['word']
+            # else:
+            # o = s_o_formation(gov_dict[gov_key], sent_data)
+            o = s_o_formation(gov_dict[gov_key], sent_data)
+    v = token["word"]
+    
+    return s, v, o
+
+def acl_svo(token, gov_dict, sent_data):
+    s = "Someone?"
+    v = ""
+    o = ""
+    for gov_key in gov_dict.keys():
+        if gov_key == "acl":
+            print(token["word"])
+            if isinstance(gov_dict["acl"], list):
+                for k in gov_dict["acl"]:
+                    s, v, o = verb_root(sent_data[k], sent_data[k]["govern_dict"], sent_data)
+                    s = token["word"]
+                    break
+            else:
+                 s, v, o = verb_root(sent_data[gov_dict["acl"]], sent_data[gov_dict["acl"]]["govern_dict"], sent_data)
+                 s = token["word"]
+                 break
+    return s, v, o
+
+
+
+def negation_detect(token, gov_dict, sent_data):
+    result = False
+    negation_tokens = ["no", "not", "n't", "seldom", "never", "hardly"]
+    if "advmod" not in gov_dict.keys():
+        return result
+    else:
+        if isinstance(gov_dict["advmod"], list):
+            
+            for idx in gov_dict["advmod"]:
+                word = sent_data[idx]["word"]
+                for ntk in negation_tokens:
+                    if ntk in word.lower():
+                        return True
+                    
+                    result = result or negation_detect(sent_data[idx], sent_data[idx]['govern_dict'], sent_data)
+        else:
+            idx = gov_dict["advmod"]
+            word = sent_data[idx]["word"]
+            for ntk in negation_tokens:
+                if ntk in word.lower():
+                    return True
+                result = result or negation_detect(sent_data[idx], sent_data[idx]['govern_dict'], sent_data)
+    return result
+                    
+        
+        
+        
+def SVO_extraction (sent_data):
+    SVO = []
+    L = []
+    T = []
+    T_S = []
+    P = []
+    N = []
+    acl = []
+    # prep = ["in", "of", "for", "to", "with", "on", "at"]
+    s = "Someone?"
+    v = ""
+    o = ""
+    for key in sent_data.keys():
+        negation = False
+        token = sent_data[key]
+        # print(token["word"])
+        if token["ner"] == "TIME" or token["ner"] == "DATE":
+            T.append(token["word"])
+            T_S.append(token['normalizedNER'])
+        if token["ner"] == "PERSON": 
+            P.append(token["word"])
+        # if token["deprel"] == "ROOT":
+        if token["ner"] == "CITY" or  token["ner"] == 'STATE_OR_PROVINCE' or token["ner"] == 'COUNTRY': 
+            L.append(token["word"])
+            
+        gov_dict = token["govern_dict"]
+        if "VB" in token["pos"] or "JJ" in token["pos"]:# Subject -> Verb -> object
+            s, v, o = verb_root(token, gov_dict, sent_data)
+            negation = negation_detect(token, gov_dict, sent_data)
+        elif (token["deprel"] == "ROOT" or token["deprel"] == "parataxis") and "NN" in token["pos"]:#Subject -> Verb(be) -> predicative expression
+            s, v, o = pred_root(token, gov_dict, sent_data)
+            negation = negation_detect(token, gov_dict, sent_data)
+        # elif token["deprel"] == "ROOT" and token["pos"] == "POS":
+        #     s, v, o = be_pos(token, gov_dict, sent_data)
+        elif "acl" in gov_dict.keys():
+            if isinstance(gov_dict["acl"], list):
+                for idx in gov_dict["acl"]:
+                    s, v, o = verb_root(sent_data[idx], sent_data[idx]["govern_dict"], sent_data)
+                    negation = negation_detect(sent_data[idx], sent_data[idx]["govern_dict"], sent_data)
+                    s = token["word"]
+                    if [s, v, o] not in SVO:
+                        SVO.append([s, v, o])
+                        N.append(negation)
+            else:
+                idx = gov_dict["acl"]
+                s, v, o = verb_root(sent_data[idx], sent_data[idx]["govern_dict"], sent_data)
+                s = token["word"]
+            # s, v, o = acl_svo(token, gov_dict, sent_data)
+        
+        if v != "" and ( s != "Someone?" or o != ''):
+            if [s, v, o] not in SVO:
+                SVO.append([s, v, o])
+                N.append(negation)
+
+    return SVO, L, T, T_S, P, N
+            
+                        
+# Dec. 21
 def process_json_openIE(documentID, document, sentenceID, json, **kwargs):
+    noteOutputPath = "/Users/claude/Desktop/ClaudeCase/Emory/Trabajo/SVO/txt_output_notes"
+    filename = os.path.split(document)[1]
+    # print("filename: ",filename)
+    # notefilename = noteOutputPath + '/openIE_json_'+filename
+    # with open(notefilename, 'wt') as out:
+    #     pprint.pprint(json, stream = out)
+    # out.close()
     extract_date_from_filename_var = False
     for key, value in kwargs.items():
         if key == 'extract_date_from_filename_var' and value == True:
@@ -895,6 +1166,12 @@ def process_json_openIE(documentID, document, sentenceID, json, **kwargs):
     date_str = date_in_filename(document, **kwargs)
     openIE = []
     for sentence in json['sentences']:
+        sent_data = openIE_sent_data_reorg(sentence)#reorganize the dependency into the order of tokens in sentence
+        reorg_data_filename = noteOutputPath + '/output_reorg_'+filename
+        with open(reorg_data_filename, 'a+') as reorg_out:
+            reorg_out.write(str(sentenceID + 1))
+            pprint.pprint(sent_data, stream = reorg_out)
+        reorg_out.close()
         complete_sent = ''
         for token in sentence['tokens']:
             if token['originalText'] in string.punctuation:
@@ -906,33 +1183,17 @@ def process_json_openIE(documentID, document, sentenceID, json, **kwargs):
                     complete_sent = complete_sent + ' ' + token['originalText']
         # sentenceID = sentence['index'] + 1
         sentenceID = sentenceID + 1
-        SVOs = []
-        for openie in sentence['openie']:
-            # Document ID, Sentence ID, Document, S, V, O/A, Sentence
-            SVOs.append([openie['subject'],openie['relation'],openie['object']])
-        container = []
-        for SVO_value in SVOs:
-            redundant_flag = False
-            remainder = [elmt for elmt in SVOs if elmt != SVO_value]
-            for SVO_base in remainder:
-                SVO_value_str = SVO_value[0] + ' ' + SVO_value[1] + ' ' + SVO_value[2]
-                SVO_base_str = SVO_base[0] + ' ' + SVO_base[1] + ' ' + SVO_base[2]
-                if SVO_value[0] == SVO_base[0] and similar_string_floor_filter(SVO_value_str,SVO_base_str):
-                    redundant_flag = True
-                    break
-                else:
-                    continue
-            if not redundant_flag:
-               container.append(SVO_value)
-        if len(container) > 0:
-            for row in container:
-                if extract_date_from_filename_var:
+        SVO, L, T, T_S, P, N = SVO_extraction (sent_data)
+        # for l in L: 
+        # SVOs = []
+        nidx = 0
+        for row in SVO: 
+            if extract_date_from_filename_var:
                 # temp.append(date_str)
-                    openIE.append([documentID, sentenceID, document, row[0], row[1], row[2], complete_sent, date_str])
-                else:
-                    openIE.append([documentID, sentenceID, document, row[0], row[1], row[2], complete_sent])
-    # print(openIE)
-
+                openIE.append([documentID, sentenceID, document, row[0], row[1], row[2], N[nidx]," ".join(L), " ".join(P), " ".join(T), " ".join(T_S),complete_sent, date_str])
+            else:
+                openIE.append([documentID, sentenceID, document, row[0], row[1], row[2], N[nidx], " ".join(L), " ".join(P), " ".join(T), " ".join(T_S),complete_sent])
+            nidx += 1
     return openIE
 
 
@@ -1000,7 +1261,7 @@ def process_json_all_postag(documentID, document, sentenceID, recordID,json, **k
         # print("The result after adding the ", sentenceID, "th sentence: ")
         # pprint.pprint(result)
 
-    return result
+    return result, recordID
 
 def process_json_deprel(documentID, document, sentenceID, recordID,json, **kwargs):
     print("   Processing Json output file for DepRel")
@@ -1052,7 +1313,7 @@ def process_json_deprel(documentID, document, sentenceID, recordID,json, **kwarg
             if extract_date_from_filename_var:
                 temp.append(date_str)
             result.append(temp)
-    return result
+    return result, recordID
 
 def process_json_parser(documentID, document, sentenceID, recordID, pcfg, json, **kwargs):
     print("   Processing Json output file for Parser")
@@ -1124,7 +1385,10 @@ def process_json_parser(documentID, document, sentenceID, recordID, pcfg, json, 
         # print("The result after adding the ", sentenceID, "th sentence: ")
         # pprint.pprint(result)
 
-    return result
+    return result, recordID
+
+
+
 def similar_string_floor_filter(str1, str2):
     dist = nltk.edit_distance(str1, str2)
     if dist <= 5:
