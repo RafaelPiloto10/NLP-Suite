@@ -90,6 +90,7 @@ def run_senna(inputFilename=None, inputDir=None, outputDir=None, openOutputFiles
             document_index += 1
 
     senna_df = pd.DataFrame(formatted_table, columns=['Col %s' % i for i in range(len(formatted_table[0]))])
+    print(senna_df)
 
     convert_to_svo(senna_df, SENNA_output_file_name, createExcelCharts, filter_svo)
     filesToOpen.append(SENNA_output_file_name)
@@ -131,7 +132,7 @@ def senna_single_file(SENNAdir, inputFilename: str) -> list:
     # senna_exec = os.path.join(SENNAdir, senna_exec)
     # w/o changing dir SENNA will not produce an output table
     os.chdir(SENNAdir)
-    cmd = subprocess.Popen([senna_exec, '-pos', '-srl', '-psg'], stdin=subprocess.PIPE,
+    cmd = subprocess.Popen([senna_exec, '-ner', '-pos', '-srl', '-psg'], stdin=subprocess.PIPE,
                            stdout=subprocess.PIPE)  # Input the text to stdin
 
     output = cmd.communicate(input=encoded_input)[0].decode()  # Get the output from stdout
@@ -173,7 +174,7 @@ def convert_to_svo(input_df: pd.DataFrame, output_file_name: str, createExcelCha
     sentence_start_index = []
     df = input_df
     new_df = pd.DataFrame(
-        columns=['Document ID', 'Sentence ID', 'Document', 'S', 'V', 'O/A', 'S(NP)', 'O(NP)', 'LOCATION', 'TIME',
+        columns=['Document ID', 'Sentence ID', 'Document', 'S', 'V', 'O/A', 'S(NP)', 'O(NP)', 'PERSON', 'LOCATION', 'TIME',
                  'Sentence'])
     document_id, sent_id = 0, 0
 
@@ -196,8 +197,9 @@ def convert_to_svo(input_df: pd.DataFrame, output_file_name: str, createExcelCha
 
         # Iterating each column
         for i in range(4, len(df.iloc[1, :])):
-            SVO = {'S': [], 'V': [], 'O': [], 'LOCATION': [], 'TIME': [], 'S(NP)': [], 'O(NP)': []}
+            SVO = {'S': [], 'V': [], 'O': [], 'PERSON': [], 'LOCATION': [], 'TIME': [], 'S(NP)': [], 'O(NP)': []}
             noun_postag = {'PRP', 'NN', 'NNS', 'NNP', 'WP'}
+            ners = {'PER', 'TMP', 'LOC'}
 
             sent_col = df.iloc[sentence_start_index[a]:sentence_start_index[a + 1], i]
             sent_col = sent_col.tolist()
@@ -209,10 +211,6 @@ def convert_to_svo(input_df: pd.DataFrame, output_file_name: str, createExcelCha
                         sent_col[j].count('-') == 1 or sent_col[j].count('-') > 1 and sent_col[j][-1].isnumeric()):
                     label = sent_col[j].split('-')[-1]
                     mapping.update({sentence_start_index[a] + j: label})
-                elif sent_col[j][-3:] == 'LOC':
-                    SVO['LOCATION'].append(df.iloc[sentence_start_index[a] + j, 2])
-                elif sent_col[j][-3:] == 'TMP':
-                    SVO['TIME'].append(df.iloc[sentence_start_index[a] + j, 2])
 
             # Converting signs to '--S--', '--V--' and '--O--'
             temp = {}  # {col_index: converted signs} for this sentence
@@ -234,6 +232,7 @@ def convert_to_svo(input_df: pd.DataFrame, output_file_name: str, createExcelCha
                         for key in temp.keys():
                             word = df.iloc[key, 2]
                             postag = df.iloc[key, 3]
+                            ner = df.iloc[key, 4]
                             if temp[key] != 'V':  # S
                                 if postag in noun_postag and (not s_has_noun or s_cont_noun):
                                     s_has_noun = s_cont_noun = True
@@ -241,6 +240,15 @@ def convert_to_svo(input_df: pd.DataFrame, output_file_name: str, createExcelCha
                                 else:
                                     s_cont_noun = False
                                 SVO['S(NP)'].append(word)
+
+                                # Using NER to identify Location, Person and Time
+                                if ner in ners:
+                                    if ner == 'TMP':
+                                        SVO['TIME'].append(word)
+                                    elif ner == 'LOC':
+                                        SVO['LOCATION'].append(word)
+                                    elif ner == 'PER':
+                                        SVO['PERSON'].append(word)
                             else:  # V
                                 SVO['V'].append(word)
 
@@ -256,6 +264,7 @@ def convert_to_svo(input_df: pd.DataFrame, output_file_name: str, createExcelCha
                         for key in temp_keys:
                             word = df.iloc[key, 2]
                             postag = df.iloc[key, 3]
+                            ner = df.iloc[key, 4]
 
                             if temp_keys.index(key) < verb_index[0]:
                                 if postag in noun_postag:
@@ -273,6 +282,15 @@ def convert_to_svo(input_df: pd.DataFrame, output_file_name: str, createExcelCha
                                     SVO['O(NP)'].append(word)
                                 else:
                                     SVO['S(NP)'].append(word)
+
+                                # Using NER to identify Location, Person and Time
+                                if ner in ners:
+                                    if ner == 'TMP':
+                                        SVO['TIME'].append(word)
+                                    elif ner == 'LOC':
+                                        SVO['LOCATION'].append(word)
+                                    elif ner == 'PER':
+                                        SVO['PERSON'].append(word)
                             elif temp_keys.index(key) > verb_index[1]:
                                 if postag in noun_postag:
                                     if before_verb > after_verb:
@@ -289,6 +307,15 @@ def convert_to_svo(input_df: pd.DataFrame, output_file_name: str, createExcelCha
                                     SVO['S(NP)'].append(word)
                                 else:
                                     SVO['O(NP)'].append(word)
+
+                                # Using NER to identify Location, Person and Time
+                                if ner in ners:
+                                    if ner == 'TMP':
+                                        SVO['TIME'].append(word)
+                                    elif ner == 'LOC':
+                                        SVO['LOCATION'].append(word)
+                                    elif ner == 'PER':
+                                        SVO['PERSON'].append(word)
                             else:
                                 SVO['V'].append(word)
 
@@ -300,6 +327,7 @@ def convert_to_svo(input_df: pd.DataFrame, output_file_name: str, createExcelCha
                 SVO['S'] = ' '.join(SVO['S'])
                 SVO['V'] = ' '.join(SVO['V'])
                 SVO['O'] = ' '.join(SVO['O'])
+                SVO['PERSON'] = ' '.join(SVO['PERSON'])
                 SVO['LOCATION'] = ' '.join(SVO['LOCATION'])
                 SVO['TIME'] = ' '.join(SVO['TIME'])
                 SVO['S(NP)'] = ' '.join(SVO['S(NP)'])
@@ -308,10 +336,9 @@ def convert_to_svo(input_df: pd.DataFrame, output_file_name: str, createExcelCha
                 formatted_input_file_name = IO_csv_util.dressFilenameForCSVHyperlink(df.iloc[a, 1])
                 new_row = pd.DataFrame(
                     [[document_id, sent_id, formatted_input_file_name, SVO['S'], SVO['V'], SVO['O'], SVO['S(NP)'],
-                      SVO['O(NP)'],
-                      SVO['LOCATION'], SVO['TIME'], sentence]],
-                    columns=['Document ID', 'Sentence ID', 'Document', 'S', 'V', 'O/A', 'S(NP)', 'O(NP)', 'LOCATION',
-                             'TIME', 'Sentence'])
+                      SVO['O(NP)'], SVO['PERSON'], SVO['LOCATION'], SVO['TIME'], sentence]],
+                    columns=['Document ID', 'Sentence ID', 'Document', 'S', 'V', 'O/A', 'S(NP)', 'O(NP)', 'PERSON',
+                             'LOCATION', 'TIME', 'Sentence'])
                 new_df = new_df.append(new_row, ignore_index=True)
 
         sent_id += 1
@@ -324,6 +351,6 @@ def convert_to_svo(input_df: pd.DataFrame, output_file_name: str, createExcelCha
 
 if __name__ == '__main__':
     dir_name = '/Users/admin/Desktop/EMORY/Academics/Spring_2021/SOC497R/SRL/test'
-    file_name = '/Users/admin/Desktop/EMORY/Academics/Spring_2021/SOC497R/SRL/test.txt'
+    file_name = '/Users/admin/Desktop/EMORY/Academics/Spring_2021/SOC497R/NLP2/sampleData/Professor Dumbass.txt'
     output_dir = '/Users/admin/Desktop/EMORY/Academics/Spring_2021/SOC497R/'
-    run_senna(inputDir=dir_name, outputDir=output_dir, openOutputFiles=True, createExcelCharts=True)
+    run_senna(inputFilename=file_name, inputDir='', outputDir=output_dir, openOutputFiles=True, createExcelCharts=True)
