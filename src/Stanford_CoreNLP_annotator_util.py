@@ -1064,7 +1064,7 @@ def acl_svo(token, gov_dict, sent_data):
 
 def negation_detect(token, gov_dict, sent_data):
     result = False
-    negation_tokens = ["no", "not", "n’t", "seldom", "never", "hardly"]
+    negation_tokens = ["no", "not", "n't", "seldom", "never", "hardly"]
     if "advmod" not in gov_dict.keys():
         return result
     else:
