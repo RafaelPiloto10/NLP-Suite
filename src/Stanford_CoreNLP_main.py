@@ -101,26 +101,25 @@ def run(inputFilename, inputDir, outputDir, openOutputFiles, createExcelCharts, 
                     tempOutputFile = IO_CoNLL_util.compute_sentence_table(tempOutputFiles[0], outputDir)
                     filesToOpen.append(tempOutputFile)
 
-        if CoNLL_table_analyzer_var and len(filesToOpen)>0:
-            if IO_libraries_util.inputProgramFileCheck('CoNLL_table_analyzer_main.py') == False:
-                return
-            # open the analyzer having saved the new new parser output in config so that it open the right input file
-            if parser:
-                config_filename_temp = 'conll-table-analyzer-config.txt'
-                config_array = ['EMPTY LINE', outputCoNLLfilePath, 'EMPTY LINE', 'EMPTY LINE', 'EMPTY LINE', outputDir]
-                config_util.saveConfig(GUI_util.window, config_filename_temp, config_array, True)
+    if CoNLL_table_analyzer_var:
+        if IO_libraries_util.inputProgramFileCheck('CoNLL_table_analyzer_main.py') == False:
+            return
+        # open the analyzer having saved the new new parser output in config so that it open the right input file
+        config_filename_temp = 'conll-table-analyzer-config.txt'
+        config_array = ['EMPTY LINE', outputCoNLLfilePath, 'EMPTY LINE', 'EMPTY LINE', 'EMPTY LINE', outputDir]
+        config_util.saveConfig(GUI_util.window, config_filename_temp, config_array, True)
 
-                reminders_util.checkReminder(config_filename,
-                                             ['CoNLL table analyzer'],
-                                             "The Stanford CoreNLP GUI will now open the 'CoNLL table analyzer' where you can:\n\n  1. search the words contained in the CoNLL table (the one just created or a different one) by their syntactical properties and the type of relations to other words;\n  2. compute frequency distributions of various types of linguistic objects: clauses, nouns, verbs, function words ('junk/stop' words).",
-                                             True)
+        reminders_util.checkReminder(config_filename,
+                                     ['CoNLL table analyzer'],
+                                     "The Stanford CoreNLP GUI will now open the 'CoNLL table analyzer' where you can:\n\n  1. search the words contained in the CoNLL table (the one just created or a different one) by their syntactical properties and the type of relations to other words;\n  2. compute frequency distributions of various types of linguistic objects: clauses, nouns, verbs, function words ('junk/stop' words).",
+                                     True)
 
-                call("python CoNLL_table_analyzer_main.py", shell=True)
+        call("python CoNLL_table_analyzer_main.py", shell=True)
 
     if CoreNLP_annotators_var and CoreNLP_annotators_menu_var != '':
 
         # POS annotator ---------------------------------------------------------------------------------------------------------------------------
-        if CoreNLP_annotators_menu_var == 'POS annotator':
+        if 'POS annotator' in CoreNLP_annotators_menu_var or CoreNLP_annotators_menu_var == '*':
             if IO_libraries_util.inputProgramFileCheck('Stanford_CoreNLP_annotator_util.py') == False:
                 return
 
@@ -137,7 +136,7 @@ def run(inputFilename, inputDir, outputDir, openOutputFiles, createExcelCharts, 
 
         # DepRel annotator ---------------------------------------------------------------------------------------------------------------------------
 
-        if CoreNLP_annotators_menu_var == 'DepRel annotator':
+        if 'DepRel annotator' in CoreNLP_annotators_menu_var or CoreNLP_annotators_menu_var == '*':
             if IO_libraries_util.inputProgramFileCheck('Stanford_CoreNLP_annotator_util.py') == False:
                 return
 
@@ -154,14 +153,14 @@ def run(inputFilename, inputDir, outputDir, openOutputFiles, createExcelCharts, 
 
         # NER annotator ---------------------------------------------------------------------------------------------------------------------------
 
-        if CoreNLP_annotators_menu_var == 'NER (GUI)':
+        if 'NER (GUI)' in CoreNLP_annotators_menu_var:
             if IO_libraries_util.inputProgramFileCheck('Stanford_CoreNLP_NER_main.py') == False:
                 return
             call("python Stanford_CoreNLP_NER_main.py", shell=True)
 
         # NER normalized date annotator ---------------------------------------------------------------------------------------------------------------------------
 
-        if 'Normalized' in CoreNLP_annotators_menu_var:
+        if 'Normalized' in CoreNLP_annotators_menu_var or '**' in CoreNLP_annotators_menu_var:
             # date_extractor
             if IO_libraries_util.inputProgramFileCheck('Stanford_CoreNLP_annotator_util.py') == False:
                 return
@@ -179,7 +178,7 @@ def run(inputFilename, inputDir, outputDir, openOutputFiles, createExcelCharts, 
 
         # quote annotator ---------------------------------------------------------------------------------------------------------------------------
 
-        if 'Quote' in CoreNLP_annotators_menu_var:
+        if 'Quote' in CoreNLP_annotators_menu_var or '**' in CoreNLP_annotators_menu_var:
             # if quote_extractor:
             if IO_libraries_util.inputProgramFileCheck('Stanford_CoreNLP_annotator_util.py') == False:
                 return
@@ -199,7 +198,7 @@ def run(inputFilename, inputDir, outputDir, openOutputFiles, createExcelCharts, 
 
         # gender annotator ---------------------------------------------------------------------------------------------------------------------------
 
-        if 'Gender' in CoreNLP_annotators_menu_var:
+        if 'Gender' in CoreNLP_annotators_menu_var or '**' in CoreNLP_annotators_menu_var:
             if IO_libraries_util.inputProgramFileCheck('Stanford_CoreNLP_annotator_util.py') == False:
                 return
 
@@ -217,8 +216,7 @@ def run(inputFilename, inputDir, outputDir, openOutputFiles, createExcelCharts, 
 
         # Sentiment analysis annotator ---------------------------------------------------------------------------------------------------------------------------
 
-        if CoreNLP_annotators_menu_var == 'Sentiment analysis':
-            # if sentiment_analysis:
+        if 'Sentiment analysis' in CoreNLP_annotators_menu_var:
             if IO_libraries_util.inputProgramFileCheck('Stanford_CoreNLP_annotator_util.py') == False:
                 return
 
@@ -233,12 +231,14 @@ def run(inputFilename, inputDir, outputDir, openOutputFiles, createExcelCharts, 
                                                                            date_position_var=date_field_position)
             if len(tempOutputFiles)>0:
                 filesToOpen.extend(tempOutputFiles)
-        # openIE annotator ---------------------------------------------------------------------------------------------------------------------------
 
-        if CoreNLP_annotators_menu_var == 'OpenIE - SVO extraction (Neural Network)':
-            # if sentiment_analysis:
+        # OpenIE SVO extractor ---------------------------------------------------------------------------------------------------------------------------
+
+        if 'OpenIE' in CoreNLP_annotators_menu_var:
             if IO_libraries_util.inputProgramFileCheck('Stanford_CoreNLP_annotator_util.py') == False:
                 return
+
+            IO_user_interface_util.script_under_development('Stanford CoreNLP OpenIE')
 
             tempOutputFiles = Stanford_CoreNLP_annotator_util.CoreNLP_annotate(inputFilename, inputDir,
                                                                            outputDir, openOutputFiles,
@@ -251,10 +251,9 @@ def run(inputFilename, inputDir, outputDir, openOutputFiles, createExcelCharts, 
                                                                            date_position_var=date_field_position)
             if len(tempOutputFiles)>0:
                 filesToOpen.extend(tempOutputFiles)
-                
+
     if openOutputFiles:
         IO_files_util.OpenOutputFiles(GUI_util.window, openOutputFiles, filesToOpen)
-
 
 
 # the values of the GUI widgets MUST be entered in the command otherwise they will not be updated
@@ -467,7 +466,7 @@ def check_sentence_table(*args):
         sentence_table_checkbox_msg.config(text="Do NOT compute sentence table")
 compute_sentence_var.trace('w', check_sentence_table)
 
-CoNLL_table_analyzer_var.set(1)
+CoNLL_table_analyzer_var.set(0)
 CoNLL_table_analyzer_checkbox = tk.Checkbutton(window, text='CoNLL table analyzer', variable=CoNLL_table_analyzer_var,
                                                onvalue=1, offvalue=0)
 y_multiplier_integer = GUI_IO_util.placeWidget(GUI_IO_util.get_labels_x_coordinate() + 20, y_multiplier_integer,
@@ -493,13 +492,17 @@ y_multiplier_integer = GUI_IO_util.placeWidget(GUI_IO_util.get_labels_x_coordina
 
 CoreNLP_annotators_menu_var.set("")
 CoreNLP_annotators_menu = tk.OptionMenu(window, CoreNLP_annotators_menu_var,
+        'NER (GUI)',
         'Coreference PRONOMINAL resolution (Neural Network)',
-        'DepRel annotator', 'POS annotator',
-        'NER (GUI)', 'Normalized NER date',
-        'Gender annotator (Neural Network)',
-        'Quote/dialogue annotator (Neural Network)',
         'Sentiment analysis (Neural Network)',
-        'OpenIE - SVO extraction (Neural Network)')
+        'OpenIE - SVO extraction (Neural Network)',
+        '*',
+        'POS annotator',
+        'DepRel annotator',
+        '**',
+        'Normalized NER date',
+        'Gender annotator (Neural Network)',
+        'Quote/dialogue annotator (Neural Network)')
 
 y_multiplier_integer = GUI_IO_util.placeWidget(GUI_IO_util.get_open_file_directory_coordinate(), y_multiplier_integer,
                                                CoreNLP_annotators_menu)
@@ -518,6 +521,10 @@ def activate_CoreNLP_annotators_menu(*args):
             y_multiplier_integer = GUI_IO_util.placeWidget(GUI_IO_util.get_open_file_directory_coordinate() + 400,
                                                            y_multiplier_integer,
                                                            manual_Coref_checkbox)
+            if input_main_dir_path.get()!='':
+                manual_Coref_checkbox.configure(state='disabled')
+            else:
+                manual_Coref_checkbox.configure(state='normal')
         else:
             manual_Coref_checkbox.place_forget()  # invisible
     else:
@@ -567,7 +574,7 @@ def help_buttons(window, help_button_x_coordinate, basic_y_coordinate, y_step):
     GUI_IO_util.place_help_button(window, help_button_x_coordinate, basic_y_coordinate + y_step * 7, "Help",
                                   "Please, tick/untick the checkbox if you want to open (or not) the CoNLL table analyzer GUI to analyze the CoreNLP parser results contained in the CoNLL table.")
     GUI_IO_util.place_help_button(window, help_button_x_coordinate, basic_y_coordinate + y_step * 8, "Help",
-                                  "Please, using the dropdown menu, select one of the many other annotators available through Stanford CoreNLP: Coreference pronominal resolution, DepRel, POS, NER (Named Entity Recognition), NER normalized date. gender, quote, and sentiment analysis.\n\nANNOTATORS MARKED AS NEURAL NETWORK ARE MORE ACCURATE, BUT SLOW AND REQUIRE A GREAT DEAL OF MEMORY.\n\n1.  PRONOMINAL co-reference resolution refers to such cases as 'John said that he would...'; 'he' would be substituted by 'John'. CoreNLP can resolve other cases but the algorithm here is restricted to pronominal resolution.\n\nThe co-reference resolution algorithm is a memory hog. You may not have enough memory on your machine.\n\nDeterministic Coreference Resolution is fastest but less accurate; Neural Network is slowest but most accurate; recommended!\n\nTick the checkbox Manually edit coreferenced document if you wish to resolve manually cases of unresolved or wrongly resolved coreferences. MANUAL EDITING REQUIRES A LOT OF MEMORY SINCE BOTH ORIGINAL AND CO-REFERENCED FILE ARE BROUGHT IN MEMORY. DEPENDING UPON FILE SIZES, YOU MAY NOT HAVE ENOUGH MEMORY FOR THIS STEP.\n\n2.  The CoreNLP NER annotator recognizes the following NER values:\n  named (PERSON, LOCATION, ORGANIZATION, MISC);\n  numerical (MONEY, NUMBER, ORDINAL, PERCENT);\n  temporal (DATE, TIME, DURATION, SET).\n  In addition, via regexner, the following entity classes are tagged: EMAIL, URL, CITY, STATE_OR_PROVINCE, COUNTRY, NATIONALITY, RELIGION, (job) TITLE, IDEOLOGY, CRIMINAL_CHARGE, CAUSE_OF_DEATH.\n\n3.  The NER NORMALIZED DATE annotator extracts standard dates from text in the yyyy-mm-dd format (e.g., 'the day before Christmas' extracted as 'xxxx-12-24').\n\n4.  The CoreNLP coref GENDER annotator extracts the gender of both first names and personal pronouns (he, him, his, she, her, hers) using a neural network approach. This annotator requires a great deal of memory. So, please, adjust the memory allowing as much memory as you can afford.\n\n5.  The CoreNLP QUOTE annotator extracts quotes from text and attributes the quote to the speaker.\n\n6.  The SENTIMENT ANALYSIS annotator computes the sentiment values (negative, neutral, positive) of each sentence in a text.\n\n\n\nIn INPUT the algorithms expect a single txt file or a directory of txt files.\n\nIn OUTPUT the algorithms will produce a number of csv files annd Excel charts. The Gender annotator will also produce an html file with male tags displayed in blue and female tags displayed in red. The Coreference annotator will produce txt-format copies of the same input txt files but co-referenced.")
+                                  "Please, using the dropdown menu, select one of the many other annotators available through Stanford CoreNLP: Coreference pronominal resolution, DepRel, POS, NER (Named Entity Recognition), NER normalized date. gender, quote, and sentiment analysis.\n\nANNOTATORS MARKED AS NEURAL NETWORK ARE MORE ACCURATE, BUT SLOW AND REQUIRE A GREAT DEAL OF MEMORY.\n\n1.  PRONOMINAL co-reference resolution refers to such cases as 'John said that he would...'; 'he' would be substituted by 'John'. CoreNLP can resolve other cases but the algorithm here is restricted to pronominal resolution.\n\nThe co-reference resolution checkbox is disabled when selected an entire directory in input. The co-reference resolution algorithm is a memory hog. You may not have enough memory on your machine.\n\nDeterministic Coreference Resolution is fastest but less accurate; Neural Network is slowest but most accurate; recommended!\n\nTick the checkbox Manually edit coreferenced document if you wish to resolve manually cases of unresolved or wrongly resolved coreferences. MANUAL EDITING REQUIRES A LOT OF MEMORY SINCE BOTH ORIGINAL AND CO-REFERENCED FILE ARE BROUGHT IN MEMORY. DEPENDING UPON FILE SIZES, YOU MAY NOT HAVE ENOUGH MEMORY FOR THIS STEP.\n\n2.  The CoreNLP NER annotator recognizes the following NER values:\n  named (PERSON, LOCATION, ORGANIZATION, MISC);\n  numerical (MONEY, NUMBER, ORDINAL, PERCENT);\n  temporal (DATE, TIME, DURATION, SET).\n  In addition, via regexner, the following entity classes are tagged: EMAIL, URL, CITY, STATE_OR_PROVINCE, COUNTRY, NATIONALITY, RELIGION, (job) TITLE, IDEOLOGY, CRIMINAL_CHARGE, CAUSE_OF_DEATH.\n\n3.  The NER NORMALIZED DATE annotator extracts standard dates from text in the yyyy-mm-dd format (e.g., 'the day before Christmas' extracted as 'xxxx-12-24').\n\n4.  The CoreNLP coref GENDER annotator extracts the gender of both first names and personal pronouns (he, him, his, she, her, hers) using a neural network approach. This annotator requires a great deal of memory. So, please, adjust the memory allowing as much memory as you can afford.\n\n5.  The CoreNLP QUOTE annotator extracts quotes from text and attributes the quote to the speaker.\n\n6.  The SENTIMENT ANALYSIS annotator computes the sentiment values (negative, neutral, positive) of each sentence in a text.\n\n\n\nIn INPUT the algorithms expect a single txt file or a directory of txt files.\n\nIn OUTPUT the algorithms will produce a number of csv files annd Excel charts. The Gender annotator will also produce an html file with male tags displayed in blue and female tags displayed in red. The Coreference annotator will produce txt-format copies of the same input txt files but co-referenced.\n\Select * ton run POS annotator, DepRel annotator, Normalized NER date, Gender annotator (Neural Network), Quote/dialogue annotator (Neural Network).")
     GUI_IO_util.place_help_button(window, help_button_x_coordinate, basic_y_coordinate + y_step * 9, "Help",
                                   GUI_IO_util.msg_openOutputFiles)
 

@@ -7,6 +7,7 @@ from sklearn.decomposition import NMF
 from scipy.cluster.hierarchy import dendrogram, linkage
 from matplotlib import pyplot as plt
 import os.path
+import re #ANGEL
 
 import IO_csv_util
 import IO_user_interface_util
@@ -62,7 +63,6 @@ class SVDClustering:
         pos_vector_clusters = self.reweigh_vecs(normalized_vecs, pos_clusters_indices, w)
         neg_vector_clusters = self.reweigh_vecs(normalized_vecs, neg_clusters_indices, w)
         return pos_vector_clusters, pos_clusters_indices, pos_modes, neg_vector_clusters, neg_clusters_indices, neg_modes
-
 
 class NMFClustering:
     def __init__(self, n_clusters, max_iter_nmf=1000):
@@ -207,7 +207,7 @@ def get_v_clusters_from_cluster_indices(vectors, clusters_indices):
 
 
 # return cluster_file. key: cluster ID, value: (document name, sentiment vector)
-def processCluster(cluster_indices, file_list, sentiment_vectors, rec_n_clusters, outputFile, inputDir):
+def processCluster(cluster_indices,scoresFile_list, file_list, sentiment_vectors, rec_n_clusters, outputFile, inputDir):#Angel
     cluster_file = {}
     for i in range(len(cluster_indices)):
         if cluster_indices[i] in cluster_file:
@@ -221,9 +221,15 @@ def processCluster(cluster_indices, file_list, sentiment_vectors, rec_n_clusters
         writer.writeheader()
         for i in range(rec_n_clusters):
             documents = cluster_file[i]
-            for each  in documents:
-                org_file_name = os.path.basename(each[0]).split("_")[2] + ".txt"
-                writer.writerow({'Cluster ID': "Cluster " + str(i + 1), "Sentiment Score File Name": IO_csv_util.dressFilenameForCSVHyperlink(each[0]), "Original File Name": IO_csv_util.dressFilenameForCSVHyperlink(os.path.join(inputDir, org_file_name))})
+            for each in documents: #each: (narratiefile, sentiment_vector)
+                #===============ANGEL==============
+                match=re.search("^=hyperlink", each[0])
+                if match:
+                    orgFile=IO_csv_util.undressFilenameForCSVHyperlink(each[0])
+                else:
+                    orgFile=each[0]
+                scFile=scoresFile_list[str(each[0])]
+                writer.writerow({'Cluster ID': "Cluster " + str(i + 1), "Sentiment Score File Name": IO_csv_util.dressFilenameForCSVHyperlink(scFile), "Original File Name": IO_csv_util.dressFilenameForCSVHyperlink(orgFile)})
     return cluster_file
 
 def update_Ct_St(sample, H, C_t, S_t):

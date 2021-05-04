@@ -3,7 +3,7 @@
 import sys
 import GUI_util
 import IO_libraries_util
-
+import IO_user_interface_util
 if IO_libraries_util.install_all_packages(GUI_util.window,"CoReference Resolution",['os','tkinter','re'])==False:
     sys.exit(0)
 
@@ -185,55 +185,16 @@ def manualCoref(original_file, corefed_file, outputFile, coRefOptions):
     print("=======Finished Displaying Manual Editing=========")
     return 0
 
-# check if the coreference ends successfully
-# return files_to_open, error indicator
-# 0: no error; 1: error and no manual coref;
-def checkSingleFile(inputFilename, corefed_file, manual_Coref, coRefOptions, files_to_open):
-    # check if corefed_file is empty:
-    f = open(corefed_file, "r", encoding='utf-8', errors='ignore')
-    corefed_text = f.read()
-    f.close()
-    # if the file is empty
-    if corefed_text == "":
-        if manual_Coref:
-            msgbox_exit = mb.askyesno("Co-Reference Resolution Error",
-                                      "Something went wrong for Co-Reference Resolution; the Co-Referenced output file is empty.\n\nPlease, check the command line, most likely for 'GC overhead limit exceeded' when processing large files.\n\n" +
-                                      "Do you want to use the original file to continue manual Co-Reference process? If not, please click 'No' to end the process of Coreference Resolution")
-            if msgbox_exit:
-                if manualCoref(inputFilename, inputFilename, corefed_file, coRefOptions) == 0:  # use the orginal file as coref
-                    # manual coref success!
-                    files_to_open.append(corefed_file)
-                    return files_to_open, 0
-                else:
-                    # manual coref error!
-                    return files_to_open, 1
-            else:
-                # user don't want to use the original file to continue manual coref
-                return files_to_open, 1
-        else:
-            mb.showinfo("Co-Reference Resolution Error",
-                        "Something went wrong for Co-Reference Resolution; the Co-Referenced output file is empty.\n\nPlease, check the command line, most likely for 'GC overhead limit exceeded' when processing large files.\n\n")
-
-            return files_to_open, 1
-    # coreference success!
-    else:
-        if manual_Coref:
-            manualCoref(inputFilename, corefed_file, corefed_file, coRefOptions)
-        files_to_open.append(corefed_file)
-
-    return files_to_open, 0
-
-
 # return file_to_open
 def run(inputFilename, input_main_dir_path, output_dir_path, openOutputFiles, createExcelCharts,
         memory_var,coRefOptions, manual_Coref):
 
-    files_to_open = []
-    
+    corefed_file = []
+
     # check that the CoreNLPdir as been setup
     CoreNLPdir=IO_libraries_util.get_external_software_dir('Stanford_CoreNLP_coreference_util', 'Stanford CoreNLP')
     if CoreNLPdir==None:
-        return files_to_open
+        return filesToOpen
 
     errorFound, error_code, system_output=IO_libraries_util.check_java_installation('SVO extractor')
     if errorFound:
@@ -243,7 +204,6 @@ def run(inputFilename, input_main_dir_path, output_dir_path, openOutputFiles, cr
     #                     'Started running Stanford CoreNLP ' + coRefOptions + ' Co-Reference Resolution at', True,
     #                     'PLEASE, BE PATIENT... Depending upon the size of the document/number of documents processed this may take from a few minutes to a few hours.')
 
-    error = 0
     # with only one input file
     if len(inputFilename)>0:
         base = os.path.basename(inputFilename)
@@ -251,22 +211,21 @@ def run(inputFilename, input_main_dir_path, output_dir_path, openOutputFiles, cr
 
         if IO_libraries_util.inputProgramFileCheck('Stanford_CoreNLP_annotator_util.py')==False:
             return
-        corefed_file = Stanford_CoreNLP_annotator_util.CoreNLP_annotate(inputFilename,input_main_dir_path,output_dir_path, openOutputFiles, createExcelCharts,'coref',False,memory_var)
-        files_to_open, error = checkSingleFile(inputFilename, corefed_file[0], manual_Coref, coRefOptions, files_to_open)
-
-    else:
+        corefed_file = Stanford_CoreNLP_annotator_util.CoreNLP_annotate(inputFilename,input_main_dir_path,
+                                                                        output_dir_path, openOutputFiles, createExcelCharts,'coref',False,
+                                                                        memory_var)
+    else: # dir input
         corefed_file = Stanford_CoreNLP_annotator_util.CoreNLP_annotate(inputFilename, input_main_dir_path,
                                                                    output_dir_path, openOutputFiles, createExcelCharts,'coref', False,
                                                                    memory_var)
-
+    
+    if manual_Coref:
         if len(input_main_dir_path) == 0 and len(inputFilename) > 0:
-            input_main_dir_path = os.path.split(inputFilename)[0]
-        for file in corefed_file:
-            if file[-4:] == ".txt":
-                head, tail = os.path.split(file)
-                # get the original file path from coref processed file path
-                original_file = input_main_dir_path + '/' + tail[18:]
-                files_to_open, error = checkSingleFile(original_file, file, manual_Coref, coRefOptions,
-                                                       files_to_open)
-
-    return files_to_open, error
+            for file in corefed_file:
+                if file[-4:] == ".txt":
+                    error = manualCoref(inputFilename, file, file, coRefOptions)
+                    # return the corefed_file
+        else:
+            IO_user_interface_util.timed_alert(GUI_util.window, 3000, 'Feature Not Available', 'Manual Coreference is only available when processing single file, not input directory.')
+            # input_main_dir_path = os.path.split(inputFilename)[0]
+    return corefed_file

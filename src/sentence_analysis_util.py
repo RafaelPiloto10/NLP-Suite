@@ -57,7 +57,8 @@ def dictionary_items_bySentenceID(window,inputFilename,inputDir, outputDir,creat
         container = []
         for file in file_list:
             documentID+=1
-            print("Processing file ", str(documentID),"\\",str(nFile),file)
+            head, tail = os.path.split(file)
+            print("Processing file ", str(documentID),"\\",str(nFile),tail)
             text = (open(file, "r", encoding="utf-8",errors='ignore').read())
             #Process each word in txt
             Sentence_ID = 0
@@ -93,7 +94,8 @@ def dictionary_items_bySentenceID(window,inputFilename,inputDir, outputDir,creat
         container = []
         for file in file_list:
             documentID += 1
-            print("Processing file ", str(documentID), "\\", str(nFile), file)
+            head, tail = os.path.split(file)
+            print("Processing file ", str(documentID), "\\", str(nFile), tail)
             text = (open(file, "r", encoding="utf-8", errors='ignore').read())
             # Process each word in txt
             Sentence_ID = 0
@@ -237,7 +239,7 @@ def extract_sentences(input_file, input_dir, output_dir, inputString):
         wordFound = False
         fileID = fileID + 1
         head, tail = os.path.split(doc)
-        print("\nProcessing file " + str(fileID) + "/" + str(Ndocs) + ' ' + tail)
+        print("Processing file " + str(fileID) + "/" + str(Ndocs) + ' ' + tail)
         with open(doc, 'r', encoding='utf-8', errors='ignore') as inputFile:
             text = inputFile.read().replace("\n", " ")
         with open(outputFilename_extract, 'w', encoding='utf-8', errors='ignore') as outputFile_extract, open(outputFilename_extract_minus, 'w', encoding='utf-8', errors='ignore') as outputFile_extract_minus:
@@ -311,8 +313,8 @@ def sentence_complexity(window, inputFilename, inputDir, outputDir, openOutputFi
     for doc in inputDocs:
         index += 1
         head, tail = os.path.split(doc)
-        print("\nProcessing file " + str(index) + "/" + str(Ndocs) + ' ' + tail)
-        outputFilename = IO_files_util.generate_output_file_name(doc, inputDir, outputDir, '.csv', 'SentComp', '', '')
+        print("Processing file " + str(index) + "/" + str(Ndocs) + ' ' + tail)
+        outputFilename = IO_files_util.generate_output_file_name(doc, '', outputDir, '.csv', 'SentComp', '', '')
 
         # the output filename passed to jar file MUST be a filename without path
         temp_outputFilename = os.path.basename(outputFilename)
@@ -336,15 +338,20 @@ def sentence_complexity(window, inputFilename, inputDir, outputDir, openOutputFi
     # Combine all CSV files when processing an input dir
     # https://github.com/ekapope/Combine-CSV-files-in-the-folder/blob/master/Combine_CSVs.py
     if inputDir != '':
-        combined_csv_filename = IO_files_util.generate_output_file_name(inputFilename, inputDir, outputDir, '.csv', 'SentComp',
-                                                                        'dir', '')
-        combined_data = pd.concat([pd.read_csv(f) for f in output_csv])
-        combined_data.to_csv(combined_csv_filename, index=False, encoding='utf-8')
+        outputFilename = IO_files_util.generate_output_file_name(inputFilename, inputDir, outputDir, '.csv', 'SentComp',
+                                                                        '', '')
+        try:
+            combined_data = pd.concat([pd.read_csv(f) for f in output_csv])
+        except:
+            mb.showwarning("Fatal error",
+                           "An error was encountered in merging the " + str(Ndocs) + " individual csv files of sentence complexity. Please, use R to merge the csv files containing the sentence complexity scores for each sentence of each input txt file saved in the output directory " + outputDir)
+            return
+        combined_data.to_csv(outputFilename, index=False, encoding='utf-8')
         # Delete the individual CSV files
         for f in output_csv:
             os.unlink(f)
         # # Add to files to open
-        filesToOpen.append(combined_csv_filename)
+        filesToOpen.append(outputFilename)
         mb.showwarning(title='Warning',
                        message='The sentence complexity algorithm will NOT produce the 3 expected Excel line charts of sentence complexity scores by sentence index for the ' + str(
                            Ndocs) + ' files processed since this would produce too many files in output.')
@@ -357,7 +364,7 @@ def sentence_complexity(window, inputFilename, inputDir, outputDir, openOutputFi
         # sentence length
         columns_to_be_plotted = [[2, 4]]
 
-        Excel_outputFilename = Excel_util.run_all(columns_to_be_plotted, inputFilename, outputDir,
+        Excel_outputFilename = Excel_util.run_all(columns_to_be_plotted, outputFilename, outputDir,
                                                   outputFileLabel='SentComp',
                                                   chart_type_list=["line"],
                                                   chart_title='Sentence Length (in Number of Words) by Sentence Index',
@@ -388,7 +395,7 @@ def sentence_complexity(window, inputFilename, inputDir, outputDir, openOutputFi
         # Yngve and Frazier scores
         columns_to_be_plotted = [[2, 5], [2, 7]]
 
-        Excel_outputFilename = Excel_util.run_all(columns_to_be_plotted, inputFilename, outputDir,
+        Excel_outputFilename = Excel_util.run_all(columns_to_be_plotted, outputFilename, outputDir,
                                                   outputFileLabel='SentComp',
                                                   chart_type_list=["line"],
                                                   chart_title='"Sentence Complexity (Yngve and Frazier Scores by Sentence Index)',
@@ -417,7 +424,7 @@ def sentence_complexity(window, inputFilename, inputDir, outputDir, openOutputFi
         # Yngve and Frazier sums
         columns_to_be_plotted = [[2, 6], [2, 8]]
 
-        Excel_outputFilename = Excel_util.run_all(columns_to_be_plotted, inputFilename, outputDir,
+        Excel_outputFilename = Excel_util.run_all(columns_to_be_plotted, outputFilename, outputDir,
                                                   outputFileLabel='SentComp',
                                                   chart_type_list=["line"],
                                                   chart_title='"Sentence Complexity (Yngve and Frazier Sums by Sentence Index)',
@@ -505,7 +512,7 @@ def sentence_text_readability(window, inputFilename, inputDir, outputDir, openOu
 
             documentID = documentID + 1
             head, tail = os.path.split(file)
-            print("\nProcessing file " + str(documentID) + "/" + str(nFile) + ' ' + tail)
+            print("Processing file " + str(documentID) + "/" + str(nFile) + ' ' + tail)
 
             # write text files ____________________________________________
 
@@ -694,7 +701,7 @@ def sentence_text_readability(window, inputFilename, inputDir, outputDir, openOu
                 columns_to_be_plotted = [[2, 5], [2, 6], [2, 7], [2, 9], [2, 10], [2, 11]]
                 hover_label = ['Sentence', 'Sentence', 'Sentence', 'Sentence', 'Sentence', 'Sentence']
 
-                Excel_outputFilename = Excel_util.run_all(columns_to_be_plotted, inputFilename, outputDir,
+                Excel_outputFilename = Excel_util.run_all(columns_to_be_plotted, outputFilenameCsv, outputDir,
                                                           outputFileLabel='READ',
                                                           chart_type_list=["line"],
                                                           chart_title='Text Readability',
@@ -722,7 +729,7 @@ def sentence_text_readability(window, inputFilename, inputDir, outputDir, openOu
 
                 columns_to_be_plotted = [[2, 13]]
                 hover_label = ['Sentence']
-                Excel_outputFilename = Excel_util.run_all(columns_to_be_plotted, inputFilename, outputDir,
+                Excel_outputFilename = Excel_util.run_all(columns_to_be_plotted, outputFilenameCsv, outputDir,
                                                           outputFileLabel='READ',
                                                           chart_type_list=["line"],
                                                           chart_title='Text Readability',
@@ -753,7 +760,7 @@ def sentence_text_readability(window, inputFilename, inputDir, outputDir, openOu
             columns_to_be_plotted = [[0, 12]]
             hover_label = []
 
-            Excel_outputFilename = Excel_util.run_all(columns_to_be_plotted, inputFilename, outputDir,
+            Excel_outputFilename = Excel_util.run_all(columns_to_be_plotted, outputFilenameCsv, outputDir,
                                                       outputFileLabel='READ',
                                                       chart_type_list=["bar"],
                                                       chart_title='Frequency of Sentences by Readability Consensus of Grade Level',
