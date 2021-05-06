@@ -174,7 +174,7 @@ def convert_to_svo(input_df: pd.DataFrame, output_file_name: str, createExcelCha
     sentence_start_index = []
     df = input_df
     new_df = pd.DataFrame(
-        columns=['Document ID', 'Sentence ID', 'Document', 'S', 'V', 'O/A', 'S(NP)', 'O(NP)', 'PERSON', 'LOCATION', 'TIME',
+        columns=['Document ID', 'Sentence ID', 'Document', 'S', 'V', 'O/A', 'S(NP)', 'O(NP)', 'PERSON', 'LOCATION', 'TIME', 'NEGATION',
                  'Sentence'])
     document_id, sent_id = 0, 0
 
@@ -197,20 +197,32 @@ def convert_to_svo(input_df: pd.DataFrame, output_file_name: str, createExcelCha
 
         # Iterating each column
         for i in range(4, len(df.iloc[1, :])):
-            SVO = {'S': [], 'V': [], 'O': [], 'PERSON': [], 'LOCATION': [], 'TIME': [], 'S(NP)': [], 'O(NP)': []}
+            SVO = {'S': [], 'V': [], 'O': [], 'PERSON': [], 'LOCATION': [], 'TIME': [], 'NEGATION': [], 'S(NP)': [], 'O(NP)': []}
             noun_postag = {'PRP', 'NN', 'NNS', 'NNP', 'WP'}
-            ners = {'PER', 'TMP', 'LOC'}
 
             sent_col = df.iloc[sentence_start_index[a]:sentence_start_index[a + 1], i]
             sent_col = sent_col.tolist()
             mapping = {}
 
+            def check_ner(ner: str, word: str):
+                if ner == 'LOC':
+                    SVO['LOCATION'].append(word)
+                elif ner == 'PER':
+                    SVO['PERSON'].append(word)
+
             # Adding {row_index: label} to mapping
             for j in range(len(sent_col)):
-                if sent_col[j] != 'X' and sent_col[j] != 'O' and (
-                        sent_col[j].count('-') == 1 or sent_col[j].count('-') > 1 and sent_col[j][-1].isnumeric()):
-                    label = sent_col[j].split('-')[-1]
-                    mapping.update({sentence_start_index[a] + j: label})
+                word_index = sentence_start_index[a] + j
+                word = df.iloc[word_index, 2]
+                word_label = sent_col[j]
+                if word_label != 'X' and word_label != 'O' and (
+                        word_label.count('-') == 1 or word_label.count('-') > 1 and word_label[-1].isnumeric()):
+                    last_label = word_label.split('-')[-1]
+                    mapping.update({word_index: last_label})
+                elif word_label[-3:] == 'TMP':
+                    SVO['TIME'].append(word)
+                elif word_label[-3:] == 'NEG' or word.lower() == 'never':
+                    SVO['NEGATION'].append(word)
 
             # Converting signs to '--S--', '--V--' and '--O--'
             temp = {}  # {col_index: converted signs} for this sentence
@@ -241,14 +253,7 @@ def convert_to_svo(input_df: pd.DataFrame, output_file_name: str, createExcelCha
                                     s_cont_noun = False
                                 SVO['S(NP)'].append(word)
 
-                                # Using NER to identify Location, Person and Time
-                                if ner in ners:
-                                    if ner == 'TMP':
-                                        SVO['TIME'].append(word)
-                                    elif ner == 'LOC':
-                                        SVO['LOCATION'].append(word)
-                                    elif ner == 'PER':
-                                        SVO['PERSON'].append(word)
+                                check_ner(ner, word)
                             else:  # V
                                 SVO['V'].append(word)
 
@@ -260,7 +265,7 @@ def convert_to_svo(input_df: pd.DataFrame, output_file_name: str, createExcelCha
                         except ValueError:
                             continue
                         temp_keys = list(temp.keys())
-                        # Replacing the labels
+
                         for key in temp_keys:
                             word = df.iloc[key, 2]
                             postag = df.iloc[key, 3]
@@ -283,14 +288,7 @@ def convert_to_svo(input_df: pd.DataFrame, output_file_name: str, createExcelCha
                                 else:
                                     SVO['S(NP)'].append(word)
 
-                                # Using NER to identify Location, Person and Time
-                                if ner in ners:
-                                    if ner == 'TMP':
-                                        SVO['TIME'].append(word)
-                                    elif ner == 'LOC':
-                                        SVO['LOCATION'].append(word)
-                                    elif ner == 'PER':
-                                        SVO['PERSON'].append(word)
+                                check_ner(ner, word)
                             elif temp_keys.index(key) > verb_index[1]:
                                 if postag in noun_postag:
                                     if before_verb > after_verb:
@@ -308,14 +306,7 @@ def convert_to_svo(input_df: pd.DataFrame, output_file_name: str, createExcelCha
                                 else:
                                     SVO['O(NP)'].append(word)
 
-                                # Using NER to identify Location, Person and Time
-                                if ner in ners:
-                                    if ner == 'TMP':
-                                        SVO['TIME'].append(word)
-                                    elif ner == 'LOC':
-                                        SVO['LOCATION'].append(word)
-                                    elif ner == 'PER':
-                                        SVO['PERSON'].append(word)
+                                check_ner(ner, word)
                             else:
                                 SVO['V'].append(word)
 
@@ -327,18 +318,19 @@ def convert_to_svo(input_df: pd.DataFrame, output_file_name: str, createExcelCha
                 SVO['S'] = ' '.join(SVO['S'])
                 SVO['V'] = ' '.join(SVO['V'])
                 SVO['O'] = ' '.join(SVO['O'])
-                SVO['PERSON'] = ' '.join(SVO['PERSON'])
-                SVO['LOCATION'] = ' '.join(SVO['LOCATION'])
+                SVO['PERSON'] = ', '.join(SVO['PERSON'])
+                SVO['LOCATION'] = ', '.join(SVO['LOCATION'])
                 SVO['TIME'] = ' '.join(SVO['TIME'])
+                SVO['NEGATION'] = ', '.join(SVO['NEGATION'])
                 SVO['S(NP)'] = ' '.join(SVO['S(NP)'])
                 SVO['O(NP)'] = ' '.join(SVO['O(NP)'])
 
                 formatted_input_file_name = IO_csv_util.dressFilenameForCSVHyperlink(df.iloc[a, 1])
                 new_row = pd.DataFrame(
                     [[document_id, sent_id, formatted_input_file_name, SVO['S'], SVO['V'], SVO['O'], SVO['S(NP)'],
-                      SVO['O(NP)'], SVO['PERSON'], SVO['LOCATION'], SVO['TIME'], sentence]],
+                      SVO['O(NP)'], SVO['PERSON'], SVO['LOCATION'], SVO['TIME'], SVO['NEGATION'], sentence]],
                     columns=['Document ID', 'Sentence ID', 'Document', 'S', 'V', 'O/A', 'S(NP)', 'O(NP)', 'PERSON',
-                             'LOCATION', 'TIME', 'Sentence'])
+                             'LOCATION', 'TIME', 'NEGATION', 'Sentence'])
                 new_df = new_df.append(new_row, ignore_index=True)
 
         sent_id += 1
