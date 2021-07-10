@@ -20,7 +20,10 @@ def download_jars():
              'WordNet_Search_DOWN.jar', 'WordNet_Search_UP.jar']
     for name in names:
         full_url = prefix + name
+        print(f'Downloading {name}...')
         download_file(full_url, name)
+        print(f'Successfully downloaded {name}')
+
 
 if __name__ == '__main__':
     download_jars()
