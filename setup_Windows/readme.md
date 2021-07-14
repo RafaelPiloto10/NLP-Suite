@@ -6,6 +6,8 @@
 
 3. Go to the extracted folder
 
+3. If you don't have [Anaconda](https://www.anaconda.com/products/individual#windows) installed yet, please download the `exe` and place the `exe` in the `NLP/setup_Windows/` subfolder.
+
 4. Run "STEP1-install_anaconda" by double-clicking on it.
     - SKIP THIS STEP IF YOU ALREADY HAVE ANACONDA INSTALLED ON YOUR MACHINE
     - If you'd like to skip this step, make sure you have Anaconda in $PATH. One way to check is to type conda in a command-line window, press enter, and see if there is an error.
@@ -21,7 +23,8 @@ If you encounter any problems, feel free to [start a new issue](https://github.c
 
 There are two ways of updating to the newest NLP Suite version.
 1. Double click `update.bat` on your local machine every time you want to get new/changed files from GitHub.
-2. Double click on `setup_auto_update.bat` and, from then on, when exit the NLP Suite new/changed files will be automatically pulled from from GitHub. You only need to click on setup_auto_update.bat once.
+2. Double click on `setup_auto_update.bat` and, from then on, when exiting the NLP Suite new/changed files will be automatically pulled from GitHub.
+   You only need to click on setup_auto_update.bat once.
 
 ## Shortcuts
 

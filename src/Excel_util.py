@@ -4,7 +4,7 @@
 import sys
 import GUI_util
 import IO_libraries_util
-import IO_user_interface_util
+
 if IO_libraries_util.install_all_packages(GUI_util.window,"Excel_util",['csv','tkinter','os','collections','openpyxl'])==False:
     sys.exit(0)
 
@@ -23,6 +23,7 @@ import csv
 import IO_csv_util
 import GUI_IO_util
 import IO_files_util
+import IO_user_interface_util
 
 # ensure filename extension is correct for hover_over effects (xlxm) and no effects (xlsx)
 def checkExcel_extension(output_file_name,hover_info_column_list):
@@ -62,14 +63,19 @@ def prepare_data_to_be_plotted(inputFilename, columns_to_be_plotted, chart_type_
         data_to_be_plotted = get_data_to_be_plotted_with_counts(inputFilename,withHeader_var,headers,columns_to_be_plotted,column_yAxis_field_list,dataRange)
     else:
         try:
-            # data = pd.read_csv(inputFilename, encoding="utf-8", error_bad_lines=False)
-            data = pd.read_csv(inputFilename)
-        except ValueError as err:
-            if 'codec' in str(err):
-                err=str(err) + '\n\nA utf-8 encoding problem was found while reading into pandas the csv file ' + inputFilename + '\n\nPlease, check the data in the txt files that generated the csv file. Run the utf-8 compliance algorithm and, perhaps, run the cleaning algorithm that converts apostrophes.\n\nNO EXCEL CHART PRODUCED.'
-            mb.showwarning(title='Input file read error',
-                   message=str(err))
-            return
+            data = pd.read_csv(inputFilename,encoding='utf-8')
+        except:
+            try:
+                data = pd.read_csv(inputFilename,encoding='ISO-8859-1')
+                IO_user_interface_util.timed_alert(window, 2000, 'Warning',
+                                                   'Excel-util encountered errors with utf-8 encoding and switched to ISO-8859-1 in reading into pandas the csv file ' + inputFilename)
+                print("Excel-util encountered errors with utf-8 encoding and switched to ISO-8859-1 encoding in reading into pandas the csv file " + inputFilename)
+            except ValueError as err:
+                if 'codec' in str(err):
+                    err=str(err) + '\n\nExcel-util encountered errors with both utf-8 and ISO-8859-1 encoding in the function \'prepare_data_to_be_plotted\' while reading into pandas the csv file\n\n' + inputFilename + '\n\nPlease, check carefully the data in the csv file; it may contain filenames with non-utf-8/ISO-8859-1 characters; less likely, the data in the txt files that generated the csv file may also contain non-compliant characters. Run the utf-8 compliance algorithm and, perhaps, run the cleaning algorithm that converts apostrophes.\n\nNO EXCEL CHART PRODUCED.'
+                mb.showwarning(title='Input file read error',
+                       message=str(err))
+                return
         data_to_be_plotted = get_data_to_be_plotted_NO_counts(inputFilename,withHeader_var,headers,columns_to_be_plotted,data)
     return data_to_be_plotted
 
@@ -206,7 +212,7 @@ def get_dataRange(columns_to_be_plotted, data):
 
 
 # -----------------------------------------------------------------
-# MUST COMPUTTE HOVER OVER VALUES!!! see below
+# MUST COMPUTE HOVER OVER VALUES!!! see below
 
 # create a list of unique words to be displayed in hover over
 # result = IO_files_util.openCSVFile(outputFilenameCSV1, 'r', 'utf-8')
@@ -701,8 +707,21 @@ def create_excel_chart(window,data_to_be_plotted,inputFilename,outputDir,scriptT
     A single Workbook can have multiple Worksheets
     See https://www.pythonexcel.com/openpyxl.php
     """
-    
-    n = len(data_to_be_plotted)
+
+    # head, tail = os.path.split(Excel_outputFilename)
+    head, tail = os.path.split(inputFilename)
+    num_label=len(data_to_be_plotted[0])-1
+
+
+    # ValueError: Row numbers must be between 1 and 1048576
+    # 1048576 is simply 2 to the 20th power, and thus this number is the largest that can be represented in twenty bits.
+    # https://stackoverflow.com/questions/33775423/how-to-set-a-data-type-for-a-column-with-closedxml
+    if IO_csv_util.GetNumberOfRecordInCSVFile(inputFilename) > 1048575:
+        IO_user_interface_util.timed_alert(window, 4000, 'Warning',
+                                           "Excel chart error: The number of rows in the input csv file\n\n" + tail + "\n\nexceeds the maximum number of rows Excel can handle (1048576, i.e., 2 to the 20th power, the largest that can be represented in twenty bits), leading to the error 'ValueError: Row numbers must be between 1 and 1048576.'")
+        print("Excel chart error: The number of rows in the input csv file\n\n" + tail + "\n\nexceeds the maximum number of rows Excel can handle (1048576, i.e., 2 to the 20th power, the largest that can be represented in twenty bits), leading to the error 'ValueError: Row numbers must be between 1 and 1048576.")
+        return
+
     if len(hover_info_column_list) > 0:
         outputExtension='.xlsm'
     else:
@@ -710,15 +729,13 @@ def create_excel_chart(window,data_to_be_plotted,inputFilename,outputDir,scriptT
 
     Excel_outputFilename = IO_files_util.generate_output_file_name(inputFilename, '', outputDir, outputExtension, scriptType, chart_type_list[0],'chart')
 
+    n = len(data_to_be_plotted)
+
     #while the chart_type_list is complete in the Excel_charts GUI,
     #   when calling this function from other scripts only one chartType is typically passed 
     if len(chart_type_list) != n:
         for i in range(n-1):
             chart_type_list.append(chart_type_list[0])
-
-    # head, tail = os.path.split(Excel_outputFilename)
-    head, tail = os.path.split(inputFilename)
-    num_label=len(data_to_be_plotted[0])-1
 
     IO_user_interface_util.timed_alert(window, 2000, 'Warning', 'Preparing Excel chart ' + tail + '\n\nPlease wait...', False)
 
@@ -831,8 +848,12 @@ def create_excel_chart(window,data_to_be_plotted,inputFilename,outputDir,scriptT
         for i in range(len(hover_column_numbers)):
             hover_data = prepare_hover_data(inputFilename, hover_column_numbers[i], i)
             for j in range(len(hover_data)):
-                ws1.cell(row=j + 1, column=i + 1).value = hover_data[j][0]
-
+                if j > 1048575:
+                    print(
+                        "Excel chart error with hover over data: The number of rows in the input csv file\n\n" + inputFilename + "\n\nexceeds the maximum number of rows Excel can handle (1048576, i.e., 2 to the 20th power, the largest that can be represented in twenty bits), leading to the error 'ValueError: Row numbers must be between 1 and 1048576.'\n\nProcessing continues...")
+                    break
+                else:
+                    ws1.cell(row=j + 1, column=i + 1).value = hover_data[j][0]
         names = []
         names.append(chartTitle)
         names.append(column_yAxis_label)

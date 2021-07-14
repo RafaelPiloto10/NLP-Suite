@@ -27,10 +27,6 @@ Parameters:
 # add parameter to exclude duplicates? also mean or median analysis
 
 import sys
-
-import GUI_IO_util
-import IO_files_util
-
 import GUI_util
 import IO_libraries_util
 
@@ -49,6 +45,8 @@ import pandas as pd
 import tkinter.messagebox as mb
 
 import IO_csv_util
+import IO_files_util
+import GUI_IO_util
 
 IO_libraries_util.import_nltk_resource(GUI_util.window,'tokenizers/punkt','punkt')
 # check WordNet
@@ -87,8 +85,8 @@ def analyzefile(input_file, output_dir, output_file, csvfile, mode, Document_ID,
         fulltext = myfile.read()
     # end method if file is empty
     if len(fulltext) < 1:
-        mb.showerror(title='File empty', message='The file ' + myfile + ' is empty.\n\nPlease, use another file and try again.')
-        print('Empty file '+ myfile )
+        mb.showerror(title='File empty', message='The file ' + input_file + ' is empty.\n\nPlease, use another file and try again.')
+        print('Empty file ', input_file)
         return
 
     # otherwise, split into sentences
@@ -347,7 +345,8 @@ def main(input_file, input_dir, output_dir,output_file, mode):
                         print("Finished ANEW sentiment analysis of " + filename + " in " + str((time.time() - start_time)) + " seconds")
             else:
                 print('Input directory "' + input_dir + '" is invalid.')
-                sys.exit(0)
+                sys.exit(1)
+    csvfile.close()
     return fileNamesToPass #LINE ADDED
 
     # endTime = time.localtime()

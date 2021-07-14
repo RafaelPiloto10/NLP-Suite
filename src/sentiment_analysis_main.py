@@ -27,7 +27,16 @@ import sentiment_analysis_ANEW_util
 
 # RUN section ______________________________________________________________________________________________________________________________________________________
 
-def run(CoreNLPdir,inputFilename,inputDir,outputDir,openOutputFiles, createExcelCharts,mean_var,median_var,SA_algorithm_var,memory_var):
+def run(CoreNLPdir,inputFilename,inputDir,outputDir,
+        openOutputFiles,
+        createExcelCharts,
+        mean_var,
+        median_var,
+        SA_algorithm_var,
+        memory_var,
+        sentence_index_var,
+        shape_of_stories_var):
+
     #if GUI_util.check_missingIO()==True:
     #    return
     usefile = False
@@ -35,6 +44,10 @@ def run(CoreNLPdir,inputFilename,inputDir,outputDir,openOutputFiles, createExcel
     flag="" #used by CoreNLP
     filesToOpen = []  # Store all files that are to be opened once finished
 
+    if shape_of_stories_var:
+        if IO_libraries_util.inputProgramFileCheck('shape_of_stories_main.py') == False:
+            return
+        call("python shape_of_stories_main.py", shell=True)
 
     if SA_algorithm_var=='':
         mb.showwarning('Warning',"No option has been selected.\n\nPlease, select a Sentiment analysis option and try again.")
@@ -115,8 +128,8 @@ def run(CoreNLPdir,inputFilename,inputDir,outputDir,openOutputFiles, createExcel
                 # CoreNLP only computes mean values
                 columns_to_be_plotted = [[2,4]]
                 hover_label=['Sentence']
-                inputFilename=outputFilename
-                Excel_outputFilename = Excel_util.run_all(columns_to_be_plotted, inputFilename, outputDir,
+                # inputFilename = outputFilename
+                Excel_outputFilename = Excel_util.run_all(columns_to_be_plotted, outputFilename, outputDir,
                                                           outputFileLabel='CoreNLP_sent',
                                                           chart_type_list=["line"],
                                                           chart_title='Stanford CoreNLP - Sentiment Scores by Sentence Index',
@@ -127,14 +140,10 @@ def run(CoreNLPdir,inputFilename,inputDir,outputDir,openOutputFiles, createExcel
                 if Excel_outputFilename != "":
                     filesToOpen.append(Excel_outputFilename)
 
-                # outputFilenameXlsm = Excel_util.run_all(columns_to_be_plotted,inputFilename, outputDir, outputQuotefilePath,
-                # chart_type_list = ["line"], chart_title= "Stanford CoreNLP - Sentiment Scores by Sentence Index",
-                # column_xAxis_label_var = 'Sentence index',column_yAxis_label_var = 'Frequency of sentiment score',outputExtension = '.xlsm',label1='SC',label2='Sentiment CoreNLP',label3='line',label4='chart',label5='', useTime=False,disable_suffix=True,  count_var=0, column_yAxis_field_list = [], reverse_column_position_for_series_label=False , series_label_list=[''], second_y_var=0, second_yAxis_label='', hover_info_column_list=hover_label)
-
                 columns_to_be_plotted = [[5,5]]
                 hover_label=[]
-                inputFilename=inputFilename
-                Excel_outputFilename = Excel_util.run_all(columns_to_be_plotted, inputFilename, outputDir,
+                # inputFilename = inputFilename
+                Excel_outputFilename = Excel_util.run_all(columns_to_be_plotted, outputFilename, outputDir,
                                                           outputFileLabel='CoreNLP_SA',
                                                           chart_type_list=["bar"],
                                                           chart_title='Stanford CoreNLP - Sentiment Scores',
@@ -187,8 +196,8 @@ def run(CoreNLPdir,inputFilename,inputDir,outputDir,openOutputFiles, createExcel
             else:
                 columns_to_be_plotted = [[2,4]]
                 hover_label=['Sentence']
-            inputFilename=outputFilename
-            Excel_outputFilename = Excel_util.run_all(columns_to_be_plotted, inputFilename, outputDir,
+            # inputFilename = outputFilename
+            Excel_outputFilename = Excel_util.run_all(columns_to_be_plotted, outputFilename, outputDir,
                                                       outputFileLabel='Hedo_sent',
                                                       chart_type_list=["line"],
                                                       chart_title='Hedonometer - Sentiment Scores by Sentence Index',
@@ -199,14 +208,10 @@ def run(CoreNLPdir,inputFilename,inputDir,outputDir,openOutputFiles, createExcel
             if Excel_outputFilename != "":
                 filesToOpen.append(Excel_outputFilename)
 
-            # outputFilenameXlsm = Excel_util.run_all(columns_to_be_plotted,inputFilename,outputDir, outputFilename, chart_type_list = ["line"],
-            # chart_title= "Hedonometer - Sentiment Scores by Sentence Index", column_xAxis_label_var = 'Sentence index',
-            # column_yAxis_label_var = 'Frequency of sentiment scores',outputExtension = '.xlsm',label1='SC',label2='Hedonometer',label3='line',label4='chart',label5='', useTime=False,disable_suffix=True,  count_var=0, column_yAxis_field_list = [], reverse_column_position_for_series_label=False , series_label_list=[''], second_y_var=0, second_yAxis_label='', hover_info_column_list=hover_label)
-
             columns_to_be_plotted = [[5,5]]
             hover_label=[]
-            inputFilename = outputFilename
-            Excel_outputFilename = Excel_util.run_all(columns_to_be_plotted, inputFilename, outputDir,
+            # inputFilename = outputFilename
+            Excel_outputFilename = Excel_util.run_all(columns_to_be_plotted, outputFilename, outputDir,
                                                       outputFileLabel='Hedo_sent',
                                                       chart_type_list=["bar"],
                                                       chart_title='Hedonometer - Sentiment Scores',
@@ -214,8 +219,7 @@ def run(CoreNLPdir,inputFilename,inputDir,outputDir,openOutputFiles, createExcel
                                                       hover_info_column_list=hover_label,
                                                       count_var=1,
                                                       column_yAxis_label_var='Scores')
-        # Excel_outputFilename = Excel_util.run_all(columns_to_be_plotted,
-        # inputFilename,outputDir, outputFilename, chart_type_list = ["bar"], chart_title= "Hedonometer (Sentiment Values)", column_xAxis_label_var = 'Sentiment values',column_yAxis_label_var = 'Frequency of sentiment values',outputExtension = '.xlsm',label1='SC',label2='Hedonometer',label3='bar',label4='chart',label5='', useTime=False,disable_suffix=True,  count_var=1, column_yAxis_field_list = [], reverse_column_position_for_series_label=False , series_label_list=[''], second_y_var=0, second_yAxis_label='', hover_info_column_list=hover_label)
+
             if Excel_outputFilename != "":
                 filesToOpen.append(Excel_outputFilename)
 
@@ -240,8 +244,8 @@ def run(CoreNLPdir,inputFilename,inputDir,outputDir,openOutputFiles, createExcel
             columns_to_be_plotted = [[2,4]]
             hover_label=['Sentence']
 
-            inputFilename = outputFilename
-            Excel_outputFilename = Excel_util.run_all(columns_to_be_plotted, inputFilename, outputDir,
+            # inputFilename = outputFilename
+            Excel_outputFilename = Excel_util.run_all(columns_to_be_plotted, outputFilename, outputDir,
                                                       outputFileLabel='SentiWordNet_sent',
                                                       chart_type_list=["line"],
                                                       chart_title='SentiWordNet - Sentiment Scores by Sentence Index',
@@ -252,12 +256,9 @@ def run(CoreNLPdir,inputFilename,inputDir,outputDir,openOutputFiles, createExcel
             if Excel_outputFilename != "":
                 filesToOpen.append(Excel_outputFilename)
 
-            # outputFilenameXlsm = Excel_util.run_all(columns_to_be_plotted,inputFilename,outputDir,
-            # outputFilename, chart_type_list = ["line"], chart_title= "SentiWordNet - Sentiment Scores by Sentence Index", column_xAxis_label_var = 'Sentence index',column_yAxis_label_var = 'Frequency of sentiment score',outputExtension = '.xlsm',label1='SC',label2='SentiWordNet',label3='line',label4='chart',label5='', useTime=False,disable_suffix=True,  count_var=0, column_yAxis_field_list = [], reverse_column_position_for_series_label=False , series_label_list=[''], second_y_var=0, second_yAxis_label='', hover_info_column_list=hover_label)
-
             columns_to_be_plotted = [[5,5]]
             hover_label=[]
-            Excel_outputFilename = Excel_util.run_all(columns_to_be_plotted, inputFilename, outputDir,
+            Excel_outputFilename = Excel_util.run_all(columns_to_be_plotted, outputFilename, outputDir,
                                                       outputFileLabel='SentiWordNet_sent',
                                                       chart_type_list=["bar"],
                                                       chart_title='SentiWordNet - Sentiment Scores',
@@ -266,7 +267,6 @@ def run(CoreNLPdir,inputFilename,inputDir,outputDir,openOutputFiles, createExcel
                                                       count_var=1,
                                                       column_yAxis_label_var='Scores')
 
-            # outputFilenameXlsm1 = Excel_util.run_all(columns_to_be_plotted,inputFilename,outputDir, outputFilename, chart_type_list = ["bar"], chart_title= "SentiWordNet - Sentiment Values", column_xAxis_label_var = 'Sentiment value',column_yAxis_label_var = 'Frequency of sentiment value',outputExtension = '.xlsm',label1='SC',label2='SentiWordNet',label3='bar',label4='chart',label5='', useTime=False,disable_suffix=True,  count_var=1, column_yAxis_field_list = [], reverse_column_position_for_series_label=False , series_label_list=[''], second_y_var=0, second_yAxis_label='', hover_info_column_list=hover_label)
             if Excel_outputFilename != "":
                 filesToOpen.append(Excel_outputFilename)
 
@@ -291,10 +291,9 @@ def run(CoreNLPdir,inputFilename,inputDir,outputDir,openOutputFiles, createExcel
             # VADER does not compute separate mean and median values
             columns_to_be_plotted = [[2,4]]
             hover_label=['Sentence']
-            inputFilename=outputFilename
+            # inputFilename = outputFilename
 
-            inputFilename = outputFilename
-            Excel_outputFilename = Excel_util.run_all(columns_to_be_plotted, inputFilename, outputDir,
+            Excel_outputFilename = Excel_util.run_all(columns_to_be_plotted, outputFilename, outputDir,
                                                       outputFileLabel='VADER_sent',
                                                       chart_type_list=["line"],
                                                       chart_title='VADER - Sentiment Scores by Sentence Index',
@@ -305,13 +304,10 @@ def run(CoreNLPdir,inputFilename,inputDir,outputDir,openOutputFiles, createExcel
             if Excel_outputFilename != "":
                 filesToOpen.append(Excel_outputFilename)
 
-            #outputFilenameXlsm = Excel_util.run_all(columns_to_be_plotted,inputFilename,outputDir, outputFilename, chart_type_list = ["line"],
-            # chart_title= "VADER - Sentiment Scores by Sentence Index", column_xAxis_label_var = 'Sentence index',column_yAxis_label_var = 'Frequency of sentiment score',outputExtension = '.xlsm',label1='SC',label2='VADER',label3='line',label4='chart',label5='', useTime=False,disable_suffix=True,  count_var=0, column_yAxis_field_list = [], reverse_column_position_for_series_label=False , series_label_list=[''], second_y_var=0, second_yAxis_label='', hover_info_column_list=hover_label)
-
             columns_to_be_plotted = [[5,5]]
             hover_label=[]
-            inputFilename=outputFilename
-            Excel_outputFilename = Excel_util.run_all(columns_to_be_plotted, inputFilename, outputDir,
+            # inputFilename = outputFilename
+            Excel_outputFilename = Excel_util.run_all(columns_to_be_plotted, outputFilename, outputDir,
                                                       outputFileLabel='VADER_sent',
                                                       chart_type_list=["bar"],
                                                       chart_title='VADER - Sentiment Scores',
@@ -320,8 +316,6 @@ def run(CoreNLPdir,inputFilename,inputDir,outputDir,openOutputFiles, createExcel
                                                       count_var=1,
                                                       column_yAxis_label_var='Scores')
 
-            # outputFilenameXlsm1 = Excel_util.run_all(columns_to_be_plotted,inputFilename,outputDir, outputFilename, chart_type_list = ["bar"], chart_title= "VADER - Sentiment Values", column_xAxis_label_var = 'Sentiment value',column_yAxis_label_var = 'Frequency of sentiment value',outputExtension = '.xlsm',label1='SC',
-            # label2='VADER',label3='bar',label4='chart',label5='', useTime=False,disable_suffix=True,  count_var=1, column_yAxis_field_list = [], reverse_column_position_for_series_label=False , series_label_list=[''], second_y_var=0, second_yAxis_label='', hover_info_column_list=hover_label)
             if Excel_outputFilename != "":
                 filesToOpen.append(Excel_outputFilename)
         IO_user_interface_util.timed_alert(GUI_util.window, 3000, 'Analysis end', 'Finished running VADER Sentiment Analysis at', True)
@@ -333,7 +327,7 @@ def run(CoreNLPdir,inputFilename,inputDir,outputDir,openOutputFiles, createExcel
         if IO_libraries_util.inputProgramFileCheck('sentiment_analysis_ANEW_util.py')==False:
             return
         IO_user_interface_util.timed_alert(GUI_util.window, 3000, 'Analysis start', 'Started running ANEW Sentiment Analysis at', True)
-        outputFilename = IO_files_util.generate_output_file_name(inputFilename, inputDir, outputDir, '.csv', 'SC', 'VADER', '', '', '', False, True)
+        outputFilename = IO_files_util.generate_output_file_name(inputFilename, inputDir, outputDir, '.csv', 'SC', 'ANEW', '', '', '', False, True)
 
         sentiment_analysis_ANEW_util.main(inputFilename, inputDir, outputDir, outputFilename, mode)
         if createExcelCharts==True:
@@ -345,8 +339,8 @@ def run(CoreNLPdir,inputFilename,inputDir,outputDir,openOutputFiles, createExcel
                 columns_to_be_plotted = [[2,4],[2,6],[2,8]]
                 hover_label=['Sentence','Sentence','Sentence']
 
-            inputFilename = outputFilename
-            Excel_outputFilename = Excel_util.run_all(columns_to_be_plotted, inputFilename, outputDir,
+            # inputFilename = outputFilename
+            Excel_outputFilename = Excel_util.run_all(columns_to_be_plotted, outputFilename, outputDir,
                                                       outputFileLabel='ANEW_sent',
                                                       chart_type_list=["line"],
                                                       chart_title='ANEW - Sentiment Scores by Sentence Index',
@@ -357,17 +351,14 @@ def run(CoreNLPdir,inputFilename,inputDir,outputDir,openOutputFiles, createExcel
             if Excel_outputFilename != "":
                 filesToOpen.append(Excel_outputFilename)
 
-            # outputFilenameXlsm = Excel_util.run_all(columns_to_be_plotted,inputFilename,outputDir,
-            # outputFilename, chart_type_list = ["line"], chart_title= "ANEW - Scores by Sentence Index", column_xAxis_label_var = 'Sentence index',column_yAxis_label_var = 'Frequency of sentiment score',outputExtension = '.xlsm',label1='SC',label2='ANEW',label3='line',label4='chart',label5='', useTime=False,disable_suffix=True,  count_var=0, column_yAxis_field_list = [], reverse_column_position_for_series_label=False , series_label_list=[''], second_y_var=0, second_yAxis_label='', hover_info_column_list=hover_label)
-
             # sentiment bar chart
             if mode == "both":
                 columns_to_be_plotted = [[5,5],[7,7]]
             else:
                 columns_to_be_plotted = [[5,5]]
             hover_label=[]
-            inputFilename = outputFilename
-            Excel_outputFilename = Excel_util.run_all(columns_to_be_plotted, inputFilename, outputDir,
+            # inputFilename = outputFilename
+            Excel_outputFilename = Excel_util.run_all(columns_to_be_plotted, outputFilename, outputDir,
                                                       outputFileLabel='ANEW_sent',
                                                       chart_type_list=["bar"],
                                                       chart_title='ANEW - Sentiment Scores',
@@ -376,8 +367,6 @@ def run(CoreNLPdir,inputFilename,inputDir,outputDir,openOutputFiles, createExcel
                                                       count_var=1,
                                                       column_yAxis_label_var='Scores')
 
-            # outputFilenameXlsm1 = Excel_util.run_all(columns_to_be_plotted,inputFilename,outputDir, outputFilename, chart_type_list = ["bar"],
-            # chart_title= "ANEW - Sentiment Values", column_xAxis_label_var = 'Sentiment value',column_yAxis_label_var = 'Frequency of sentiment value',outputExtension = '.xlsm',label1='SC',label2='ANEW_Sentiment',label3='bar',label4='chart',label5='', useTime=False,disable_suffix=True,  count_var=1, column_yAxis_field_list = [], reverse_column_position_for_series_label=False , series_label_list=[''], second_y_var=0, second_yAxis_label='', hover_info_column_list=hover_label)
             if Excel_outputFilename != "":
                 filesToOpen.append(Excel_outputFilename)
 
@@ -387,8 +376,8 @@ def run(CoreNLPdir,inputFilename,inputDir,outputDir,openOutputFiles, createExcel
             else:
                 columns_to_be_plotted = [[7,7]]
             hover_label=[]
-            inputFilename = outputFilename
-            Excel_outputFilename = Excel_util.run_all(columns_to_be_plotted, inputFilename, outputDir,
+            # inputFilename = outputFilename
+            Excel_outputFilename = Excel_util.run_all(columns_to_be_plotted, outputFilename, outputDir,
                                                       outputFileLabel='ANEW_arous',
                                                       chart_type_list=["bar"],
                                                       chart_title='ANEW - Arousal Scores',
@@ -397,8 +386,6 @@ def run(CoreNLPdir,inputFilename,inputDir,outputDir,openOutputFiles, createExcel
                                                       count_var=1,
                                                       column_yAxis_label_var='Scores')
 
-            # outputFilenameXlsm2 = Excel_util.run_all(columns_to_be_plotted,inputFilename,outputDir, outputFilename,
-            # chart_type_list = ["bar"], chart_title= "ANEW - Arousal Values", column_xAxis_label_var = 'Arousal value',column_yAxis_label_var = 'Frequency of arousal value',outputExtension = '.xlsm',label1='SC',label2='ANEW_Arousal',label3='bar',label4='chart',label5='', useTime=False,disable_suffix=True,  count_var=1, column_yAxis_field_list = [], reverse_column_position_for_series_label=False , series_label_list=[''], second_y_var=0, second_yAxis_label='', hover_info_column_list=hover_label)
             if Excel_outputFilename != "":
                 filesToOpen.append(Excel_outputFilename)
 
@@ -408,8 +395,8 @@ def run(CoreNLPdir,inputFilename,inputDir,outputDir,openOutputFiles, createExcel
             else:
                 columns_to_be_plotted = [[9,9]]
             hover_label=[]
-            inputFilename = outputFilename
-            Excel_outputFilename = Excel_util.run_all(columns_to_be_plotted, inputFilename, outputDir,
+            # inputFilename = outputFilename
+            Excel_outputFilename = Excel_util.run_all(columns_to_be_plotted, outputFilename, outputDir,
                                                       outputFileLabel='ANEW_dom',
                                                       chart_type_list=["bar"],
                                                       chart_title='ANEW - Dominance Scores',
@@ -418,8 +405,6 @@ def run(CoreNLPdir,inputFilename,inputDir,outputDir,openOutputFiles, createExcel
                                                       count_var=1,
                                                       column_yAxis_label_var='Scores')
 
-            # outputFilenameXlsm3 = Excel_util.run_all(columns_to_be_plotted,inputFilename,outputDir,
-            # outputFilename, chart_type_list = ["bar"], chart_title= "ANEW - Dominance Values", column_xAxis_label_var = 'Dominance value',column_yAxis_label_var = 'Frequency of dominance value',outputExtension = '.xlsm',label1='SC',label2='ANEW_Dominance',label3='bar',label4='chart',label5='', useTime=False,disable_suffix=True,  count_var=1, column_yAxis_field_list = [], reverse_column_position_for_series_label=False , series_label_list=[''], second_y_var=0, second_yAxis_label='', hover_info_column_list=hover_label)
             if Excel_outputFilename != "":
                 filesToOpen.append(Excel_outputFilename)
 
@@ -439,13 +424,15 @@ run_script_command=lambda: run(GUI_util.softwareDir.get(),
                                mean_var.get(),
                                median_var.get(),
                                SA_algorithm_var.get(),
-                               memory_var.get())
+                               memory_var.get(),
+                               sentence_index_var.get(),
+                               shape_of_stories_var.get())
 
 GUI_util.run_button.configure(command=run_script_command)
 
 # GUI section ______________________________________________________________________________________________________________________________________________________
 
-GUI_size='1100x400'
+GUI_size='1100x480'
 GUI_label='Graphical User Interface (GUI) for Sentiment Analysis'
 config_filename='sentiment-analysis-config.txt'
 # The 6 values of config_option refer to:
@@ -484,6 +471,10 @@ median_var = tk.IntVar()
 SA_algorithm_var = tk.StringVar()
 memory_var = tk.IntVar()
 memory_var_lb = tk.Label(window, text='Memory ')
+
+sentence_index_var = tk.IntVar()
+shape_of_stories_var = tk.IntVar()
+
 # doNotCreateIntermediateFiles_var = tk.IntVar() #when an entire directory is processed; could lead to an enourmus number of output files
 
 mean_var.set(1)
@@ -564,6 +555,14 @@ def activate_memory_var(*args):
             return
 SA_algorithm_var.trace('w',activate_memory_var)
 
+sentence_index_var.set(0)
+sentence_index_checkbox = tk.Checkbutton(window, state='disabled', text='Do sentiments fluctuate across a document (Sentiment scores by sentence index)', variable=sentence_index_var, onvalue=1, offvalue=0)
+y_multiplier_integer=GUI_IO_util.placeWidget(GUI_IO_util.get_labels_x_coordinate(),y_multiplier_integer,sentence_index_checkbox)
+
+shape_of_stories_var.set(0)
+shape_of_stories_checkbox = tk.Checkbutton(window, text='Do sentiments fluctuate across documents (\'Shape of stories\')', variable=shape_of_stories_var, onvalue=1, offvalue=0)
+y_multiplier_integer=GUI_IO_util.placeWidget(GUI_IO_util.get_labels_x_coordinate(),y_multiplier_integer,shape_of_stories_checkbox)
+
 # doNotCreateIntermediateFiles_var.set(1)
 # doNotCreateIntermediateFiles_checkbox = tk.Checkbutton(window, variable=doNotCreateIntermediateFiles_var, onvalue=1, offvalue=0)
 # doNotCreateIntermediateFiles_checkbox.config(text="Do NOT produce intermediate csv files when processing all txt files in a directory")
@@ -595,7 +594,9 @@ def help_buttons(window,help_button_x_coordinate,basic_y_coordinate,y_step):
     GUI_IO_util.place_help_button(window,help_button_x_coordinate,basic_y_coordinate+y_step*2,"Help", GUI_IO_util.msg_outputDirectory)
     GUI_IO_util.place_help_button(window,help_button_x_coordinate,basic_y_coordinate+y_step*3,"Help", "Please, tick the checkboxes for either Mean or Median in output csv files. BY DEFAULT, BOTH VALUES ARE COMPUTED.\n\nStanford CoreNLP Sentiment Analysis only computes mean values for each sentence.\n\nVADER only computes 'compound' values for each sentence.\n\nSentiWordNet as well does not provide sentence mean/median values.")
     GUI_IO_util.place_help_button(window,help_button_x_coordinate,basic_y_coordinate+y_step*4,"Help", "Please, using the dropdown menu, select the algorithm to be used for computing sentiment analysis.\n\nSelect * to run ALL algorithms.\n\nStanford CoreNLP neural network approach to Sentiment Analysis typically achieves better results than dictionary-based approaches.\n\nCoreNLP computes mean values only for each sentence on a scale 0-4 (minimum-maximum).\n\nANEW (Affective Norms for English Words) computes sentiment/arousal/dominance mean/median values for each sentence using the ANEW ratings for SENTIMENT (VALENCE), AROUSAL, and DOMINANCE (CONTROL) by Bradley, M.M. & Lang, P.J. (2017). Affective Norms for English Words (ANEW): Instruction manual and affective ratings. Technical Report C-3. Gainesville, FL:UF Center for the Study of Emotion and Attention.\n\nContrary to all other approaches, the ANEW script computes three different measures, for SENTIMENT, AROUSAL, and DOMINANCE:\nSENTIMENT or VALENCE measures how pleasant/unpleasant a word makes us feel;\nAROUSAL measures how calm/excited a word makes us feel;\nDOMINANCE or CONTROL measures how dominated/in control a word makes us feel.\n\nTHE SCRIPT EXPECTS TO FIND THE FILE EnglishShortenedANEW.csv IN A ""lib"" SUBFOLDER OF THE FOLDER WHERE THE Sentiment_Analysis_ANEW.py SCRIPT IS STORED.\n\nIn OUTPUT, the script creates a csv file containing the calculated mean/median sentiment values for each sentence, where each rating can have a total of maximum 9 points.\n\nValues for sentiment, arousal, and dominance are classified on a scale 0-9, grouped in 5 categories: <3, >=3 and < 5, 5 (neutral), >5 and <8, >=8 and <=9.\n\nThe hedonometer algorithm uses the hedonometer.org rated dictionary to compute sentiment mean/median values for each sentence.\n\nThe script has been shown to work best with social media texts (e.g., Twitter), New York Times editorials, movie reviews, and product reviews.\n\nTHE SCRIPT EXPECTS TO FIND THE FILE hedonometer.json IN A ""lib"" SUBFOLDER OF THE FOLDER WHERE THE Sentiment_Analysis_Hedonometer.py SCRIPT IS STORED.\n\nIn OUTPUT, the script creates a csv file containing the calculated mean/median sentiment values for each sentence.\n\nSentiment values are classified on a scale 0-10, grouped in 3 categories: negative (>=0 and <4), neutral (>=4 and <=6), and positive (>6 and <=10).\n\nThe NLTK VADER (VADER, Valence Aware Dictionary and sEntiment Reasoner) uses the NLTK rated dictionary to compute sentiment mean/median values for each sentence.\n\nThe script has been shown to work best with social media texts (e.g., Twitter).\n\nIn INPUT the script expects either a single text file or a set of text files stored in a directory. THE SCRIPT ALSO EXPECTS TO FIND THE VADER RATED DICTIONARY FILE vader_lexicon.txt IN A ""lib"" SUBFOLDER OF THE FOLDER WHERE THE Sentiment_Analysis_VADER.py SCRIPT IS STORED.\n\nIn OUTPUT, the script creates a csv file containing the calculated 'compound' sentiment values for each sentence.\n\nMean and Median calculations are not available for VADER; VADER computes 'compound' values for each sentence.\n\nSentiment values are classified on a scale -1 (most negative) to 1 as (most positive) grouped in 3 categories: negative (<-0.05), neutral (>=-0.05 and <=0.05), and positive (>0.05 and <=1).\n\nVADER heavily relies on a number of NLTK libraries. If VADER fails to run, make sure that in command line you run\n   python -m nltk.downloader all")
-    GUI_IO_util.place_help_button(window,help_button_x_coordinate,basic_y_coordinate+y_step*5,"Help",GUI_IO_util.msg_openOutputFiles)
+    GUI_IO_util.place_help_button(window,help_button_x_coordinate,basic_y_coordinate+y_step*5,"Help", "Please, tick the checkboxes to display a line plot of sentiment scores by sentence index across a specific document.")
+    GUI_IO_util.place_help_button(window,help_button_x_coordinate,basic_y_coordinate+y_step*6,"Help", "Please, tick the checkboxes to open a specific GUI to compute the \'shape of stories\' of a set of sentiment scores across different documents.")
+    GUI_IO_util.place_help_button(window,help_button_x_coordinate,basic_y_coordinate+y_step*7,"Help",GUI_IO_util.msg_openOutputFiles)
 help_buttons(window,GUI_IO_util.get_help_button_x_coordinate(),GUI_IO_util.get_basic_y_coordinate(),GUI_IO_util.get_y_step())
 
 # change the value of the readMe_message

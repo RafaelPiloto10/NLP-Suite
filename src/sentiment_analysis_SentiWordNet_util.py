@@ -19,11 +19,10 @@ http://www.nltk.org/howto/sentiwordnet.html
 #   would provide a single measure of polarity.
 
 import sys
-import IO_files_util
 import GUI_util
 import IO_libraries_util
 
-if IO_libraries_util.install_all_packages(GUI_util.window,"sentiment_analysis_SentiWordNet",['nltk','os','csv','argparse','pandas','tkinter','numpy','time','twython'])==False:
+if IO_libraries_util.install_all_packages(GUI_util.window,"sentiment_analysis_SentiWordNet",['nltk','os','csv','argparse','tkinter','time'])==False:
     sys.exit(0)
 
 import csv
@@ -31,7 +30,9 @@ import os
 import time
 import argparse
 import tkinter.messagebox as mb
+
 import IO_csv_util
+import IO_files_util
 
 from nltk.corpus import wordnet as wn
 from nltk.corpus import sentiwordnet as swn
@@ -68,7 +69,7 @@ def penn_to_wn(tag):
 # performs sentiment analysis on inputFile using the NLTK, outputting results to a new CSV file in outputDir
 def analyzefile(inputFilename, outputDir, output_file, mode, documentID, documentName):
     """
-    Performs sentiment analysis on the text file given as input using the VADER database.
+    Performs sentiment analysis on the text file given as input using the SentiWordnet database.
     Outputs results to a new CSV file in outputDir.
     :param inputFilename: path of .txt file to analyze
     :param outputDir: path of directory to create new output file
@@ -88,7 +89,7 @@ def analyzefile(inputFilename, outputDir, output_file, mode, documentID, documen
     # end method if file is empty
     if len(fulltext) < 1:
         mb.showerror(title='File empty', message='The file ' + inputFilename + ' is empty.\n\nPlease, use another file and try again.')
-        print('Empty file '+ inputFilename)
+        print('Empty file ', inputFilename)
         return
 
     sentences = tokenize.sent_tokenize(fulltext)  # split text into sentences
@@ -176,7 +177,6 @@ def main(inputFilename, input_dir, outputDir, output_file, mode):
             if os.path.exists(inputFilename):
                 fileNamesToPass.append(analyzefile(inputFilename, outputDir, output_file, mode, 1, inputFilename))
                 output_file = analyzefile(inputFilename, outputDir, output_file, mode, 1, inputFilename)
-                #print("Output Vader Sentiment " + output_file + " created")
             else:
                 print('Input file "' + inputFilename + '" is invalid.')
                 sys.exit(1)
@@ -192,10 +192,10 @@ def main(inputFilename, input_dir, outputDir, output_file, mode):
                         documentID += 1
                         fileNamesToPass.append(analyzefile(filename, outputDir, output_file,mode, documentID, filename)) #LINE ADDED (edited)
                         print("Finished SentiWordNet sentiment analysis of " + filename + " in " + str((time.time() - start_time)) + " seconds")
-                        #print("Output Vader Sentiment " + output_file + " created")
             else:
                 print('Input directory "' + input_dir + '" is invalid.')
-                sys.exit(1)
+                # sys.exit(1)
+    csvfile.close()
     return fileNamesToPass #LINE ADDED
 
 

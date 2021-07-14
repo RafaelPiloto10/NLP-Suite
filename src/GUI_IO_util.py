@@ -65,10 +65,6 @@ GISLocations_libPath = os.path.join(NLPPath,'lib'+os.sep+'GIS')
 TIPSPath = os.path.join(NLPPath,'TIPS')
 remindersPath = os.path.join(NLPPath, 'reminders')
 
-#The argument GUI is the title of the GUI displayed (e.g., Narrative Analysis) 
-def GUI_under_construction(GUI):
-    mb.showwarning(title='GUI under construction', message='The ' + GUI + ' GUI is under construction. Sorry!\n\nPlease, revisit this option soon.')
-
 def placeWidget(x_coordinate,y_multiplier_integer,widget_name,sameY=False, centerX=False, basic_y_coordinate=90):
     #basic_y_coordinate = 90
     y_step = 40 #the line-by-line increment on the GUI
@@ -80,21 +76,42 @@ def placeWidget(x_coordinate,y_multiplier_integer,widget_name,sameY=False, cente
         y_multiplier_integer = y_multiplier_integer+1
     return y_multiplier_integer
 
-help_button_x_coordinate = 50
-labels_x_coordinate = 120  #start point of all labels in the second column (first column after ? HELP)
-labels_x_indented_coordinate = 140
-entry_box_x_coordinate=0 # set below for different platforms
-open_file_directory_coordinate=0 # set below for different platforms
 
 if sys.platform == 'darwin': #Mac OS
-    entry_box_x_coordinate = 440 #start point of all labels in the third  column (second column after ? HELP)
-else:
-    entry_box_x_coordinate = 400 #start point of all labels in the third  column (second column after ? HELP)
-
-if sys.platform == 'darwin': #Mac OS
+    help_button_x_coordinate = 70
+    labels_x_coordinate = 150  # start point of all labels in the second column (first column after ? HELP)
+    labels_x_indented_coordinate = 160
+    select_file_directory_button_width=23
+    open_file_directory_button_width = 1
     open_file_directory_coordinate = 400
+    entry_box_x_coordinate = 470 #start point of all labels in the third column (second column after ? HELP); where IO filename, dir, etc. are displayed
+    read_button_x_coordinate = 70
+    watch_videos_x_coordinate = 200
+    open_TIPS_x_coordinate = 370
+    open_reminders_x_coordinate = 570
+    run_button_x_coordinate = 850
+    quit_button_x_coordinate = 980
+
+    # special internal GUI specific values
+    SVO_2nd_column = 570
+
 else: #windows and anything else
+    help_button_x_coordinate = 50
+    labels_x_coordinate = 120  # start point of all labels in the second column (first column after ? HELP)
+    labels_x_indented_coordinate = 140
+    select_file_directory_button_width=30
+    open_file_directory_button_width = 3
     open_file_directory_coordinate = 350
+    entry_box_x_coordinate = 400 #start point of all labels in the third column (second column after ? HELP)
+    read_button_x_coordinate = 50
+    watch_videos_x_coordinate = 170
+    open_TIPS_x_coordinate = 350
+    open_reminders_x_coordinate = 550
+    run_button_x_coordinate = 840
+    quit_button_x_coordinate = 960
+
+    # special internal GUI specific values
+    SVO_2nd_column = 520
 
 basic_y_coordinate = 90
 y_step = 40 #the line-by-line increment on the GUI
@@ -149,7 +166,7 @@ Several Emory undergraduate students have contributed over the years to the deve
         Angel Xie\n\
         Catherine Xie\n\
         Doris Zhou\n\n\
-JOIN THE TEAM: If you want to contribute to the continued development of the NLP Suite, please write to Roberto Franzosi at rfranzo@emory.edu\n\n\
+JOIN THE TEAM: If you want to contribute to the continued development of the NLP Suite, please write to Roberto Franzosi at rfranzo@emory.edu or join directly via GitHub at https://github.com/NLP-Suite/NLP-Suite\n\n\
 LICENSE: The NLP Suite is freely distributed under a GNU License Agreement.\n\n\
 ACKNOWLEDGMENT: Acknowledgment of the use of the package in the form of citation would be greatly appreciated (click on the button How to cite).\n\n\
 BUGS: If you find and fix bugs, keeping us informed would also be greatly appreciated.')
@@ -205,38 +222,53 @@ def check_missingIO(window,missingIO,config_filename,silent=False):
 # set input/output file name based on IO_util selectFile
 #changeVar is the name of the IO FIELD (.get()) that needs to be displayed (e.g., filename) 
 #changeVar1 is the name of the IO BUTTON that needs to be disabled in the case of mutuallyexclusive options
-def selectFile_set_options(window, config_input_output_options,IsInputFile,checkCoNLL,changeVar,changeVar1,title,fileType,extension,input_main_dir_path):
-    currentFilename=changeVar.get()
-    if len(changeVar.get())>0:
-        initialFolder=os.path.dirname(changeVar.get())
-    else:
-        initialFolder=''
-    #get the file
-    if IsInputFile==True:
-        filename= IO_files_util.selectFile(window, IsInputFile, checkCoNLL, changeVar, changeVar1, title, fileType, extension, None, initialFolder)
-    else:
-        filename= IO_files_util.selectFile(window, IsInputFile, checkCoNLL, changeVar, changeVar1, title, fileType, extension, outputFilename, None, initialFolder)
-    if len(filename)==0:
-        changeVar.set(currentFilename)
-    else:
-        input_main_dir_path.set('')
+# def selectFile_set_options(window, config_input_output_options,IsInputFile,checkCoNLL,changeVar,changeVar1,title,fileType,extension,input_main_dir_path):
+#     currentFilename=changeVar.get()
+#     if len(changeVar.get())>0:
+#         initialFolder=os.path.dirname(changeVar.get())
+#     else:
+#         initialFolder=''
+#     #get the file
+#     if IsInputFile==True:
+#         filename= IO_files_util.selectFile(window, IsInputFile, checkCoNLL, changeVar, changeVar1, title, fileType, extension, None, initialFolder)
+#     else:
+#         filename= IO_files_util.selectFile(window, IsInputFile, checkCoNLL, changeVar, changeVar1, title, fileType, extension, outputFilename, None, initialFolder)
+#     if len(filename)==0:
+#         changeVar.set(currentFilename)
+#     else:
+#         input_main_dir_path.set('')
 
-#changeVar is the name of the IO FIELD (.get()) that needs to be displayed (e.g., softwareDir)
-#changeVar1 is the name of the IO BUTTON that needs to be disabled in the case of mutuallyexclusive options
-#title is the name that will appear when selecting the directory, e.g., "Select Stanford CoreNLP directory"
-def selectDirectory_set_options(window, changeVar,changeVar1,title,config_input_output_options,inputFilename,inputMainDir=False):
-    currentDirectory=changeVar.get()
-    if len(changeVar.get())>0:
-        initialFolder=os.path.dirname(changeVar.get())
-    else:
-        initialFolder=''
-    #get the directory
-    directoryName=IO_files_util.selectDirectory(window, changeVar, changeVar1, title, initialFolder)
-    if directoryName=='':
-        changeVar.set(currentDirectory)
-    else:
-        if inputMainDir==True:
-            inputFilename.set('')
+# #changeVar is the name of the IO FIELD (.get()) that needs to be displayed (e.g., softwareDir)
+# #changeVar1 is the name of the IO BUTTON that needs to be disabled in the case of mutuallyexclusive options
+# #title is the name that will appear when selecting the directory, e.g., "Select Stanford CoreNLP directory"
+# def selectDirectory_set_options(window, changeVar,changeVar1,title,config_input_output_options,inputFilename,inputMainDir=False):
+#     currentDirectory=changeVar.get()
+#     if len(changeVar.get())>0:
+#         initialFolder=os.path.dirname(changeVar.get())
+#     else:
+#         initialFolder=''
+#     #get the directory
+#     directoryName=IO_files_util.selectDirectory(window, changeVar, changeVar1, title, initialFolder)
+#     # try:  # if the inputFilename button is not present this would throw an error
+#     # 	changeVar1.config(state="normal")
+#     # except:
+#     # 	pass
+#     if directoryName=='':
+#         changeVar.set(currentDirectory)
+#         print(changeVar.get())
+#     else:
+#         if inputMainDir==True:
+#             try:
+#                 changeVar1.set('') # inputFilename
+#             except:
+#                 pass
+#             print('changeVar1',changeVar1.get())
+#             try:
+#                 changeVar.set('testa di cazzo') # input_main_dir_path
+#             except:
+#                 pass
+#             print('changeVar',changeVar.get())
+#     return directoryName
 
 from tkinter import Toplevel
 def Dialog2Display(title: str):

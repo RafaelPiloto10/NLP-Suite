@@ -23,13 +23,10 @@ Parameters:
 # add parameter to exclude duplicates? also mean or median analysis
 
 import sys
-
-import GUI_IO_util
-import IO_files_util
 import GUI_util
 import IO_libraries_util
 
-if IO_libraries_util.install_all_packages(GUI_util.window,"Sentiment Analysis HEDONOMETER",['nltk','json','os','csv','argparse','pandas','tkinter','numpy','time'])==False:
+if IO_libraries_util.install_all_packages(GUI_util.window,"Sentiment Analysis HEDONOMETER",['nltk','json','os','csv','argparse','tkinter','time'])==False:
     sys.exit(0)
 
 import os
@@ -39,11 +36,11 @@ import statistics
 import time
 import argparse
 import tkinter.messagebox as mb
-
-import IO_csv_util
-
 from nltk import tokenize
 from nltk import word_tokenize
+
+import IO_csv_util
+import GUI_IO_util
 
 IO_libraries_util.import_nltk_resource(GUI_util.window,'tokenizers/punkt','punkt')
 # check WordNet
@@ -78,8 +75,8 @@ def analyzefile(input_file, output_dir, output_file, mode, Document_ID, Document
         fulltext = myfile.read()
     # end method if file is empty
     if len(fulltext) < 1:
-        mb.showerror(title='File empty', message='The file ' + myfile + ' is empty.\n\nPlease, use another file and try again.')
-        print('Empty file '+ myfile )
+        mb.showerror(title='File empty', message='The file ' + input_file + ' is empty.\n\nPlease, use another file and try again.')
+        print('Empty file ', input_file)
         return
 
     # otherwise, split into sentences
@@ -142,19 +139,27 @@ def analyzefile(input_file, output_dir, output_file, mode, Document_ID, Document
             if mode == 'mean' or mode == 'both':
                 sentiment_mean = statistics.mean(v_list)
                 sentiment=sentiment_mean
-                if sentiment > 6 :
+                if sentiment > 7.5 :
+                    label_mean = 'very positive'
+                elif sentiment > 6:
                     label_mean = 'positive'
-                elif sentiment < 4:
+                elif sentiment < 4.5:
                     label_mean = 'negative'
+                elif sentiment < 2.5:
+                    label_mean = 'very negative'
                 else:
                     label_mean = "neutral"
             if mode == 'median' or mode == 'both':
                 sentiment_median = statistics.median(v_list)
                 sentiment=sentiment_median
-                if sentiment > 6 :
+                if sentiment > 7.5 :
+                    label_median = 'very positive'
+                elif sentiment > 6:
                     label_median = 'positive'
-                elif sentiment < 4:
+                elif sentiment < 4.5:
                     label_median = 'negative'
+                elif sentiment < 2.5:
+                    label_median = 'very negative'
                 else:
                     label_median = "neutral"
 
@@ -240,7 +245,8 @@ def main(input_file, input_dir, output_dir, output_file, mode):
                         print("Finished HEDONOMETER sentiment analysis of " + filename + " in " + str((time.time() - start_time)) + " seconds")
             else:
                 print('Input directory "' + input_dir + '" is invalid.')
-                sys.exit(0)
+                sys.exit(1)
+    csvfile.close()
     return fileNamesToPass #LINE ADDED
 
 

@@ -38,7 +38,7 @@ import sys
 import GUI_util
 import IO_libraries_util
 
-if IO_libraries_util.install_all_packages(GUI_util.window, "sentiment_analysis_VADER", ['nltk','os','csv','argparse','pandas','tkinter','numpy','time','twython'])==False:
+if IO_libraries_util.install_all_packages(GUI_util.window, "sentiment_analysis_VADER", ['nltk','os','csv','argparse','tkinter','time'])==False:
     sys.exit(0)
 
 import csv
@@ -106,7 +106,7 @@ def analyzefile(input_file, output_dir, output_file, mode, Document_ID, Document
     # end method if file is empty
     if len(fulltext) < 1:
         mb.showerror(title='File empty', message='The file ' + input_file + ' is empty.\n\nPlease, use another file and try again.')
-        print('Empty file '+ input_file)
+        print('Empty file ', input_file)
         return
 
     sentences = tokenize.sent_tokenize(fulltext)  # split text into sentences
@@ -268,6 +268,7 @@ def main(input_file, input_dir, output_dir, output_file, mode):
             else:
                 print('Input directory "' + input_dir + '" is invalid.')
                 sys.exit(1)
+    csvfile.close()
     return fileNamesToPass #LINE ADDED
 
 
