@@ -28,7 +28,7 @@ import GUI_util
 import IO_libraries_util
 
 if IO_libraries_util.install_all_packages(GUI_util.window,"Mallet Topic modeling",['os','tkinter.messagebox','subprocess'])==False:
-	sys.exit(0)
+    sys.exit(0)
 
 import os
 import tkinter.messagebox as mb
@@ -54,7 +54,7 @@ def run(inputDir, outputDir,openOutputFiles,createExcelCharts,OptimizeInterval, 
     # del os.environ['MALLET_HOME']
 
     # check that the MalletDir as been setup
-    MalletDir=IO_libraries_util.get_external_software_dir('topic_modeling_mallet', 'Mallet')
+    MalletDir, missing_external_software=IO_libraries_util.get_external_software_dir('topic_modeling_mallet', 'Mallet')
     if MalletDir== None:
         return
 

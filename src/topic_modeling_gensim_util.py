@@ -59,7 +59,7 @@ from nltk.corpus import stopwords
 try:
     spacy.load('en_core_web_sm')
 except:
-    mb.showerror(title='Library error', message='The Gensim Topic modeling tool could not find the English language spacy library. This needs to be installed. At command promp type: "python -m spacy download en_core_web_sm" then enter.\n\nYOU MAY HAVE TO RUN THE COMMAND AS ADMINISTRATOR.\n\nHOW DO YOU DO THAT?'
+    mb.showerror(title='Library error', message='The Gensim Topic modeling tool could not find the English language spacy library. This needs to be installed. At command promp type:\npython -m spacy download en_core_web_sm\n\nYOU MAY HAVE TO RUN THE COMMAND AS ADMINISTRATOR.\n\nHOW DO YOU DO THAT?'
         '\n\nIn Mac, at terminal, type sudo python -m spacy download en_core_web_sm'
         '\n\nIn Windows, click on left-hand start icon in task bar'
         '\n  Scroll down to Anaconda' 
@@ -67,7 +67,7 @@ except:
         '\n  Right click on Anaconda Prompt'
         '\n  Click on More'
         '\n  Click on Run as Administrator'
-        '\n  At the command prompt, Enter "activate " and your environment'
+        '\n  At the command prompt, Enter "conda activate NLP" (if NLP is your environment)'
         '\n  Then enter: "python -m spacy download en_core_web_sm" and Return'
         '\n\nThis imports the package.')
     sys.exit(0)
@@ -478,7 +478,7 @@ def run_Gensim(window, inputDir, outputDir, num_topics, remove_stopwords_var,
     if run_Mallet==True:
 
         # check that the MalletDir as been setup
-        MalletDir = IO_libraries_util.get_external_software_dir('topic_modeling_gensim', 'Mallet')
+        MalletDir, missing_external_software = IO_libraries_util.get_external_software_dir('topic_modeling_gensim', 'Mallet')
         if MalletDir==None:
             return
 

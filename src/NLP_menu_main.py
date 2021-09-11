@@ -23,6 +23,7 @@ from subprocess import call
 import GUI_IO_util
 import IO_files_util
 import reminders_util
+import config_util
 
 # RUN section ______________________________________________________________________________________________________________________________________________________
 
@@ -51,9 +52,11 @@ GUI_util.run_button.configure(command=run_script_command)
 
 IO_setup_display_brief=False
 
-GUI_size='1150x680'
+GUI_size='1150x670'
 GUI_label='Graphical User Interface (GUI) for a suite of tools of Natural Language Processing (NLP) & Data Visualization'
-config_filename='NLP-config.txt'
+# config_filename='NLP-config.txt'
+# there is now now way to setup a specific I/O config for the NLP_menu_main; it can only have the default setup
+config_filename='default-config.txt'
 # The 6 values of config_option refer to:
 #   software directory
 #   input file 1 for CoNLL file 2 for TXT file 3 for csv file 4 for any type of file
@@ -73,12 +76,19 @@ window = GUI_util.window
 config_input_output_options = GUI_util.config_input_output_options
 config_filename = GUI_util.config_filename
 
-GUI_util.GUI_top(config_input_output_options, config_filename, IO_setup_display_brief)
+ScriptName = 'NLP_menu_main'
+
+GUI_util.GUI_top(config_input_output_options, config_filename, IO_setup_display_brief, ScriptName)
+
+setup_IO_OK_checkbox_var = tk.IntVar()
+setup_software_OK_checkbox_var = tk.IntVar()
+
 
 script_to_run=''
 IO_values=''
 
 def clear(e):
+
     software_setup_var.set('')
     data_file_handling_tools_var.set('')
     pre_processing_tools_var.set('')
@@ -239,6 +249,7 @@ pydict["Word2Vec (via Gensim)"] = ["", 0]
 
 # NLP Suite team & How to cite are in GUI_util
 
+IO_setup_var = tk.IntVar()
 software_setup_var = tk.StringVar()
 data_file_handling_tools_var = tk.StringVar()
 pre_processing_tools_var = tk.StringVar()
@@ -253,14 +264,29 @@ def setup_IO():
     #   filename, inputDir, outputDir
     call("python IO_setup_main.py --config_option \"0, 2, 1, 0, 0, 1\" --config_filename \"default-config.txt\"",
          shell=True)
-    IO_options = GUI_util.get_IO_options(config_filename,config_input_output_options)
-    GUI_util.display_IO_setup(window, IO_setup_display_brief, config_filename, IO_options)
+    IO_options = config_util.get_IO_options(config_filename,config_input_output_options)
+    GUI_util.display_IO_setup(window, IO_setup_display_brief, config_filename, IO_options,ScriptName)
 
-    GUI_util.activateRunButton()
+    GUI_util.activateRunButton(False,ScriptName)
+    setup_IO_checkbox()
+
+def setup_IO_checkbox():
+    state = str(GUI_util.run_button['state'])
+    if state != 'disabled':
+        setup_IO_OK_checkbox_var.set(1)
+    else:
+        setup_IO_OK_checkbox_var.set(0)
 
 IO_setup_button = tk.Button(window, text='Setup default I/O options: INPUT corpus file(s) and OUTPUT files directory', font=("Courier", 12, "bold"), command=lambda: setup_IO())
 y_multiplier_integer = GUI_IO_util.placeWidget(GUI_IO_util.get_labels_x_coordinate(), y_multiplier_integer,
-                                               IO_setup_button)
+                                               IO_setup_button,True)
+
+setup_IO_OK_checkbox = tk.Checkbutton(window, state='disabled',
+                                      variable=setup_IO_OK_checkbox_var, onvalue=1, offvalue=0)
+y_multiplier_integer = GUI_IO_util.placeWidget(GUI_IO_util.get_labels_x_coordinate() + 800, y_multiplier_integer,
+                                               setup_IO_OK_checkbox)
+
+IO_setup_var.trace('w',setup_IO)
 
 def setup_software_warning():
     mb.showwarning('Software option', 'Please, using the dropdown menu, select the external software that you would like to install.')
@@ -278,12 +304,35 @@ software_setup_menu = tk.OptionMenu(window, software_setup_var,
 
 software_setup_menu.configure(width=70)
 y_multiplier_integer = GUI_IO_util.placeWidget(GUI_IO_util.get_entry_box_x_coordinate(), y_multiplier_integer,
-                                               software_setup_menu)
+                                               software_setup_menu,True)
+
+setup_software_checkbox = tk.Checkbutton(window, state='disabled',
+                                         variable=setup_software_OK_checkbox_var, onvalue=1, offvalue=0)
+y_multiplier_integer = GUI_IO_util.placeWidget(GUI_IO_util.get_labels_x_coordinate() + 800, y_multiplier_integer,
+                                               setup_software_checkbox)
+
 
 # check for external software installation (Stanford CoreNLP, WordNet, Mallet, SENNA)
 def setup_software(*args):
-    if software_setup_var.get()!='':
-        IO_libraries_util.get_external_software_dir('NLP_menu', software_setup_var.get())
+    silent = False
+    only_check_missing = False
+    # if software_setup_var.get()!='':
+    #     silent = False
+    #     only_check_missing = False
+    # else:
+    #     silent = True
+    #     only_check_missing = True
+    output, missing_external_software = IO_libraries_util.get_external_software_dir('NLP_menu', software_setup_var.get(),silent,only_check_missing)
+    # must be recomputed because the return variable missing_external_software will STILL contain the missing software
+    # that could have been updated
+    setup_software_checkbox()
+
+def setup_software_checkbox():
+    missing_external_software=IO_libraries_util.get_missing_software_list('')
+    if len(missing_external_software)>0:
+        setup_software_OK_checkbox_var.set(0)
+    else:
+        setup_software_OK_checkbox_var.set(1)
 
 software_setup_var.trace('w',setup_software)
 
@@ -514,8 +563,9 @@ TIPS_lookup = {'NLP Suite: Package description': 'TIPS_NLP_NLP Suite Package des
                'Things to do with words: Rhetoric (Arguments)': 'TIPS_NLP_Things to do with words Rhetorical analysis Arguments.pdf',
                'Things to do with words: Rhetoric (Tropes & Figures)': 'TIPS_NLP_Things to do with words Rhetorical analysis Tropes and Figures.pdf',
                'Style analysis': 'TIPS_NLP_Style analysis.pdf',
-               'Text encoding (utf-8)': 'TIPS_NLP_Text encoding (utf-8).pdf'}
-TIPS_options = 'NLP Suite: Package description', 'Things to do with words: NLP approach', 'Setup Input/Output configuration for your corpus', 'Setup external software (e.g., Mallet)', 'NLP Suite: General tools', 'NLP Suite: Tools of linguistic analysis', 'NLP basic language', 'Things to do with words: Overall view', 'Things to do with words: Content analysis', 'Things to do with words: Frame analysis', 'Things to do with words: Narrative analysis', 'Things to do with words: Rhetoric (Arguments)', 'Things to do with words: Rhetoric (Tropes & Figures)', 'Style analysis', 'Text encoding (utf-8)'
+               'Text encoding (utf-8)': 'TIPS_NLP_Text encoding (utf-8).pdf',
+               'csv files - Problems & solutions':'TIPS_NLP_csv files - Problems & solutions.pdf'}
+TIPS_options = 'NLP Suite: Package description', 'Things to do with words: NLP approach', 'Setup Input/Output configuration for your corpus', 'Setup external software (e.g., Mallet)', 'NLP Suite: General tools', 'NLP Suite: Tools of linguistic analysis', 'NLP basic language', 'Things to do with words: Overall view', 'Things to do with words: Content analysis', 'Things to do with words: Frame analysis', 'Things to do with words: Narrative analysis', 'Things to do with words: Rhetoric (Arguments)', 'Things to do with words: Rhetoric (Tropes & Figures)', 'Style analysis', 'Text encoding (utf-8)','csv files - Problems & solutions'
 
 
 # reminders content for specific GUIs are set in the csv file reminders
@@ -532,9 +582,9 @@ def help_buttons(window, help_button_x_coordinate, basic_y_coordinate, y_step):
     # GUI_IO_util.place_help_button(window,help_button_x_coordinate,basic_y_coordinate+y_step*2,"Help",GUI_IO_util.msg_outputDirectory)
     # leave a blank line to separate general tools
     GUI_IO_util.place_help_button(window, help_button_x_coordinate, basic_y_coordinate + y_step, "Help",
-                                  "Please, click on the button to the right to open the GUI that will allow you to setup default I/O options:\n   INPUT file and or directory of files (your corpus)and\n   OUTPUT directory where all files (csv, txt, html, kml, jpg) produced by the NLP-Suite tools will be saved.\n\nThese default I/O options will be used for all GUIs.")
+                                  "Please, click on the button to the right to open the GUI that will allow you to setup default I/O options:\n   INPUT file and or directory of files (your corpus)and\n   OUTPUT directory where all files (csv, txt, html, kml, jpg) produced by the NLP-Suite tools will be saved.\n\nThese default I/O options will be used for all GUIs.\n\nThe checkbox at the end of the line is set to OK if all INPUT/OUTPUT options have been successfully selected and saved in the default-config.txt file under the subdirecory config.")
     GUI_IO_util.place_help_button(window, help_button_x_coordinate, basic_y_coordinate + y_step * 2, "Help",
-                                  "The NLP-Suite relies for some of its operations on external software that needs to be downloaded and installed (Stanford CoreNLP, WordNet, Mallet, SENNA). When using any of these software, the NLP-Suite needs to know where they have been installed on your computer (e.g., C:\Program Files (x86)\WordNet).\n\nPlease, using the dropdown menu, select the software option that you want to link to its installation directory. YOUR SELECTION WILL BE SAVED IN THE software_config.csv FILE UNDER THE SUBDIRECTORY config.")
+                                  "The NLP-Suite relies for some of its operations on external software that needs to be downloaded and installed (Stanford CoreNLP, WordNet, Mallet, SENNA). When using any of these software, the NLP-Suite needs to know where they have been installed on your computer (e.g., C:\Program Files (x86)\WordNet).\n\nPlease, using the dropdown menu, select the software option that you want to link to its installation directory. YOUR SELECTION WILL BE SAVED IN THE software_config.csv FILE UNDER THE SUBDIRECTORY config.\n\nThe checkbox at the end of the line is set to OK if all external software packages have been successfully installed.")
     GUI_IO_util.place_help_button(window, help_button_x_coordinate, basic_y_coordinate + y_step * 4, "Help",
                                   "Please, using the dropdown menu, select one of the many options available for data and file handling." + GUI_IO_util.msg_Esc)
     GUI_IO_util.place_help_button(window, help_button_x_coordinate, basic_y_coordinate + y_step * 5, "Help",
@@ -559,7 +609,7 @@ help_buttons(window, GUI_IO_util.get_help_button_x_coordinate(), GUI_IO_util.get
 readMe_message = "This Python 3 script is the front end for a wide collection of Java and Python Natural Language Processing (NLP) tools.\n\nThe set of tools are divided into GENERAL TOOLS (data and file handling, pre-processing, statistical, visualization) and LINGUISTIC ANALYSIS TOOLS.\n\nLINGUISTIC ANALYSIS TOOLS are divided into tools that expect in input CORPUS DATA (i.e., multiple documents stored in a directory), CORPUS and/or SINGLE DOCUMENT, and SENTENCE.\n\nWhile some linguistic tools are specific for one of these three categories (e.g., topic modeling cannot be performed on a single document), MANY TOOLS OVERLAP. As a result, you may find the same tool under BOTH corpus and corpus/document. SENTENCE TOOLS still require either a corpus or a single document in input; but they also provide in output sentence-level information for more in-grained linguistic analyses.\n\nAll tools are open source freeware software released under the GNU LGPLv2.1 license (http://www.gnu.org/licenses/old-licenses/lgpl-2.1.en.html).\n\nYou can cite the NLP Suite as:\n\nR. Franzosi. 2020. NLP Suite: A  set of tools of Natural Language Processing (NLP) & Data Visualization."
 readMe_command = lambda: GUI_IO_util.readme_button(window, GUI_IO_util.get_help_button_x_coordinate(),
                                                    GUI_IO_util.get_basic_y_coordinate(), "Help", readMe_message)
-GUI_util.GUI_bottom(config_input_output_options, y_multiplier_integer, readMe_command, TIPS_lookup, TIPS_options, IO_setup_display_brief)
+GUI_util.GUI_bottom(config_input_output_options, y_multiplier_integer, readMe_command, TIPS_lookup, TIPS_options, IO_setup_display_brief, ScriptName)
 
 if platform == "darwin":
     reminders_util.checkReminder(config_filename,
@@ -569,6 +619,11 @@ if platform == "darwin":
 
 # check for external software installation (Stanford CoreNLP, WordNet, Mallet, SENNA)
 # IO_libraries_util.get_external_software_dir('NLP_menu','')
+
+# check for missing I/O configuration options
+setup_IO_checkbox()
+# check for missing external software
+setup_software()
 
 GUI_util.window.mainloop()
 

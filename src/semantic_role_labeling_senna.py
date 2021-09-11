@@ -45,7 +45,7 @@ def run_senna(inputFilename=None, inputDir=None, outputDir=None, openOutputFiles
     doc_id = 0
 
     # check that the SENNA dir as been setup
-    SENNAdir = IO_libraries_util.get_external_software_dir('SVO SENNA', 'SENNA')
+    SENNAdir, missing_external_software  = IO_libraries_util.get_external_software_dir('SVO SENNA', 'SENNA')
 
     if SENNAdir is None:
         return filesToOpen
@@ -96,7 +96,7 @@ def run_senna(inputFilename=None, inputDir=None, outputDir=None, openOutputFiles
             document_index += 1
 
     senna_df = pd.DataFrame(formatted_table, columns=['Col %s' % i for i in range(len(formatted_table[0]))])
-    print(senna_df[20:45])
+    print(senna_df)
     # Result of SENNA
 
     convert_to_svo(senna_df, SENNA_output_file_name, createExcelCharts, filter_svo)

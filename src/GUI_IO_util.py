@@ -178,8 +178,8 @@ def cite_NLP(Window, configFilename=''):
     mb.showinfo(title='How to cite NLP Suite', message='Franzosi, Roberto. 2020. NLP Suite: A collection of natural language processing tools.\n\nGitHub: https://github.com/NLP-Suite/NLP-Suite\n\n\
 The following papers are based on the NLP Suite tools:\n\n\
 Franzosi, Roberto. 2020. "What’s in a Text? Bridging the Gap Between Quality and Quantity in the Digital Era." Quality & Quantity. DOI: https://doi.org/10.1007/s11135-020-01067-6\n\n\
+Franzosi, Roberto, Wenqin Dong, Yilin Dong. 2021. "Qualitative and Quantitative Research in the Humanities and Social Sciences: How Natural Language Processing (NLP) Can Help." Quality & Quantity. In press.\n\n\
 Unpublished papers:\n\n\
-Franzosi, Roberto, Wenqin Dong, Yilin Dong, Yi Wang. 2020. "Social Movements Research: How Natural Language Processing (NLP) Can Help." Unpublished manuscript.\n\n\
 Franzosi, Roberto, Wenqin Dong, Yuhang Feng, Gabriel Wang. 2020. "Automatic Information Extraction of the Narrative Elements Who, What, When, and Where." Unpublished manuscript.\n\n\
 Franzosi, Roberto, Wenqin Dong, Alberto Purpura. 2020. "The Shape of Stories." Unpublished manuscript.')
 
@@ -188,25 +188,29 @@ Franzosi, Roberto, Wenqin Dong, Alberto Purpura. 2020. "The Shape of Stories." U
 #configArray is computed by setup_IO_configArray in config_util
 # config_input_output_options is set to [0, 0, 0, 0, 0, 0] for GUIs that are placeholders for more specialized GUIs
 #   in these cases (e.g., narrative_analysis_main, there are no I/O options to save
-def exit_window(window,configFilename, config_input_output_options, configArray):
-    if configFilename!="NLP-config.txt" and config_input_output_options != [0, 0, 0, 0, 0, 0]:
-        # check whether the current IO configuration
-        #	is different from the saved configuration
-        #	if changed you want to ask the question
+def exit_window(window,configFilename, ScriptName, config_input_output_options, configArray):
+    if ScriptName!='NLP_menu_main' and config_input_output_options != [0, 0, 0, 0, 0, 0]:
         config_util.saveConfig(window,configFilename, configArray)
-        # if config_util.checkSavedConfig(configFilename, configArray)==False:
-        # 	msgbox_save = tk.messagebox.askyesnocancel("Save Input/Output Configuration", "Since the paths configuration has changed (i.e., input and output paths), would you like to save the paths configuration? \n\nIf you save the paths configuration you will not need to enter them again next time you run this Python script.")
-        # 	if msgbox_save == True: #yes
-        # 		config_util.saveConfig(window,configFilename, configArray)
-        # 	elif msgbox_save is None: #cancel
-        # 		window.focus_force()
-        # 		return
     window.destroy()
     exit(0)
 
 
 # missingIO is called from GUI_util
-def check_missingIO(window,missingIO,config_filename,silent=False):
+def check_missingIO(window,missingIO,config_filename,IO_setup_display_brief,ScriptName,silent=False):
+    # the IO_button_name error message changes depending upon the call
+    button = "button"
+    # there is no RUN button when setting up IO information so the call to check_missingIO should be silent
+    run_button_disabled_msg = "The RUN button is disabled until the required information for the selected Input/Output fields is entered.\n\n"
+    if "IO_setup_main" in ScriptName:
+        run_button_disabled_msg = ""
+    if IO_setup_display_brief==True:
+        IO_button_name = "Setup INPUT/OUTPUT configuration" # when displaying brief
+    if IO_setup_display_brief==False:
+        if 'NLP_menu_main' in ScriptName:
+            IO_button_name = "Setup default I/O options"  # when displaying from NLP_menu_main
+        else:
+            IO_button_name = "Select INPUT & Select OUTPUT" # when displaying full
+            button="buttons"
     Run_Button_Off=False
     #do not check IO requirements for NLP.py; too many IO options available depending pon the sript run
     # if config_filename=="NLP-config.txt" or config_filename=="social-science-research-config.txt":
@@ -214,10 +218,14 @@ def check_missingIO(window,missingIO,config_filename,silent=False):
         # RUN button always active since several options are available and IO gets checked in the respective scripts
         Run_Button_Off=False
         missingIO=''
+    mutually_exclusive_msg=''
+    if "Input file" in missingIO and "Input files directory" in missingIO:
+        mutually_exclusive_msg='The two I/O options - "Input file" and "Input files directory" - are mutually exclusive. You can only select one or the other. In other words, you can choose to work with a sigle file in input or with many files stored in a directory.\n\n'
+
     if len(missingIO)>0:
         if not silent:
-            mb.showwarning(title='Warning', message='The following required INPUT/OUTPUT information is missing in config file ' + config_filename + ':\n\n' + missingIO + '\n\nThe RUN button is disabled until the required information for all Input/Output fields is entered.\n\nPlease, click on the "Setup INPUT/OUTPUT configuration" button and enter the required I/O information.')
-        Run_Button_Off=True
+            mb.showwarning(title='Warning', message='The following required INPUT/OUTPUT information is missing in config file ' + config_filename + ':\n\n' + missingIO + '\n\n' + mutually_exclusive_msg + run_button_disabled_msg + 'Please, click on the "' + IO_button_name + '" ' + button + ' at the top of the GUI and enter the required I/O information.')
+            Run_Button_Off=True
     if Run_Button_Off==True:
         run_button_state="disabled"
     else:
