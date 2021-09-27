@@ -61,7 +61,7 @@ Google_heatmaps_libPath = os.path.join(NLPPath,'lib'+os.sep+'sampleHeatmap')
 Excel_charts_libPath = os.path.join(NLPPath,'lib'+os.sep+'sampleCharts')
 sentiment_libPath = os.path.join(NLPPath,'lib'+os.sep+'sentimentLib')
 concreteness_libPath = os.path.join(NLPPath,'lib'+os.sep+'concretenessLib')
-OpenIE_libPath = os.path.join(NLPPath,'lib'+os.sep+'OpenIE')
+CoreNLP_enhanced_dependencies_libPath = os.path.join(NLPPath,'lib'+os.sep+'CoreNLP_enhanced_dependencies')
 wordLists_libPath = os.path.join(NLPPath,'lib'+os.sep+'wordLists')
 namesGender_libPath = os.path.join(NLPPath, 'lib'+os.sep+'namesGender')
 GISLocations_libPath = os.path.join(NLPPath,'lib'+os.sep+'GIS')
@@ -86,6 +86,7 @@ if sys.platform == 'darwin': #Mac OS
     labels_x_indented_coordinate = 160
     select_file_directory_button_width=23
     open_file_directory_button_width = 1
+    IO_button_name_width=1
     open_file_directory_coordinate = 400
     entry_box_x_coordinate = 470 #start point of all labels in the third column (second column after ? HELP); where IO filename, dir, etc. are displayed
     read_button_x_coordinate = 70
@@ -97,12 +98,15 @@ if sys.platform == 'darwin': #Mac OS
 
     # special internal GUI specific values
     SVO_2nd_column = 570
+    SVO_2nd_column_top = 450
+    SVO_3rd_column_top = 850
 
 else: #windows and anything else
     help_button_x_coordinate = 50
     labels_x_coordinate = 120  # start point of all labels in the second column (first column after ? HELP)
     labels_x_indented_coordinate = 140
     select_file_directory_button_width=30
+    IO_button_name_width=30
     open_file_directory_button_width = 3
     open_file_directory_coordinate = 350
     entry_box_x_coordinate = 400 #start point of all labels in the third column (second column after ? HELP)
@@ -115,6 +119,8 @@ else: #windows and anything else
 
     # special internal GUI specific values
     SVO_2nd_column = 520
+    SVO_2nd_column_top = 400
+    SVO_3rd_column_top = 800
 
 basic_y_coordinate = 90
 y_step = 40 #the line-by-line increment on the GUI

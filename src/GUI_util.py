@@ -1,6 +1,9 @@
 #Written by Roberto Franzosi (help by Jack Hester, Feb 2019 and Karol Josh, March 2020)
 
 import sys
+
+import requests
+
 import GUI_util
 import IO_libraries_util
 
@@ -16,13 +19,15 @@ import os
 import tkinter.messagebox as mb
 import inspect
 from subprocess import call
+import webbrowser
 
 import config_util
 import reminders_util
 import TIPS_util
 import GUI_IO_util
 import IO_files_util
-import IO_CoNLL_util
+import IO_internet_util
+
 
 y_multiplier_integer = 1
 noLicenceError=False
@@ -164,12 +169,60 @@ def display_logo():
             offset=12
         logo.place(x=GUI_IO_util.get_help_button_x_coordinate()-offset, y=10)
 
+
+version_str = '1.5.9'
+
+def check_newest_release(current_release: str):
+    # check internet connection
+    if not IO_internet_util.check_internet_availability_warning("Automatic check for NLP Suite newest release version on GitHub"):
+        return
+    # current_release = '1.5.9' # line used for testing
+    setup_folder="setup_Windows"
+    update_command_auto='update_NLP-Suite_auto.bat'
+    update_command='update_NLP-Suite.bat'
+    if sys.platform == 'darwin':
+        setup_folder="setup_Mac"
+        update_command_auto = 'update_NLP-Suite_auto.command'
+        update_command='update_NLP-Suite.command'
+    release_url = 'https://raw.githubusercontent.com/NLP-Suite/NLP-Suite/current-stable/lib/release_version.txt'
+    try:
+        GitHub_newest_release = requests.get(release_url).text
+    except:
+        mb.showwarning(title='Internet connection error', message="The attempt to connect to GitHub failed.\n\nIt is not possible to check the latest release of the NLP Suite at this time. You can continue run your current release and try again later.")
+        return
+    # split the text string of release version (e.g., 1.5.9) into three parts separated by .
+    current_release_parts=[current_release[i:i + 1] for i in range(0, len(current_release), 2)]
+    GitHub_release_parts=[GitHub_newest_release[i:i + 1] for i in range(0, len(GitHub_newest_release), 2)]
+    old_version = False
+    # check numbers
+    if int(current_release_parts[0])<int(GitHub_release_parts[0]):
+        old_version = True
+    if int(current_release_parts[1])<int(GitHub_release_parts[1]):
+        old_version = True
+    if int(current_release_parts[2])<int(GitHub_release_parts[2]):
+        old_version = True
+    if 'Not Found' not in GitHub_newest_release and old_version: #GitHub_newest_release != current_release:
+        result = mb.askyesno("NLP Suite Outdated",
+                    "You are running NLP Suite release version " + str(current_release) + " an OLD version.\n\nA NEW version of the NLP Suite has been released on GitHub: " + str(GitHub_newest_release) +
+                    ".\n\nEXIT the NLP Suite NOW.\n\n   1. If you have setup the NLP Suite for automatic updates (click on " + update_command_auto + " - HIGHLY RECOMMENDED), the NLP Suite will be automatically updated every time you exit the NLP Suite.\n\n   2. Otherwise, go to the " + setup_folder + " subfolder inside the NLP installation folder and run the update script by clicking on " + update_command + " to update your NLP Suite to the latest " + str(GitHub_newest_release) + " release.\n\nFire up the NLP Suite again and if you have performed either update command you will be all set.\n\n" +
+                    "WOULD YOU LIKE TO SEE WHAT IS NEW IN THE RELEASE VERSION " + str(GitHub_newest_release) + " AVAILABLE ON GitHub? (You must be connected to the internet)")
+        if result:
+            webbrowser.open_new("https://github.com/NLP-Suite/NLP-Suite/wiki/NLP-Suite-Release-History")
+
 def display_release():
     # first digit for major upgrades
     # second digit for new features
     # third digit for bug fixes and minor changes to current version
     # must also change the Release version in readMe on GitHub
-    release_version_var.set("1.5.8")
+
+    global version_str
+    release_version_file = GUI_IO_util.libPath + os.sep + "release_version.txt"
+
+    if os.path.isfile(release_version_file):
+        with open(release_version_file,'r') as file:
+            version_str = file.read()
+
+    release_version_var.set(version_str)
 
     y_multiplier_integer=-.7
 
@@ -487,7 +540,7 @@ def setup_IO_configuration_options(IO_setup_display_brief,y_multiplier_integer,S
     display_IO_setup(window, IO_setup_display_brief, config_filename, config_input_output_options, ScriptName)
 
 def IO_config_setup_brief(window, y_multiplier_integer,ScriptName):
-    IO_setup_button = tk.Button(window, text='Setup INPUT/OUTPUT configuration',command=lambda: setup_IO_configuration_options(True,y_multiplier_integer,ScriptName))
+    IO_setup_button = tk.Button(window, width=GUI_IO_util.select_file_directory_button_width,text='Setup INPUT/OUTPUT configuration',command=lambda: setup_IO_configuration_options(True,y_multiplier_integer,ScriptName))
     y_multiplier_integer = GUI_IO_util.placeWidget(GUI_IO_util.get_labels_x_coordinate(),
                                                    y_multiplier_integer,
                                                    IO_setup_button, True)
@@ -669,9 +722,14 @@ def GUI_bottom(config_input_output_options,y_multiplier_integer,readMe_command,
 
     TIPS_util.trace_open_tips(tips_dropdown_field,tips_menu_lb,TIPS_lookup)
 
+    reminders_util.checkReminder('*',
+                                 reminders_util.title_options_NLP_Suite_reminders,
+                                 reminders_util.message_NLP_Suite_reminders,
+                                 True)
+
     routine = config_filename[:-len('-config.txt')]
     # get the list of titles available for a given GUI
-    reminder_options = reminders_util.getReminder_list(config_filename, True)
+    reminder_options = reminders_util.getReminders_list(config_filename, True)
     # None returned for a faulty reminders.csv
     reminders_error = False
     if reminder_options==None:
@@ -750,11 +808,13 @@ def GUI_bottom(config_input_output_options,y_multiplier_integer,readMe_command,
                                      reminders_util.reminder_options_GUIfrontend,
                                      message)
 
-    # routine_options = reminders_util.getReminder_list(config_filename)
+    # routine_options = reminders_util.getReminders_list(config_filename)
     result = reminders_util.checkReminder('*',
                                           reminders_util.title_options_IO_configuration,
                                           reminders_util.message_IO_configuration)
     if result != None:
-        routine_options = reminders_util.getReminder_list(config_filename)
+        routine_options = reminders_util.getReminders_list(config_filename)
+
+    check_newest_release(version_str)
 
     window.protocol("WM_DELETE_WINDOW", _close_window)

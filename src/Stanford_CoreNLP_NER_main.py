@@ -28,7 +28,7 @@ def run(inputFilename, inputDir, outputDir, openOutputFiles, createExcelCharts, 
         mb.showwarning(title='No NER tag selected', message='No NER tag has been selected.\n\nPlease, select an NER tag and try again.')
         return
 
-    tempOutputFiles = Stanford_CoreNLP_annotator_util.CoreNLP_annotate(inputFilename, inputDir, outputDir,
+    tempOutputFiles = Stanford_CoreNLP_annotator_util.CoreNLP_annotate(config_filename, inputFilename, inputDir, outputDir,
                                                         openOutputFiles, createExcelCharts,
                                                         'NER',
                                                         NERs=NER_list,
@@ -363,8 +363,8 @@ NER_sentence_checkbox = tk.Checkbutton(window, variable=NER_sentence_var, onvalu
 NER_sentence_checkbox.config(text="NER tags by sentence index")
 y_multiplier_integer=GUI_IO_util.placeWidget(GUI_IO_util.get_labels_x_coordinate(), y_multiplier_integer,NER_sentence_checkbox)
 
-TIPS_lookup = {'NER (Named Entity Recognition)':'TIPS_NLP_NER (Named Entity Recognition).pdf', 'CoNLL Table': "TIPS_NLP_Stanford CoreNLP CoNLL table.pdf",'POSTAG (Part of Speech Tags)':'TIPS_NLP_POSTAG (Part of Speech Tags) Stanford CoreNLP.pdf'}
-TIPS_options='NER (Named Entity Recognition)','CoNLL Table','POSTAG (Part of Speech Tags)'
+TIPS_lookup = {'Stanford CoreNLP memory issues': 'TIPS_NLP_Stanford CoreNLP memory issues.pdf','NER (Named Entity Recognition)':'TIPS_NLP_NER (Named Entity Recognition).pdf', 'CoNLL Table': "TIPS_NLP_Stanford CoreNLP CoNLL table.pdf",'POSTAG (Part of Speech Tags)':'TIPS_NLP_POSTAG (Part of Speech Tags) Stanford CoreNLP.pdf'}
+TIPS_options='Stanford CoreNLP memory issues','NER (Named Entity Recognition)','CoNLL Table','POSTAG (Part of Speech Tags)'
 
 # add all the lines lines to the end to every special GUI
 # change the last item (message displayed) of each line of the function help_buttons

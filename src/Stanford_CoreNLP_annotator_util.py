@@ -3,6 +3,16 @@
 #2. Type in kill -9 ***** to kill that subprocess
 #P.S ***** is the 5 digit PID
 
+"""
+TODO
+https://stanfordnlp.github.io/CoreNLP/memory-time.html
+Check out the CoreNLP website to see their recommendation on using the -filelist flag
+(e.g., java -cp "$STANFORD_CORENLP_HOME/*" edu.stanford.nlp.pipeline.StanfordCoreNLP -filelist all-files.txt -outputFormat json)
+and -parse.maxlen 70 or 100 to limit sentence length
+there is also kbp.maxlen, ner.maxlen, and pos.maxlen but they be less necessary than the parse one
+WE DO NOT USE ANY OF THESE RECOMMENDATIONS
+"""
+
 import sys
 import IO_libraries_util
 import GUI_util
@@ -28,7 +38,9 @@ import IO_files_util
 import IO_user_interface_util
 import Excel_util
 import annotator_dictionary_util
-import SVO_enhanced_dependencies_util
+import SVO_enhanced_dependencies_util # Enhanced++ dependencies
+import reminders_util
+
 import GUI_IO_util
 # from operator import itemgetter, attrgetter
 # central CoreNLP_annotator function that pulls together our approach to processing many files,
@@ -49,13 +61,13 @@ import GUI_IO_util
 
 # ner GIS, date
 
-def CoreNLP_annotate(inputFilename,
+def CoreNLP_annotate(config_filename,inputFilename,
                      inputDir, outputDir,
                      openOutputFiles, createExcelCharts,
                      annotator_params,
                      DoCleanXML,
                      memory_var, **kwargs):
-
+    silent=True
     start_time = time.time()
     speed_assessment = []#storing the information used for speed assessment
     speed_assessment_format = ['Document ID', 'Document','Time', 'Tokens to Annotate', 'Params', 'Number of Params']#the column titles of the csv output of speed assessment
@@ -66,11 +78,13 @@ def CoreNLP_annotate(inputFilename,
     if CoreNLPdir== None:
         return filesToOpen
 
-
-    errorFound, error_code, system_output=IO_libraries_util.check_java_installation('SVO extractor')
-
+    # check for Java and Java version JDK 8
+    errorFound, error_code, system_output=IO_libraries_util.check_java_installation('Stanford CoreNLP')
     if errorFound:
         return filesToOpen
+
+    # check avaialable memory
+    IO_libraries_util.check_avaialable_memory('Stanford CoreNLP')
 
     IO_user_interface_util.timed_alert(GUI_util.window, 3000, 'Analysis start', 'Started running Stanford CoreNLP ' + str(annotator_params) + ' annotator at', True, "You can follow CoreNLP annotator in command line.")
 
@@ -112,7 +126,6 @@ def CoreNLP_annotate(inputFilename,
         'DepRel': {'annotators': ['parse']},
         'NER': {'annotators':['tokenize','ssplit','pos','lemma','ner']},
         'quote': {'annotators': ['tokenize','ssplit','pos','lemma','ner','depparse','coref','quote']},
-        # 'coref': {'annotators':['dcoref']},
         'coref': {'annotators':['coref']},
         #'gender': {'annotators': ['']},
         'gender': {'annotators': ['coref']},
@@ -239,11 +252,12 @@ def CoreNLP_annotate(inputFilename,
 
     # -d64 to use 64 bits JAVA, normally set to 32 as default; option not recognized in Mac
     if sys.platform == 'darwin':  # Mac OS
-        p = subprocess.Popen(
+        # mx is the same as Xmx and refers to maximum Java heap size
+        CoreNLP_nlp = subprocess.Popen(
             ['java', '-mx' + str(memory_var) + "g", '-cp', os.path.join(CoreNLPdir, '*'),
              'edu.stanford.nlp.pipeline.StanfordCoreNLPServer', '-timeout', '999999'])
     else:
-        p = subprocess.Popen(
+        CoreNLP_nlp = subprocess.Popen(
             ['java', '-mx' + str(memory_var) + "g", '-d64', '-cp', os.path.join(CoreNLPdir, '*'),
              'edu.stanford.nlp.pipeline.StanfordCoreNLPServer', '-timeout', '999999'])
 
@@ -263,7 +277,9 @@ def CoreNLP_annotate(inputFilename,
         docTitle = os.path.basename(docName)
         docID = docID + 1
         sentenceID = 0
-        split_file = file_splitter_ByLength_util.splitDocument_byLength(GUI_util.window,'Stanford CoreNLP',docName) #if the file is too long, it needs spliting to be able to processed by the Stanford CoreNLP
+        # if the file is too long, it needs splitting to allow processing by the Stanford CoreNLP
+        #   which has a maximum 100,000 characters doc size limit
+        split_file = file_splitter_ByLength_util.splitDocument_byLength(GUI_util.window,config_filename,docName)
         for doc in split_file:
             annotated_length = 0#the number of tokens
             # doc_start_time = time.time()
@@ -271,11 +287,16 @@ def CoreNLP_annotate(inputFilename,
             head, tail = os.path.split(doc)
             print("Processing file " + str(docID) + "/" + str(nDocs) + ' ' + tail)
             text = open(doc, 'r', encoding='utf-8', errors='ignore').read().replace("\n", " ")
+            if "%" in text:
+                reminders_util.checkReminder(config_filename, reminders_util.title_options_CoreNLP_percent,
+                                             reminders_util.message_CoreNLP_percent, True)
+                text=text.replace("%","percent")
             nlp = StanfordCoreNLP('http://localhost:9000')
+            # nlp = StanfordCoreNLP('http://point.dd.works:9000')
+
             #if there's only one annotator and it uses neural nerwork model, skip annoatiting with PCFG to save time
             if param_string != '':
                 # text = open(doc, 'r', encoding='utf-8', errors='ignore').read().replace("\n", " ")
-                # nlp = StanfordCoreNLP('http://localhost:9000')
                 annotator_start_time = time.time()
                 CoreNLP_output = nlp.annotate(text, properties=params)
                 errorFound, filesError, CoreNLP_output = IO_user_interface_util.process_CoreNLP_error(GUI_util.window,
@@ -283,8 +304,11 @@ def CoreNLP_annotate(inputFilename,
                                                     doc,
                                                     nDocs,
                                                     filesError,
-                                                    text)
-                if errorFound: continue  # move to next document
+                                                    text,
+                                                    silent)
+                if errorFound:
+                    errorFound=False
+                    continue  # move to next document
                 annotator_time_elapsed = time.time() - annotator_start_time
                 file_length=len(text)
                 total_length += file_length
@@ -309,8 +333,9 @@ def CoreNLP_annotate(inputFilename,
                     NN_start_time = time.time()
                     CoreNLP_output = nlp.annotate(text, properties=params_NN)
                     errorFound, filesError, CoreNLP_output = IO_user_interface_util.process_CoreNLP_error(
-                        GUI_util.window, CoreNLP_output, doc, nDocs, filesError, text)
-                    if errorFound: continue  # move to next document
+                        GUI_util.window, CoreNLP_output, doc, nDocs, filesError, text, silent)
+                    if errorFound:
+                        continue  # move to next document; this only continues to next routine_list
                     NN_time_elapsed = time.time() - NN_start_time
                     file_length = len(text)
                     total_length += file_length
@@ -333,9 +358,8 @@ def CoreNLP_annotate(inputFilename,
                 # sentenceID = new_sentenceID
                 
                 if output_format == 'text':
-                
                     outputFilename = IO_files_util.generate_output_file_name(docName, inputDir, outputDir, '.txt', 'CoreNLP_'+annotator_chosen)
-                    with open(outputFilename, "a+") as text_file:
+                    with open(outputFilename, "a+", encoding='utf-8', errors='ignore') as text_file:
                         if processing_doc != docTitle:
                             text_file.write("\n<@#" + docTitle + "@#>\n")
                             processing_doc = docTitle
@@ -351,8 +375,14 @@ def CoreNLP_annotate(inputFilename,
                                 run_output[i].append(j)
                     else:
                         run[3].extend(sub_result)
-  
-            sentenceID += len(CoreNLP_output["sentences"])#update the sentenceID of the first sentence of the next split file
+            try:
+                if errorFound:
+                    errorFound=False
+                    continue  # move to next document; this only continues to next routine_list
+                sentenceID_SV = sentenceID
+                sentenceID += len(CoreNLP_output["sentences"])#update the sentenceID of the first sentence of the next split file
+            except:
+                print("Error processing sentence #: ",sentenceID_SV+1," in document ",tail)
     #generate output csv files and write output
     output_start_time = time.time()
     # print("Length of Files to Open after generating output: ", len(filesToOpen))
@@ -437,12 +467,12 @@ def CoreNLP_annotate(inputFilename,
                     filesToOpen=visualize_Excel_chart(createExcelCharts, filesToVisualize[j], outputDir, filesToOpen, [[1, 1]], 'bar',
                                           'Frequency Distribution of NER Tags', 1, [], 'NER_tag_bar','NER tag')
 
-    p.kill()
+    CoreNLP_nlp.kill()
     # print("Length of Files to Open after visualization: ", len(filesToOpen))
     if len(filesError)>0:
         mb.showwarning("Stanford CoreNLP Error", 'Stanford CoreNLP ' +annotator_chosen+ ' annotator has found '+str(len(filesError)-1)+' files that could not be processed by Stanford CoreNLP.\n\nPlease, read the error output file carefully to see the errors generated by CoreNLP.')
         errorFile = os.path.join(outputDir,
-                                           IO_files_util.generate_output_file_name(inputFilename, inputDir, outputDir, '.csv',
+                                           IO_files_util.generate_output_file_name(IO_csv_util.dressFilenameForCSVHyperlink(inputFilename), inputDir, outputDir, '.csv',
                                                                                    'CoreNLP', 'file_ERRORS'))
         IO_csv_util.list_to_csv(GUI_util.window, filesError, errorFile)
         filesToOpen.append(errorFile)
@@ -455,7 +485,7 @@ def CoreNLP_annotate(inputFilename,
                                                                            'CoreNLP_speed_assessment')
     df = pd.DataFrame(speed_assessment, columns=speed_assessment_format)
     df.to_csv(speed_csv, index=False)
-    filesToOpen.append(speed_csv)
+    # filesToOpen.append(speed_csv) NO NEED TO OPEN THE SPED ASSESSMENT FILE; NOT A FILE FOR USERS
     if len(inputDir) != 0:
         IO_user_interface_util.timed_alert(GUI_util.window, 3000, 'Output warning', 'The output filename generated by Stanford CoreNLP is the name of the directory processed in input, rather than any individual file in the directory. The output file(s) include all ' + str(nDocs) + ' files in the input directory processed by CoreNLP.\n\nThe different files are listed in the output csv file under the headers \'Document ID\' and \'Document\'.')
 
@@ -900,9 +930,9 @@ def process_json_SVO_enhanced_dependencies(documentID, document, sentenceID, jso
             extract_date_from_filename_var = True
 
     date_str = date_in_filename(document, **kwargs)
-    OpenIE = []
+    SVO_enhanced_dependencies = []
     for sentence in json['sentences']:#traverse output of each sentence 
-        sent_data = SVO_enhanced_dependencies_util.OpenIE_sent_data_reorg(sentence)#reorganize the output into a dictionary in which each content (also dictionary) contains information of a token
+        sent_data = SVO_enhanced_dependencies_util.SVO_enhanced_dependencies_sent_data_reorg(sentence)#reorganize the output into a dictionary in which each content (also dictionary) contains information of a token
         #including a dictionary (govern_dictionary) indicating the index of tokens whose syntactical head is the current token
 
         complete_sent = ''#build sentence string
@@ -922,11 +952,11 @@ def process_json_SVO_enhanced_dependencies(documentID, document, sentenceID, jso
 
         for row in SVO: 
             if extract_date_from_filename_var:
-                OpenIE.append([documentID, sentenceID, document, row[0], row[1], row[2], N[nidx]," ".join(L), " ".join(P), " ".join(T), " ".join(T_S),complete_sent, date_str])
+                SVO_enhanced_dependencies.append([documentID, sentenceID, IO_csv_util.dressFilenameForCSVHyperlink(document), row[0], row[1], row[2], N[nidx]," ".join(L), " ".join(P), " ".join(T), " ".join(T_S),complete_sent, date_str])
             else:
-                OpenIE.append([documentID, sentenceID, document, row[0], row[1], row[2], N[nidx], " ".join(L), " ".join(P), " ".join(T), " ".join(T_S),complete_sent])
+                SVO_enhanced_dependencies.append([documentID, sentenceID, IO_csv_util.dressFilenameForCSVHyperlink(document), row[0], row[1], row[2], N[nidx], " ".join(L), " ".join(P), " ".join(T), " ".join(T_S),complete_sent])
             nidx += 1
-    return OpenIE
+    return SVO_enhanced_dependencies
 
 def process_json_openIE(documentID, document, sentenceID, json, **kwargs):
     extract_date_from_filename_var = False
@@ -978,10 +1008,12 @@ def process_json_openIE(documentID, document, sentenceID, json, **kwargs):
     return openIE
 
 def process_json_postag(documentID, document, sentenceID, json, **kwargs):
-
+    # only processes verbs and nouns
     Verbs = []
     Nouns = []
     for sentence in json['sentences']:
+        # if len(sentence)> 20:
+        #     print("WAY TOO LOONG!")
         for token in sentence['tokens']:
             if token['pos'] in ['VB','VBD','VBG','VBN','VBP','VBZ']:
                 Verbs.append(token['lemma'])

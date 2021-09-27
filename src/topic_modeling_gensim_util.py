@@ -46,6 +46,7 @@ warnings.filterwarnings("ignore",category=DeprecationWarning)
 import IO_files_util
 import IO_user_interface_util
 import Excel_util
+import reminders_util
 
 #whether stopwordst were already downloaded can be tested, see stackoverflow
 #	https://stackoverflow.com/questions/23704510/how-do-i-test-whether-an-nltk-resource-is-already-installed-on-the-machine-runni
@@ -114,7 +115,18 @@ def format_topics_sentences(ldamodel, corpus, texts):
 
 def malletModelling(MalletDir, outputDir, createExcelCharts, corpus,num_topics, id2word,data_lemmatized, lda_model, data):
     IO_user_interface_util.timed_alert(GUI_util.window, 2000, 'Analysis start', 'Started running Mallet LDA topic modeling at',True)
-    ldamallet = gensim.models.wrappers.LdaMallet(MalletDir, corpus=corpus, num_topics=num_topics, id2word=id2word)
+    config_filename='topic-modeling-gensim-config.txt'
+    try:
+        ldamallet = gensim.models.wrappers.LdaMallet(MalletDir, corpus=corpus, num_topics=num_topics, id2word=id2word)
+    except:
+        routine_options = reminders_util.getReminders_list(config_filename)
+        reminders_util.checkReminder(config_filename,
+                                     reminders_util.title_options_gensim_release,
+                                     reminders_util.message_gensim_release,
+                                     True)
+        routine_options = reminders_util.getReminders_list(config_filename)
+        return
+
     # Show Topics
     pprint(ldamallet.show_topics(formatted=False))
 
@@ -394,13 +406,16 @@ def run_Gensim(window, inputDir, outputDir, num_topics, remove_stopwords_var,
     # Python -m spacy download en
     nlp = spacy.load('en_core_web_sm', disable=['parser', 'ner'])
 
-    if nounsOnly == True:
-        # Do lemmatization keeping only noun
-        data_lemmatized = lemmatization(data_words_bigrams, lemmatize, allowed_postags=['NOUN'])
-    else:
-        # Do lemmatization keeping only noun, adj, vb, adv
-        data_lemmatized = lemmatization(data_words_bigrams, lemmatize,
+    if lemmatize:
+        if nounsOnly == True:
+            # Do lemmatization keeping only noun
+            data_lemmatized = lemmatization(data_words_bigrams, lemmatize, allowed_postags=['NOUN'])
+        else:
+            # Do lemmatization keeping only noun, adj, vb, adv
+            data_lemmatized = lemmatization(data_words_bigrams, lemmatize,
                                         allowed_postags=['NOUN', 'ADJ', 'VERB', 'ADV'])
+    else:
+        data_lemmatized = data_words_bigrams
 
     # @print(data_lemmatized[:1])
 
@@ -455,7 +470,9 @@ def run_Gensim(window, inputDir, outputDir, num_topics, remove_stopwords_var,
     # 	print("Type of doc_lda: ", type(doc_lda))
     # visualize and generate html
     # step 15 in website
-    vis = pyLDAvis.gensim.prepare(lda_model, corpus, id2word)
+    # https://stackoverflow.com/questions/46379763/typeerror-object-of-type-complex-is-not-json-serializable-while-using-pyldavi
+    # Roberto added , mds='mmds' to avoid the error described above
+    vis = pyLDAvis.gensim.prepare(lda_model, corpus, id2word, mds='mmds')
     pyLDAvis.prepared_data_to_html(vis)
     try:
         pyLDAvis.save_html(vis, outputFilename)
@@ -476,7 +493,6 @@ def run_Gensim(window, inputDir, outputDir, num_topics, remove_stopwords_var,
     start_new_thread(show_web, (vis,))
 
     if run_Mallet==True:
-
         # check that the MalletDir as been setup
         MalletDir, missing_external_software = IO_libraries_util.get_external_software_dir('topic_modeling_gensim', 'Mallet')
         if MalletDir==None:
