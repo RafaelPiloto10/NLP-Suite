@@ -158,11 +158,11 @@ class NGramsCoOccurrences():
 
 # Test NGramsCoOccurrences logic
 if __name__ == "__main__":
-    outputFolder = "./../../Output/ngram-test/"
-    inputFolder = "/Users/apollo/emory/fall-2021/QTM446W/NLP-Suite/lib/sampleData/newspaperArticles/"
+    outputFolder = "relative_path_here"
+    inputFolder = "relative_path_here"
     dateFormat = "mm-dd-yyyy"
     datePos = 4
-    wordsLists = ["man", "woman"]
+    wordsLists = []
     checkCoOccList = False
     groupingOption = ""
     itemsDelimiter = "_"
