@@ -151,6 +151,7 @@ class NGramsCoOccurrences():
             with open(os.path.join(self.outputFolder, self.outputFileName), 'w', encoding='UTF8') as f:
                 writer = csv.writer(f)
                 writer.writerow(["word", "date", "file"])
+                # To find frequency, use `len(res)`
                 for label, res in ngram_results.items():
                     writer.writerows(res)
 
@@ -177,3 +178,4 @@ if __name__ == "__main__":
                  groupingOption, itemsDelimiter, docPCIDCouplesFilePath, scaleData, normalizeByPCID,
                  lemma, fullInfo, considerAsSeparateGroups, normalize)
     ngr, cor = ng.run()
+    ng.save(ngr, cor)
