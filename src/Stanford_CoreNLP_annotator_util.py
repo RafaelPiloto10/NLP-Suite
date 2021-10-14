@@ -175,10 +175,10 @@ def CoreNLP_annotate(config_filename,inputFilename,
         'coref': 'text',
         'gender':['Word', 'Gender', 'Sentence','Sentence ID', 'Document ID', 'Document'],
         'normalized-date':["Word", "Normalized date", "tid","Information","Sentence ID", "Sentence", "Document ID", "Document"],
-        #  Document ID, Sentence ID, Document, S, V, O/A, Sentence
+        #  Document ID, Sentence ID, Document, S, V, O, Sentence
         # Dec. 21
-        'SVO':['Document ID', 'Sentence ID', 'Document', 'S', 'V', 'O/A', "Negation","Location",'Person','Time','Time stamp','Sentence'],
-        'OpenIE':['Document ID', 'Sentence ID', 'Document', 'S', 'V', 'O/A', 'Sentence'],
+        'SVO':['Document ID', 'Sentence ID', 'Document', 'S', 'V', 'O', "Negation","Location",'Person','Time','Time stamp','Sentence'],
+        'OpenIE':['Document ID', 'Sentence ID', 'Document', 'S', 'V', 'O', 'Sentence'],
         'parser (pcfg)':["ID", "Form", "Lemma", "POStag", "NER", "Head", "DepRel", "Clause Tag", "Record ID", "Sentence ID", "Document ID", "Document"],
         'parser (nn)':["ID", "Form", "Lemma", "POStag", "NER", "Head", "DepRel", "Clause Tag", "Record ID", "Sentence ID", "Document ID", "Document"]
     }
@@ -398,7 +398,7 @@ def CoreNLP_annotate(config_filename,inputFilename,
                     outputFilename = IO_files_util.generate_output_file_name(docName, inputDir, outputDir, '.txt', 'CoreNLP_'+annotator_chosen)
                     with open(outputFilename, "a+", encoding='utf-8', errors='ignore') as text_file:
                         if processing_doc != docTitle:
-                            text_file.write("\n<@#" + docTitle + "@#>\n")
+                            text_file.write("\n<@#" + docTitle + "#@>\n")
                             processing_doc = docTitle
                         text_file.write(sub_result)
                     if outputFilename not in filesToOpen: 
@@ -1015,15 +1015,18 @@ def process_json_SVO_enhanced_dependencies(config_filename,documentID, document,
         sentenceID = sentenceID + 1
         check_sentence_length(len(sentence['tokens']), sentenceID, config_filename)
 
-        SVO, L, T, T_S, P, N = SVO_enhanced_dependencies_util.SVO_extraction(sent_data)# main function
+        # CYNTHIA: feed another information sentence['entitymentions'] to SVO_extraction to get locations
+        SVO, L, T, T_S, P, N = SVO_enhanced_dependencies_util.SVO_extraction(sent_data, sentence['entitymentions'])# main function
 
         nidx = 0
 
-        for row in SVO: 
+        #CYNTHIA: " ".join(L) => "; ".join(L)
+        # ; added list of locations in SVO output (e.g., Los Angeles; New York; Washington)
+        for row in SVO:
             if extract_date_from_filename_var:
-                SVO_enhanced_dependencies.append([documentID, sentenceID, IO_csv_util.dressFilenameForCSVHyperlink(document), row[0], row[1], row[2], N[nidx]," ".join(L), " ".join(P), " ".join(T), " ".join(T_S),complete_sent, date_str])
+                SVO_enhanced_dependencies.append([documentID, sentenceID, IO_csv_util.dressFilenameForCSVHyperlink(document), row[0], row[1], row[2], N[nidx], "; ".join(L), " ".join(P), " ".join(T), " ".join(T_S),complete_sent, date_str])
             else:
-                SVO_enhanced_dependencies.append([documentID, sentenceID, IO_csv_util.dressFilenameForCSVHyperlink(document), row[0], row[1], row[2], N[nidx], " ".join(L), " ".join(P), " ".join(T), " ".join(T_S),complete_sent])
+                SVO_enhanced_dependencies.append([documentID, sentenceID, IO_csv_util.dressFilenameForCSVHyperlink(document), row[0], row[1], row[2], N[nidx], "; ".join(L), " ".join(P), " ".join(T), " ".join(T_S),complete_sent])
             nidx += 1
     return SVO_enhanced_dependencies
 
@@ -1052,7 +1055,7 @@ def process_json_openIE(config_filename,documentID, document, sentenceID, json, 
 
         SVOs = []
         for openie in sentence['openie']:
-            # Document ID, Sentence ID, Document, S, V, O/A, Sentence
+            # Document ID, Sentence ID, Document, S, V, O, Sentence
             SVOs.append([openie['subject'],openie['relation'],openie['object']])
         container = []
         for SVO_value in SVOs:

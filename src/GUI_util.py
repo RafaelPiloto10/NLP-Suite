@@ -199,8 +199,9 @@ def check_newest_release(current_release: str):
         old_version = True
     if int(current_release_parts[1])<int(GitHub_release_parts[1]):
         old_version = True
-    if int(current_release_parts[2])<int(GitHub_release_parts[2]):
-        old_version = True
+    if int(current_release_parts[0])==int(GitHub_release_parts[0]) and int(current_release_parts[1])==int(GitHub_release_parts[1]):
+        if int(current_release_parts[2])<int(GitHub_release_parts[2]):
+            old_version = True
     if 'Not Found' not in GitHub_newest_release and old_version: #GitHub_newest_release != current_release:
         result = mb.askyesno("NLP Suite Outdated",
                     "You are running NLP Suite release version " + str(current_release) + " an OLD version.\n\nA NEW version of the NLP Suite has been released on GitHub: " + str(GitHub_newest_release) +
@@ -677,7 +678,10 @@ def GUI_bottom(config_input_output_options,y_multiplier_integer,readMe_command,
     # GUIs that serve only as frontend GUIs for more specialized GUIs should NOT display Open ooutput and Excel tickboxes
     #   that is the case, for instance, in narrative_analysis_main
     #   in this case config_input_output_options = [0, 0, 0, 0, 0, 0]
-    if config_input_output_options!= [0, 0, 0, 0, 0, 0] and ScriptName != 'NLP_menu_main' and ScriptName != "IO_setup_main":
+    if config_input_output_options!= [0, 0, 0, 0, 0, 0] and \
+            ScriptName != 'NLP_menu_main' and \
+            ScriptName != "IO_setup_main" and \
+            ScriptName != "Stanford_CoreNLP_coreference_main":
         #open out csv files widget defined above since it is used earlier
         open_csv_output_label = tk.Checkbutton(window, variable=open_csv_output_checkbox, onvalue=1, offvalue=0, command=lambda: trace_checkbox(open_csv_output_label, open_csv_output_checkbox, "Automatically open output csv file(s)", "Do NOT automatically open output csv file(s)"))
         open_csv_output_label.configure(text="Automatically open output csv file(s)")
