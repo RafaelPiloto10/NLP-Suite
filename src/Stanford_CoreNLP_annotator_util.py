@@ -52,6 +52,7 @@ import GUI_IO_util
 # tokenize: tokenize
 # ssplit:  tokenize,ssplit
 # MWT: tokenize,ssplit,mwt
+# lemma: tokenize,ssplit,pos,lemma
 # POS: tokenize,ssplit,pos
 # lemma: tokenize,ssplit,pos,lemma
 # NER: tokenize,ssplit,pos,lemma,ner
@@ -66,7 +67,12 @@ def CoreNLP_annotate(config_filename,inputFilename,
                      openOutputFiles, createExcelCharts,
                      annotator_params,
                      DoCleanXML,
-                     memory_var, **kwargs):
+                     memory_var,
+                     # print_json = False,
+                     document_length=90000,
+                     sentence_length=100,
+                     print_json = True,
+                     **kwargs):
     silent=True
     start_time = time.time()
     speed_assessment = []#storing the information used for speed assessment
@@ -83,7 +89,7 @@ def CoreNLP_annotate(config_filename,inputFilename,
     if errorFound:
         return filesToOpen
 
-    # check avaialable memory
+    # check available memory
     IO_libraries_util.check_avaialable_memory('Stanford CoreNLP')
 
     IO_user_interface_util.timed_alert(GUI_util.window, 3000, 'Analysis start', 'Started running Stanford CoreNLP ' + str(annotator_params) + ' annotator at', True, "You can follow CoreNLP annotator in command line.")
@@ -116,11 +122,12 @@ def CoreNLP_annotate(config_filename,inputFilename,
             date_position_var = value
 
     produce_split_files=False
-    
+
     params_option = {
         'tokenize': {'annotators':['tokenize']},
         'ssplit': {'annotators':['tokenize', 'ssplit']},
         'MWT': {'annotators': ['tokenize','ssplit','mwt']},
+        'Lemma': {'annotators': ['lemma']},
         'POS': {'annotators': ['tokenize','ssplit','pos','lemma']},
         'All POS':{'annotators': ['tokenize','ssplit','pos','lemma']},
         'DepRel': {'annotators': ['parse']},
@@ -136,8 +143,10 @@ def CoreNLP_annotate(config_filename,inputFilename,
         'parser (pcfg)':{"annotators": ['tokenize','ssplit','pos','lemma','ner', 'parse','regexner']},
         'parser (nn)' :{"annotators": ['tokenize','ssplit','pos','lemma','ner','depparse','regexner']}
     }
+
     routine_option = {
         'sentiment': process_json_sentiment,
+        'Lemma': process_json_lemma,
         'POS':process_json_postag,
         'All POS':process_json_all_postag,
         'NER': process_json_ner,
@@ -154,21 +163,22 @@ def CoreNLP_annotate(config_filename,inputFilename,
     }
     #@ change coref-text to coref, change coref-spreadsheet to gender@
     output_format_option = {
+        'Lemma': ["ID", "Form", "Lemma", "Record ID", "Sentence ID", "Document ID", "Document"],
         'POS':[['Verbs'],['Nouns']],
+        'All POS':["ID", "Form", "POStag", "Record ID", "Sentence ID", "Document ID", "Document"],
         'NER': ['Word', 'NER Value', 'Sentence ID', 'Sentence', 'tokenBegin', 'tokenEnd', 'Document ID','Document'],
         # TODO NER with date for dynamic GIS; modified below
         # 'NER': ['Word', 'NER Value', 'Sentence ID', 'Sentence', 'tokenBegin', 'tokenEnd', 'Document ID','Document', 'Date'],
         'sentiment': ['Document ID', 'Document','Sentence ID', 'Sentence', 'Sentiment score', 'Sentiment label'],
-        'All POS':["ID", "Form", "Lemma", "POStag", "Record ID", "Sentence ID", "Document ID", "Document"],
         'DepRel': ["ID", "Form", "Head", "DepRel", "Record ID", "Sentence ID", "Document ID", "Document"],
-        'quote': ['Document ID', 'Document', 'Sentence ID', 'Sentence', 'Number of Quotes'],
+        'quote': ['Document ID', 'Document', 'Sentence ID', 'Sentence', 'Number of Quotes', 'Speakers'],
         'coref': 'text',
         'gender':['Word', 'Gender', 'Sentence','Sentence ID', 'Document ID', 'Document'],
         'normalized-date':["Word", "Normalized date", "tid","Information","Sentence ID", "Sentence", "Document ID", "Document"],
-        #  Document ID, Sentence ID, Document, S, V, O/A, Sentence
+        #  Document ID, Sentence ID, Document, S, V, O, Sentence
         # Dec. 21
-        'SVO':['Document ID', 'Sentence ID', 'Document', 'S', 'V', 'O/A', "NEGATION","LOCATION",'PERSON','TIME','TIME_STAMP','Sentence'],
-        'OpenIE':['Document ID', 'Sentence ID', 'Document', 'S', 'V', 'O/A', 'Sentence'],
+        'SVO':['Document ID', 'Sentence ID', 'Document', 'S', 'V', 'O', "Negation","Location",'Person','Time','Time stamp','Sentence'],
+        'OpenIE':['Document ID', 'Sentence ID', 'Document', 'S', 'V', 'O', 'Sentence'],
         'parser (pcfg)':["ID", "Form", "Lemma", "POStag", "NER", "Head", "DepRel", "Clause Tag", "Record ID", "Sentence ID", "Document ID", "Document"],
         'parser (nn)':["ID", "Form", "Lemma", "POStag", "NER", "Head", "DepRel", "Clause Tag", "Record ID", "Sentence ID", "Document ID", "Document"]
     }
@@ -244,8 +254,15 @@ def CoreNLP_annotate(config_filename,inputFilename,
         run_output = []
         POS_WordNet=False
 
-    # params = {'annotators':param_string}
-    params = {'annotators':param_string, 'parse.model': 'edu/stanford/nlp/models/lexparser/englishPCFG.ser.gz','outputFormat': 'json', 'outputDirectory': outputDir, 'replaceExtension': True}
+    params = {'annotators':param_string,
+                'parse.model': 'edu/stanford/nlp/models/lexparser/englishPCFG.ser.gz',
+                'outputFormat': 'json',
+                'outputDirectory': outputDir,
+                'replaceExtension': True,
+                'parse.maxlen': str(sentence_length),
+                'ner.maxlen': str(sentence_length),
+                'pos.maxlen': str(sentence_length)}
+
     if DoCleanXML:
         params['annotators'] = params['annotators'] + ',cleanXML'
         param_string_NN = param_string_NN + ',cleanXML'
@@ -255,20 +272,25 @@ def CoreNLP_annotate(config_filename,inputFilename,
         # mx is the same as Xmx and refers to maximum Java heap size
         CoreNLP_nlp = subprocess.Popen(
             ['java', '-mx' + str(memory_var) + "g", '-cp', os.path.join(CoreNLPdir, '*'),
-             'edu.stanford.nlp.pipeline.StanfordCoreNLPServer', '-timeout', '999999'])
+             'edu.stanford.nlp.pipeline.StanfordCoreNLPServer', '-parse.maxlen' + str(sentence_length), '-timeout', '999999'])
     else:
         CoreNLP_nlp = subprocess.Popen(
-            ['java', '-mx' + str(memory_var) + "g", '-d64', '-cp', os.path.join(CoreNLPdir, '*'),
-             'edu.stanford.nlp.pipeline.StanfordCoreNLPServer', '-timeout', '999999'])
+            ['java', '-mx' + str(memory_var) + "g", '-d64', '-cp',  os.path.join(CoreNLPdir, '*'),
+             'edu.stanford.nlp.pipeline.StanfordCoreNLPServer', '-parse.maxlen' + str(sentence_length),'-timeout', '999999'])
 
     time.sleep(5)
 
+    if 'POS' in str(annotator_params) or 'NER' in str(annotator_params):
+        reminders_util.checkReminder(config_filename,
+            reminders_util.title_options_CoreNLP_POS_NER_maxlen,
+            reminders_util.message_CoreNLP_POS_NER_maxlen,
+            True)
 
     # annotating each input file
     docID=0
     recordID = 0
     filesError=[]
-    json = True
+    # json = True
     errorFound=False
     total_length = 0
     # record the time consumption before annotating text in each file
@@ -279,7 +301,7 @@ def CoreNLP_annotate(config_filename,inputFilename,
         sentenceID = 0
         # if the file is too long, it needs splitting to allow processing by the Stanford CoreNLP
         #   which has a maximum 100,000 characters doc size limit
-        split_file = file_splitter_ByLength_util.splitDocument_byLength(GUI_util.window,config_filename,docName)
+        split_file = file_splitter_ByLength_util.splitDocument_byLength(GUI_util.window,config_filename,docName,'',document_length)
         for doc in split_file:
             annotated_length = 0#the number of tokens
             # doc_start_time = time.time()
@@ -315,6 +337,14 @@ def CoreNLP_annotate(config_filename,inputFilename,
                 speed_assessment.append(
                     [docID, IO_csv_util.dressFilenameForCSVHyperlink(doc), annotator_time_elapsed, file_length,
                      param_string, param_number])
+                #print out the json output of CoreNLP to a txt file
+                if print_json:
+                    jsonFilename = IO_files_util.generate_output_file_name(docName, inputDir, outputDir, '.txt', 'CoreNLP_json_output')
+                    with open(jsonFilename, "a+", encoding='utf-8', errors='ignore') as json_out:
+                        json.dump(CoreNLP_output, json_out, indent=4)
+                    # no need to open the Json file
+                    # if jsonFilename not in filesToOpen:
+                    #     filesToOpen.append(jsonFilename)
             else: CoreNLP_output = ""
 
             # routine_list contains all annotators
@@ -342,18 +372,25 @@ def CoreNLP_annotate(config_filename,inputFilename,
                     speed_assessment.append(
                         [docID, IO_csv_util.dressFilenameForCSVHyperlink(doc), NN_time_elapsed, file_length,
                          param_string_NN, param_number_NN])
-     
+                    #print out the json output of CoreNLP (model: neural network) to a txt file
+                    if print_json:
+                        jsonFilename = IO_files_util.generate_output_file_name(docName, inputDir, outputDir, '.txt', 'CoreNLP_json_output_NN')
+                        with open(jsonFilename, "a+", encoding='utf-8', errors='ignore') as json_out_nn:
+                            json.dump(CoreNLP_output, json_out_nn, indent=4)
+                        # no need to open the Json file
+                        # if jsonFilename not in filesToOpen:
+                        #     filesToOpen.append(jsonFilename)
 
                 #generating output from json file for specific annotators
                 if "parser" in annotator_chosen:
                     if "pcfg" in annotator_chosen:
-                        sub_result, recordID = routine(docID, docName, sentenceID, recordID, True,CoreNLP_output, **kwargs)
+                        sub_result, recordID = routine(config_filename, docID, docName, sentenceID, recordID, True,CoreNLP_output, **kwargs)
                     else:
-                        sub_result, recordID = routine(docID, docName, sentenceID, recordID, False,CoreNLP_output, **kwargs)
-                elif "DepRel" in annotator_chosen or "All POS" in annotator_chosen:
-                     sub_result, recordID = routine(docID, docName, sentenceID, recordID, CoreNLP_output, **kwargs)
+                        sub_result, recordID = routine(config_filename, docID, docName, sentenceID, recordID, False,CoreNLP_output, **kwargs)
+                elif "DepRel" in annotator_chosen or "All POS" in annotator_chosen or "Lemma" in annotator_chosen:
+                     sub_result, recordID = routine(config_filename,docID, docName, sentenceID, recordID, CoreNLP_output, **kwargs)
                 else:
-                    sub_result = routine(docID, docName, sentenceID, CoreNLP_output, **kwargs)
+                    sub_result = routine(config_filename,docID, docName, sentenceID, CoreNLP_output, **kwargs)
                 
                 # sentenceID = new_sentenceID
                 
@@ -361,7 +398,7 @@ def CoreNLP_annotate(config_filename,inputFilename,
                     outputFilename = IO_files_util.generate_output_file_name(docName, inputDir, outputDir, '.txt', 'CoreNLP_'+annotator_chosen)
                     with open(outputFilename, "a+", encoding='utf-8', errors='ignore') as text_file:
                         if processing_doc != docTitle:
-                            text_file.write("\n<@#" + docTitle + "@#>\n")
+                            text_file.write("\n<@#" + docTitle + "#@>\n")
                             processing_doc = docTitle
                         text_file.write(sub_result)
                     if outputFilename not in filesToOpen: 
@@ -409,7 +446,7 @@ def CoreNLP_annotate(config_filename,inputFilename,
         else: # single, merged output
             # generate output file name
             if annotator_chosen == 'NER':
-                print("Annotator: NER")
+                print("Stanford CoreNLP annotator: NER")
                 ner = '_'.join(kwargs['NERs'])
                 outputFilename_tag=str(ner)
                 if ner=='CITY_STATE_OR_PROVINCE_COUNTRY':
@@ -493,6 +530,21 @@ def CoreNLP_annotate(config_filename,inputFilename,
     return filesToOpen
 
 
+def check_sentence_length(sentence_length, sentenceID, config_filename):
+    # WARNING for sentences with > 100 tokens
+    if sentence_length > 100:
+        order = "th"
+        if sentenceID % 10 == 1:
+            order = "st"
+        elif sentenceID % 10 == 2:
+            order = "nd"
+        elif sentenceID % 10 == 3:
+            order = "rd"
+        print("Warning: The", sentenceID, order, "sentence has " + str(sentence_length) + " words, more than the 100 max recommended by CoreNLP for best performance.")
+        reminders_util.checkReminder(config_filename, reminders_util.title_options_CoreNLP_sentence_length,
+                                     reminders_util.message_CoreNLP_sentence_length, True)
+
+
 def date_in_filename(document, **kwargs):
     extract_date_from_filename_var = False
     date_format = ''
@@ -515,7 +567,7 @@ def date_in_filename(document, **kwargs):
     return date_str
 
 # ["Word", "Normalized date", "tid","tense","information","Sentence ID", "Sentence", "Document ID", "Document"],
-def process_json_normalized_date(documentID, document, sentenceID,json, **kwargs):
+def process_json_normalized_date(config_filename,documentID, document, sentenceID,json, **kwargs):
     print("   Processing Json output file for NER NORMALIZED DATE annotator")
     extract_date_from_filename_var = False
 
@@ -600,6 +652,8 @@ def process_json_normalized_date(documentID, document, sentenceID,json, **kwargs
                     #tense = ''
                     info = ''
 
+        check_sentence_length(len(sentence['tokens']), sentenceID, config_filename)
+
     return result
 
 # def date_get_tense(norm_date):
@@ -643,7 +697,7 @@ def date_get_info(norm_date):
     #     tense = "OTHER"
     return tense
 
-def process_json_ner(documentID, document, sentenceID, json, **kwargs):
+def process_json_ner(config_filename,documentID, document, sentenceID, json, **kwargs):
     print("   Processing Json output file for NER annotator")
     # establish the kwarg local vars
     extract_date_from_text_var = False
@@ -688,8 +742,10 @@ def process_json_ner(documentID, document, sentenceID, json, **kwargs):
                     complete_sent = complete_sent + token['originalText']
                 else:
                     complete_sent = complete_sent + ' ' + token['originalText']
-        # sentenceID = sentence['index'] + 1
-        sentenceID = sentenceID + 1
+        # TODO to be checked; formerly commented out but then the Sentence ID field was always displayed as 0
+        sentenceID = sentence['index'] + 1
+        check_sentence_length(len(sentence['tokens']), sentenceID, config_filename)
+
         for ner in sentence['entitymentions']:
             temp = [ner['text'], ner['ner'], sentenceID, complete_sent,  ner['tokenBegin'],
                     ner['tokenEnd'],documentID,
@@ -757,7 +813,7 @@ def process_json_ner(documentID, document, sentenceID, json, **kwargs):
     return result
 
 
-def process_json_sentiment(documentID, document, sentenceID,json, **kwargs):
+def process_json_sentiment(config_filename,documentID, document, sentenceID,json, **kwargs):
     print("   Processing Json output file for SENTIMENT annotator")
     extract_date_from_filename_var = False
     for key, value in kwargs.items():
@@ -768,6 +824,7 @@ def process_json_sentiment(documentID, document, sentenceID,json, **kwargs):
     date_str = date_in_filename(document, **kwargs)
     sentiment = []
     for sentence in json["sentences"]:
+        sentenceID += 1
         text = ""
         for token in sentence['tokens']:
            if token['originalText'] in string.punctuation:
@@ -779,6 +836,9 @@ def process_json_sentiment(documentID, document, sentenceID,json, **kwargs):
                    text = text + ' ' + token['originalText']
         # text = " ".join([["word"] for token in sentence["tokens"]])
         # temp = [documentID, IO_csv_util.dressFilenameForCSVHyperlink(document), sentence['index'] + 1, text, sentence["sentimentValue"], sentence["sentiment"].lower()]
+
+        check_sentence_length(len(sentence['tokens']), sentenceID, config_filename)
+
         if extract_date_from_filename_var:
             temp = [documentID, IO_csv_util.dressFilenameForCSVHyperlink(document), sentence['index'] + 1, text, sentence["sentimentValue"], sentence["sentiment"].lower(), date_str]
         else:
@@ -787,7 +847,7 @@ def process_json_sentiment(documentID, document, sentenceID,json, **kwargs):
     return sentiment
 
 
-def process_json_coref(documentID, document, sentenceID, json, **kwargs):
+def process_json_coref(config_filename,documentID, document, sentenceID, json, **kwargs):
     print("   Processing Json output file for COREF annotator")
 
     def resolve(corenlp_output):
@@ -805,11 +865,12 @@ def process_json_coref(documentID, document, sentenceID, json, **kwargs):
                     corenlp_output['sentences'][target_sentence - 1]['tokens'][target_token]['word'] = antecedent[
                         'text']
 
-    def get_resolved(corenlp_output):
+    def get_resolved(corenlp_output, sentenceID):
         """ get the "resolved" output as String """
         result = ''
         possessives = ['hers', 'his', 'their', 'theirs']
         for sentence in corenlp_output['sentences']:
+            sentenceID += 1
             for token in sentence['tokens']:
                 output_word = token['word']
                 # check lemmas as well as tags for possessive pronouns in case of tagging errors
@@ -817,14 +878,17 @@ def process_json_coref(documentID, document, sentenceID, json, **kwargs):
                     output_word += "'s"  # add the possessive morpheme
                 output_word += token['after']
                 result = result + output_word
+
+            check_sentence_length(len(sentence['tokens']), sentenceID, config_filename)
+
         return result
     resolve(json)
-    output_text = get_resolved(json)
+    output_text = get_resolved(json, sentenceID)
     return output_text
 
 
 # December.10 Yi: Modify process_json_gender to provide one more column(complete sentence)
-def process_json_gender(documentID, document, start_sentenceID, json, **kwargs):
+def process_json_gender(config_filename,documentID, document, start_sentenceID, json, **kwargs):
 
     # print("CoreNLP output: ")
     # pprint.pprint(json)
@@ -851,6 +915,9 @@ def process_json_gender(documentID, document, start_sentenceID, json, **kwargs):
                 else:
                     complete_sent = complete_sent + ' ' + token['originalText']
         sentenceID = sentence['index'] + 1
+
+        check_sentence_length(len(sentence['tokens']), sentenceID, config_filename)
+
         sent_dict[sentenceID] = complete_sent
     # print("Coreference: ")
     # pprint.pprint(json['corefs'])
@@ -872,7 +939,7 @@ def process_json_gender(documentID, document, start_sentenceID, json, **kwargs):
     return sorted(result, key=lambda x:x[3]) # this function did not add each row in order of sentence, so the output needs sorting by sentenceID
 
 
-def process_json_quote(documentID, document, sentenceID, json, **kwargs):
+def process_json_quote(config_filename,documentID, document, sentenceID, json, **kwargs):
     print("   Processing Json output file for QUOTE annotator")
     extract_date_from_filename_var = False
     for key, value in kwargs.items():
@@ -883,15 +950,20 @@ def process_json_quote(documentID, document, sentenceID, json, **kwargs):
     date_str = date_in_filename(document, **kwargs)
     result = []
     quoted_sentences = {}
+    speakers = {}#the speakers of each quote
     for quote in json['quotes']:
         # quote_text = quote['text']
         # to find all sentences with quotes
         sentenceIDs = list(range(quote['beginSentence'], quote['endSentence'] + 1))
         for sent in sentenceIDs:
             quoted_sentences[sent] = quoted_sentences.get(sent, 0) + 1
-
+            if sent in speakers.keys():
+                speakers[sent].append(quote['speaker'])
+            else:
+                speakers[sent] = [quote['speaker']]
     # iterate over those sentence indexes and find its complete sentence
     for quoted_sent_id, number_of_quotes in quoted_sentences.items():
+        sentenceID = quoted_sent_id+1
         sentence_data = json['sentences'][quoted_sent_id]
         # for sentence in CoreNLP_output['sentences']:
         complete_sent = ''
@@ -903,26 +975,22 @@ def process_json_quote(documentID, document, sentenceID, json, **kwargs):
                     complete_sent = complete_sent + token['originalText']
                 else:
                     complete_sent = complete_sent + ' ' + token['originalText']
+            
+        check_sentence_length(len(sentence_data['tokens']), sentenceID, config_filename)
 
-        # sentenceID = quoted_sent_id
-        sentenceID = sentenceID + quoted_sent_id
-        # leave out the filename for now
-        # path, file_name = os.path.split(document)
-        # temp = [documentID, IO_csv_util.dressFilenameForCSVHyperlink(document), sentenceID,
-        #         complete_sent, number_of_quotes]
         if extract_date_from_filename_var:
             temp = [documentID, IO_csv_util.dressFilenameForCSVHyperlink(document), sentenceID,
-                    complete_sent, number_of_quotes, date_str]
+                    complete_sent, number_of_quotes, str(speakers[quoted_sent_id][0]),date_str]
         else:
             temp = [documentID, IO_csv_util.dressFilenameForCSVHyperlink(document), sentenceID,
-                    complete_sent, number_of_quotes]
+                    complete_sent, number_of_quotes, str(speakers[quoted_sent_id][0])]
         result.append(temp)
     return result
 
 
 
 # Dec. 21
-def process_json_SVO_enhanced_dependencies(documentID, document, sentenceID, json, **kwargs):
+def process_json_SVO_enhanced_dependencies(config_filename,documentID, document, sentenceID, json, **kwargs):
     #extract date from file name
     extract_date_from_filename_var = False
     for key, value in kwargs.items():
@@ -944,21 +1012,25 @@ def process_json_SVO_enhanced_dependencies(documentID, document, sentenceID, jso
                     complete_sent = complete_sent + token['originalText']
                 else:
                     complete_sent = complete_sent + ' ' + token['originalText']
-
         sentenceID = sentenceID + 1
-        SVO, L, T, T_S, P, N = SVO_enhanced_dependencies_util.SVO_extraction(sent_data)# main function
+        check_sentence_length(len(sentence['tokens']), sentenceID, config_filename)
+
+        # CYNTHIA: feed another information sentence['entitymentions'] to SVO_extraction to get locations
+        SVO, L, T, T_S, P, N = SVO_enhanced_dependencies_util.SVO_extraction(sent_data, sentence['entitymentions'])# main function
 
         nidx = 0
 
-        for row in SVO: 
+        #CYNTHIA: " ".join(L) => "; ".join(L)
+        # ; added list of locations in SVO output (e.g., Los Angeles; New York; Washington)
+        for row in SVO:
             if extract_date_from_filename_var:
-                SVO_enhanced_dependencies.append([documentID, sentenceID, IO_csv_util.dressFilenameForCSVHyperlink(document), row[0], row[1], row[2], N[nidx]," ".join(L), " ".join(P), " ".join(T), " ".join(T_S),complete_sent, date_str])
+                SVO_enhanced_dependencies.append([documentID, sentenceID, IO_csv_util.dressFilenameForCSVHyperlink(document), row[0], row[1], row[2], N[nidx], "; ".join(L), " ".join(P), " ".join(T), " ".join(T_S),complete_sent, date_str])
             else:
-                SVO_enhanced_dependencies.append([documentID, sentenceID, IO_csv_util.dressFilenameForCSVHyperlink(document), row[0], row[1], row[2], N[nidx], " ".join(L), " ".join(P), " ".join(T), " ".join(T_S),complete_sent])
+                SVO_enhanced_dependencies.append([documentID, sentenceID, IO_csv_util.dressFilenameForCSVHyperlink(document), row[0], row[1], row[2], N[nidx], "; ".join(L), " ".join(P), " ".join(T), " ".join(T_S),complete_sent])
             nidx += 1
     return SVO_enhanced_dependencies
 
-def process_json_openIE(documentID, document, sentenceID, json, **kwargs):
+def process_json_openIE(config_filename,documentID, document, sentenceID, json, **kwargs):
     extract_date_from_filename_var = False
     for key, value in kwargs.items():
         if key == 'extract_date_from_filename_var' and value == True:
@@ -978,9 +1050,12 @@ def process_json_openIE(documentID, document, sentenceID, json, **kwargs):
                 else:
                     complete_sent = complete_sent + ' ' + token['originalText']
         sentenceID = sentenceID + 1
+
+        check_sentence_length(len(sentence['tokens']), sentenceID, config_filename)
+
         SVOs = []
         for openie in sentence['openie']:
-            # Document ID, Sentence ID, Document, S, V, O/A, Sentence
+            # Document ID, Sentence ID, Document, S, V, O, Sentence
             SVOs.append([openie['subject'],openie['relation'],openie['object']])
         container = []
         for SVO_value in SVOs:
@@ -1007,27 +1082,8 @@ def process_json_openIE(documentID, document, sentenceID, json, **kwargs):
 
     return openIE
 
-def process_json_postag(documentID, document, sentenceID, json, **kwargs):
-    # only processes verbs and nouns
-    Verbs = []
-    Nouns = []
-    for sentence in json['sentences']:
-        # if len(sentence)> 20:
-        #     print("WAY TOO LOONG!")
-        for token in sentence['tokens']:
-            if token['pos'] in ['VB','VBD','VBG','VBN','VBP','VBZ']:
-                Verbs.append(token['lemma'])
-            elif token['pos'] in ['NN','NNP','NNS']:
-                Nouns.append(token['lemma'])
-    return Verbs, Nouns
-
-
-# floor filter: if edit distance is smaller than 5
-# (round-up average length of one English word, check this reference:
-# https://wolfgarbe.medium.com/the-average-word-length-in-english-language-is-4-7-35750344870f)
-# return True, which means the two strings are very similar
-def process_json_all_postag(documentID, document, sentenceID, recordID,json, **kwargs):
-    print("   Processing Json output file for All Postags")
+def process_json_lemma(config_filename, documentID, document, sentenceID, recordID, json, **kwargs):
+    print("   Processing Json output file for Lemma")
     extract_date_from_filename_var = False
     for key, value in kwargs.items():
         if key == 'extract_date_from_filename_var' and value == True:
@@ -1056,6 +1112,72 @@ def process_json_all_postag(documentID, document, sentenceID, recordID,json, **k
             temp.append(row["index"])
             temp.append(row["word"])
             temp.append(row["lemma"])
+            # temp.append(" ")
+            clauseID += 1
+            temp.append(str(recordID))
+            temp.append(str(sentenceID))
+            temp.append(str(documentID))
+            # temp.append(file)
+            temp.append(IO_csv_util.dressFilenameForCSVHyperlink(document))
+            if extract_date_from_filename_var:
+                temp.append(date_str)
+            result.append(temp)
+
+        check_sentence_length(len(tokens), sentenceID, config_filename)
+    return result, recordID
+
+def process_json_postag(config_filename,documentID, document, sentenceID, json, **kwargs):
+    # only processes verbs and nouns
+    Verbs = []
+    Nouns = []
+    for sentence in json['sentences']:
+        sentenceID += 1
+        # if len(sentence)> 20:
+        #     print("WAY TOO LOONG!")
+        for token in sentence['tokens']:
+            if token['pos'] in ['VB','VBD','VBG','VBN','VBP','VBZ']:
+                Verbs.append(token['lemma'])
+            elif token['pos'] in ['NN','NNP','NNS']:
+                Nouns.append(token['lemma'])
+
+        check_sentence_length(len(sentence['tokens']), sentenceID, config_filename)
+
+    return Verbs, Nouns
+
+
+# floor filter: if edit distance is smaller than 5
+# (round-up average length of one English word, check this reference:
+# https://wolfgarbe.medium.com/the-average-word-length-in-english-language-is-4-7-35750344870f)
+# return True, which means the two strings are very similar
+def process_json_all_postag(config_filename,documentID, document, sentenceID, recordID,json, **kwargs):
+    print("   Processing Json output file for All Postags")
+    extract_date_from_filename_var = False
+    for key, value in kwargs.items():
+        if key == 'extract_date_from_filename_var' and value == True:
+            extract_date_from_filename_var = True
+
+    # get date string of this sub file
+    date_str = date_in_filename(document, **kwargs)
+    result = []
+
+    for i in range(len(json["sentences"])):
+        # print("*************")
+        # print("The ", i, "th Sentence in ", document)
+        # print("OutputSentenceID: ", )
+        sentenceID += 1
+        # print("OutputSentenceID: ", sentenceID)
+        #result = []
+
+        clauseID = 0
+        tokens = json["sentences"][i]["tokens"]
+
+        for row in tokens:
+            recordID += 1
+            # if row["ner"]=="DATE":
+            #     print("NER normalized DATE ",row["normalizedNER"])
+            temp = []
+            temp.append(row["index"])
+            temp.append(row["word"])
             temp.append(row["pos"])
             # temp.append(" ")
             clauseID += 1
@@ -1075,9 +1197,11 @@ def process_json_all_postag(documentID, document, sentenceID, recordID,json, **k
         # print("The result after adding the ", sentenceID, "th sentence: ")
         # pprint.pprint(result)
 
+        check_sentence_length(len(tokens), sentenceID, config_filename)
+
     return result, recordID
 
-def process_json_deprel(documentID, document, sentenceID, recordID,json, **kwargs):
+def process_json_deprel(config_filename,documentID, document, sentenceID, recordID,json, **kwargs):
     print("   Processing Json output file for DepRel")
     extract_date_from_filename_var = False
     for key, value in kwargs.items():
@@ -1127,10 +1251,14 @@ def process_json_deprel(documentID, document, sentenceID, recordID,json, **kwarg
             if extract_date_from_filename_var:
                 temp.append(date_str)
             result.append(temp)
+
+        check_sentence_length(len(tokens), sentenceID, config_filename)
+
     return result, recordID
 
-def process_json_parser(documentID, document, sentenceID, recordID, pcfg, json, **kwargs):
+def process_json_parser(config_filename, documentID, document, sentenceID, recordID, pcfg, json, **kwargs):
     print("   Processing Json output file for Parser")
+    old_recordID = recordID
     extract_date_from_filename_var = False
     for key, value in kwargs.items():
         if key == 'extract_date_from_filename_var' and value == True:
@@ -1195,6 +1323,8 @@ def process_json_parser(documentID, document, sentenceID, recordID, pcfg, json, 
             # print(temp)
             # if dateInclude == 1 and dateStr!='DATE ERROR!!!':
             #     temp.append(dateStr)
+
+        check_sentence_length(len(tokens), sentenceID, config_filename)
 
         # print("The result after adding the ", sentenceID, "th sentence: ")
         # pprint.pprint(result)

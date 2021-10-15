@@ -4,7 +4,7 @@ import sys
 
 import requests
 
-import GUI_util
+# import GUI_util
 import IO_libraries_util
 
 # Creates a circular dependent imports
@@ -151,7 +151,7 @@ def trace_checkbox_NoLabel(checkbox_var, checkbox_text, onText, offText):
 def display_logo():
     # Necessary to avoid creating a circular dependent import
     from IO_libraries_util import install_all_packages
-    if install_all_packages(GUI_util.window, "GUI_util", ['tkinter', 'os', 'subprocess', 'PIL']) == False:
+    if install_all_packages(window, "GUI_util", ['tkinter', 'os', 'subprocess', 'PIL']) == False:
         sys.exit(0)
 
     from PIL import Image, ImageTk
@@ -199,8 +199,9 @@ def check_newest_release(current_release: str):
         old_version = True
     if int(current_release_parts[1])<int(GitHub_release_parts[1]):
         old_version = True
-    if int(current_release_parts[2])<int(GitHub_release_parts[2]):
-        old_version = True
+    if int(current_release_parts[0])==int(GitHub_release_parts[0]) and int(current_release_parts[1])==int(GitHub_release_parts[1]):
+        if int(current_release_parts[2])<int(GitHub_release_parts[2]):
+            old_version = True
     if 'Not Found' not in GitHub_newest_release and old_version: #GitHub_newest_release != current_release:
         result = mb.askyesno("NLP Suite Outdated",
                     "You are running NLP Suite release version " + str(current_release) + " an OLD version.\n\nA NEW version of the NLP Suite has been released on GitHub: " + str(GitHub_newest_release) +
@@ -526,7 +527,7 @@ def IO_config_setup_full (window, y_multiplier_integer):
         openDirectory_button.place(x=GUI_IO_util.get_open_file_directory_coordinate(), y=GUI_IO_util.get_basic_y_coordinate()+GUI_IO_util.get_y_step()*current_y_multiplier_integer4)
 
 def setup_IO_configuration_options(IO_setup_display_brief,y_multiplier_integer,ScriptName):
-    if 'Default' in GUI_util.IO_setup_menu_var.get():
+    if 'Default' in IO_setup_menu_var.get(): # GUI_util.GUI_util.IO_setup_menu_var.get()
         temp_config_filename = 'default-config.txt'
     else:
         temp_config_filename=config_filename
@@ -573,13 +574,17 @@ def GUI_top(config_input_output_options,config_filename, IO_setup_display_brief,
 
         if ScriptName == 'NLP_menu_main':
 
+            release_history_button = tk.Button(window, text='Release history', width=13, height=1, foreground="red",
+                                    command=lambda: GUI_IO_util.release_history())
+            y_multiplier_integer = GUI_IO_util.placeWidget(GUI_IO_util.get_labels_x_coordinate()+100, 0,
+                                                           release_history_button, True)
             team_button = tk.Button(window, text='NLP Suite team', width=13, height=1, foreground="red",
-                                    command=lambda: GUI_IO_util.list_team(window, config_filename))
-            y_multiplier_integer = GUI_IO_util.placeWidget(GUI_IO_util.get_entry_box_x_coordinate(), 0,
+                                    command=lambda: GUI_IO_util.list_team())
+            y_multiplier_integer = GUI_IO_util.placeWidget(GUI_IO_util.get_labels_x_coordinate()+350, 0,
                                                            team_button, True)
             cite_button = tk.Button(window, text='How to cite', width=13, height=1, foreground="red",
-                                    command=lambda: GUI_IO_util.cite_NLP(window, config_filename))
-            y_multiplier_integer = GUI_IO_util.placeWidget(GUI_IO_util.get_entry_box_x_coordinate() + 150, 0,
+                                    command=lambda: GUI_IO_util.cite_NLP())
+            y_multiplier_integer = GUI_IO_util.placeWidget(GUI_IO_util.get_labels_x_coordinate()+600, 0,
                                                            cite_button)
 
     y_multiplier_integer=0
@@ -673,7 +678,10 @@ def GUI_bottom(config_input_output_options,y_multiplier_integer,readMe_command,
     # GUIs that serve only as frontend GUIs for more specialized GUIs should NOT display Open ooutput and Excel tickboxes
     #   that is the case, for instance, in narrative_analysis_main
     #   in this case config_input_output_options = [0, 0, 0, 0, 0, 0]
-    if config_input_output_options!= [0, 0, 0, 0, 0, 0] and ScriptName != 'NLP_menu_main' and ScriptName != "IO_setup_main":
+    if config_input_output_options!= [0, 0, 0, 0, 0, 0] and \
+            ScriptName != 'NLP_menu_main' and \
+            ScriptName != "IO_setup_main" and \
+            ScriptName != "Stanford_CoreNLP_coreference_main":
         #open out csv files widget defined above since it is used earlier
         open_csv_output_label = tk.Checkbutton(window, variable=open_csv_output_checkbox, onvalue=1, offvalue=0, command=lambda: trace_checkbox(open_csv_output_label, open_csv_output_checkbox, "Automatically open output csv file(s)", "Do NOT automatically open output csv file(s)"))
         open_csv_output_label.configure(text="Automatically open output csv file(s)")
@@ -772,7 +780,7 @@ def GUI_bottom(config_input_output_options,y_multiplier_integer,readMe_command,
                                          select_output_file_button, outputFilename, select_output_dir_button,
                                          output_dir_path)[0]
 
-        if 'Default' in GUI_util.IO_setup_menu_var.get():
+        if 'Default' in IO_setup_menu_var.get(): #GUI_util.IO_setup_menu_var.get()
             temp_config_filename = 'default-config.txt'
         else:
             temp_config_filename = config_filename

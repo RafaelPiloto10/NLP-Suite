@@ -171,11 +171,12 @@ pydict = {}
 pydict[""] = ["", 0]  # not available
 # https://stanfordnlp.github.io/CoreNLP/quote.html
 pydict["Stanford CoreNLP"] = ["annotator_main.py", 1]
-pydict["Annotator extractor"] = ["annotator_main.py", 1]
-pydict["Annotator - date (NER normalized date, via CoreNLP)"] = ["Stanford_CoreNLP_main.py", 1]
-pydict["Annotator - gender (male & female names; via CoreNLP and dictionaries)"] = ["annotator_gender_main.py", 1]
-pydict["Annotator - quote (via CoreNLP)"] = ["Stanford_CoreNLP_main.py", 1]
-pydict["Annotator - dictionary, gender, DBpedia, YAGO"] = ["annotator_main.py", 1]
+pydict["CoreNLP annotator - date (NER normalized date)"] = ["Stanford_CoreNLP_main.py", 1]
+pydict["CoreNLP annotator - gender (male & female names; via CoreNLP and dictionaries)"] = ["annotator_gender_main.py", 1]
+pydict["CoreNLP annotator - quote"] = ["Stanford_CoreNLP_main.py", 1]
+pydict["CoreNLP annotator - coreference (pronominal)"] = ["Stanford_CoreNLP_coreference_main.py", 1]
+pydict["HTML annotator - dictionary, gender, DBpedia, YAGO"] = ["annotator_main.py", 1]
+pydict["HTML annotator extractor"] = ["annotator_main.py", 1]
 pydict["Annotator - hedge/uncertainty"] = ["", 0]
 pydict["CoNLL table analyzer - Search the CoNLL table"] = ["CoNLL_table_analyzer_main.py", 1]
 pydict["CoNLL table analyzer - Clause, noun, verb, function words frequencies"] = ["CoNLL_table_analyzer_main.py", 1]
@@ -189,6 +190,8 @@ pydict["File checker (file name)"] = ["file_manager_main.py", 1]
 pydict["File cleaner (Change to ASCII non-ASCII apostrophes & quotes and % to percent)"] = ["file_checker_converter_cleaner_main.py", 1]
 pydict["File cleaner (Find & Replace string)"] = ["file_checker_converter_cleaner_main.py", 1]
 pydict["File cleaner (Remove blank lines from txt file(s))"] = ["file_checker_converter_cleaner_main.py", 1]
+pydict["File cleaner (Add full stop (.) at the end of paragraphs without end-of-paragraph punctuation)"] = ["file_checker_converter_cleaner_main.py", 1]
+pydict["File cleaner (Pronominal resolution via CoreNLP)"] = ["Stanford_CoreNLP_coreference_main.py", 1]
 pydict["File classifier (dumb classifier via embedded date) (file name)"] = ["file_filename_checker_main.py", 1]
 pydict["File finder (file name)"] = ["file_manager_main.py", 1]
 pydict["File finder (file content for words/collocations)"] = ["file_finder_byWord_main.py", 1]
@@ -196,10 +199,11 @@ pydict["File-type converter (csv, docx, pdf, rtf --> txt)"] = ["file_checker_con
 pydict["File matcher (file name)"] = ["file_matcher_main.py", 1]
 pydict["File merger (file content)"] = ["file_merger_main.py", 1]
 pydict["File splitter (file content)"] = ["file_splitter_main.py", 1]
+pydict["File splitter (file name)"] = ["file_splitter_main.py", 1]
 pydict["File manager (List, Rename, Copy, Move, Delete, Count)"] = ["file_manager_main.py", 1]
 pydict["Find non-related documents"] = ["social_science_research_main.py", 1]
 pydict["Excel charts"] = ["Excel_charts_main.py", 1]
-pydict["Network graphs (Gephi)"] = ["", 0]  # not available
+pydict["Network graphs (Gephi)"] = ["visualization_main.py", 1]  # ["", 0] not available
 pydict["Geographic maps: Geocoding & maps"] = ["GIS_main.py", 1]
 pydict["Geographic maps: Google Earth Pro"] = ["GIS_Google_Earth_main.py", 1]
 pydict["Geographic maps: From texts to maps"] = ["GIS_main.py", 1]
@@ -356,6 +360,7 @@ file_handling_menu = tk.OptionMenu(window, data_file_handling_tools_var,
                                    'File matcher (file name)',
                                    'File merger (file content)',
                                    'File splitter (file content)',
+                                   'File splitter (file name)',
                                    'File manager (List, Rename, Copy, Move, Delete, Count)',
                                    'SQL database (via SQLite)'
                                    )
@@ -375,15 +380,18 @@ pre_processing_menu = tk.OptionMenu(window, pre_processing_tools_var,
                                     'File cleaner (Change to ASCII non-ASCII apostrophes & quotes and % to percent)',
                                     'File cleaner (Find & Replace string)',
                                     'File cleaner (Remove blank lines from txt file(s))',
+                                    'File cleaner (Add full stop (.) at the end of paragraphs without end-of-paragraph punctuation)',
+                                    'File cleaner (Pronominal resolution via CoreNLP)',
                                     'File finder (file name)',
                                     'File finder (file content for words/collocations)',
                                     'File-type converter (csv, docx, pdf, rtf --> txt)',
                                     'File merger (file content)',
                                     'File splitter (file content)',
-                                    'Annotator - date (NER normalized date, via CoreNLP)',
-                                    'Annotator - gender (male & female names; via CoreNLP and dictionaries)',
-                                    'Annotator - quote (via CoreNLP)',
-                                    'Co-Reference PRONOMINAL resolution (via Stanford CoreNLP)',
+                                    'File splitter (file name)',
+                                    # 'CoreNLP annotator - date (NER normalized date)',
+                                    # 'CoreNLP annotator - gender (male & female names; via CoreNLP and dictionaries)',
+                                    # 'CoreNLP annotator - quote',
+                                    # 'CoreNLP Co-Reference PRONOMINAL resolution',
                                     'Find non-related documents',
                                     'Language detection',
                                     'Newspaper article/Document titles',
@@ -420,7 +428,7 @@ visualization_menu = tk.OptionMenu(window, visualization_tools_var,
                                    'Geographic maps: Geocoding & maps',
                                    'Geographic maps: Google Earth Pro',
                                    'Geographic distances between locations',
-                                   'Annotator - dictionary, gender, DBpedia, YAGO',
+                                   'HTML annotator - dictionary, gender, DBpedia, YAGO',
                                    'Network graphs (Gephi)',
                                    'Sentence visualization: Dependency tree viewer (png graphs)',
                                    'Word clouds')
@@ -471,12 +479,13 @@ corpus_document_tools_menu = tk.OptionMenu(window, corpus_document_tools_var,
                                            'Stanford CoreNLP',
                                            'CoNLL table analyzer - Search the CoNLL table',
                                            'CoNLL table analyzer - Clause, noun, verb, function words frequencies',
-                                           'Annotator - date (NER normalized date, via CoreNLP)',
-                                           'Annotator - gender (male & female names; via CoreNLP and dictionaries)',
-                                           'Annotator - quote (via CoreNLP)',
-                                           'Annotator - dictionary, gender, DBpedia, YAGO',
+                                           'CoreNLP annotator - date (NER normalized date)',
+                                           'CoreNLP annotator - gender (male & female names; via CoreNLP and dictionaries)',
+                                           'CoreNLP annotator - quote',
+                                           'CoreNLP annotator - coreference (pronominal)',
+                                           'HTML annotator - dictionary, gender, DBpedia, YAGO',
+                                           'HTML annotator extractor',
                                            'Annotator - hedge/uncertainty',
-                                           'Annotator extractor',
                                            'Narrative analysis',
                                            'Style analysis',
                                            'Sentiment analysis',

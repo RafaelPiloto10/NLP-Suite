@@ -302,18 +302,38 @@ def compute_corpus_statistics(window,inputFilename,inputDir,outputDir,openOutput
         IO_user_interface_util.timed_alert(GUI_util.window, 2000, 'Analysis end', 'Finished running corpus statistics at', True)
 
         if createExcelCharts==True:
-            columns_to_be_plotted=[[1,3],[1,4]]
-            hover_label=['Document','Document']
+
+            columns_to_be_plotted=[[1,3]]
+            hover_label=['Document']
             inputFilename=outputFilenameCSV
             Excel_outputFilename = Excel_util.run_all(columns_to_be_plotted, inputFilename, outputDir,
                                                       outputFileLabel='',
                                                       chart_type_list=["bar"],
                                                       # chart_title='Corpus statistics\nCorpus directory: '+inputDir,
-                                                      chart_title='Corpus Statistics: Frequency of Sentences & Words by Document',
+                                                      chart_title='Corpus Statistics: Frequency of Sentences by Document',
                                                       column_xAxis_label_var='Document',
                                                       hover_info_column_list=hover_label)
             if Excel_outputFilename != "":
-                filesToOpen.append(Excel_outputFilename)
+                # rename output file or it will be overwritten by the next chart
+                Excel_outputFilename_new=Excel_outputFilename[:-5]+'_sent.xlsm'
+                os.rename(Excel_outputFilename, Excel_outputFilename_new)
+                filesToOpen.append(Excel_outputFilename_new)
+
+            columns_to_be_plotted=[[1,4]]
+            hover_label=['Document']
+            inputFilename=outputFilenameCSV
+            Excel_outputFilename = Excel_util.run_all(columns_to_be_plotted, inputFilename, outputDir,
+                                                      outputFileLabel='',
+                                                      chart_type_list=["bar"],
+                                                      # chart_title='Corpus statistics\nCorpus directory: '+inputDir,
+                                                      chart_title='Corpus Statistics: Frequency of Words by Document',
+                                                      column_xAxis_label_var='Document',
+                                                      hover_info_column_list=hover_label)
+            if Excel_outputFilename != "":
+                # rename output file or it will be overwritten by the next chart
+                Excel_outputFilename_new=Excel_outputFilename[:-5]+'_word.xlsm'
+                os.rename(Excel_outputFilename, Excel_outputFilename_new)
+                filesToOpen.append(Excel_outputFilename_new)
 
         # TODO
         #   we should create 10 classes of values by distance to the median of
@@ -348,6 +368,11 @@ def compute_character_word_ngrams(window,inputFilename,inputDir,outputDir,ngrams
     if inputFilename=='' and inputDir=='':
         mb.showwarning(title='Input error', message='No input file or input directory have been specified.\n\nThe function will exit.\n\nPlease, enter the required input options and try again.')
         return
+
+    IO_user_interface_util.timed_alert(GUI_util.window, 3000, 'N-Grams start',
+                                       'Started running n-grams at', True,
+                                       'You can follow the script in command line.')
+
     files = IO_files_util.getFileList(inputFilename, inputDir, '.txt')
     nFile=len(files)
     if nFile==0:
@@ -414,14 +439,16 @@ def compute_character_word_ngrams(window,inputFilename,inputDir,outputDir,ngrams
             else:
                 three_gram += (f[2][1:])
         generalList = [one_gram, two_gram, three_gram]
-    if ngramsNumber>3:
-        four_gram = []
-        for index, f in enumerate(container):
-            if index == 0:
-                four_gram += (f[3])
-            else:
-                four_gram += (f[3][1:])
-        generalList = [one_gram, two_gram, three_gram, four_gram]
+
+    # stop at 3; no point going above
+    # if ngramsNumber>3:
+    #     four_gram = []
+    #     for index, f in enumerate(container):
+    #         if index == 0:
+    #             four_gram += (f[3])
+    #         else:
+    #             four_gram += (f[3][1:])
+    #     generalList = [one_gram, two_gram, three_gram, four_gram]
 
     result=True
     # n-grams
@@ -477,6 +504,9 @@ def compute_character_word_ngrams(window,inputFilename,inputDir,outputDir,ngrams
                 # chart_type_list=["bar"], chart_title=chartTitle + str(index+1) + '-grams', column_xAxis_label_var='', column_yAxis_label_var='Frequency', outputExtension = '.xlsm', label1='n-grams_'+str(index+1)+'_'+fn,label2='bar',label3='chart',label4='',label5='', useTime=False,disable_suffix=True,  count_var=0, column_yAxis_field_list = [], reverse_column_position_for_series_label=False , series_label_list=[str(index+1)+'-grams'], second_y_var=0, second_yAxis_label='', hover_info_column_list=hover_label)
                 # if excel_outputFilename != "":
                 #     filesToOpen.append(excel_outputFilename)
+
+    IO_user_interface_util.timed_alert(GUI_util.window, 3000, 'N-Grams end',
+                        'Finished running n-grams at', True)
 
     if len(inputDir) != 0:
         mb.showwarning(title='Warning', message='The output filename generated by N-grams is the name of the directory processed in input, rather than any individual file in the directory.\n\nThe output csv file includes all ' + str(nFile) + ' files in the input directory processed by N-grams.')
@@ -647,6 +677,8 @@ def get_ngramlist(inputFilename,ngramsNumber=4, wordgram=1, excludePunctuation=F
 def tokenize(s):
     tokens = re.split(r"[^0-9A-Za-z\-'_]+", s)
     return tokens
+
+# measures lexical diversity
 # see code in cophi https://github.com/cophi-wue/cophi-toolbox
 # code from https://gist.github.com/magnusnissel/d9521cb78b9ae0b2c7d6#file-lexical_diversity_yule-py
 def get_yules_k_i(s):

@@ -2,12 +2,8 @@
 #edited by Cynthia Dong
 
 import sys
-
-import GUI_IO_util
-import IO_files_util
 import GUI_util
 import IO_libraries_util
-import IO_user_interface_util
 
 if IO_libraries_util.install_all_packages(GUI_util.window,"utf8_compliance_util",['os','re','tkinter','chardet'])==False:
     sys.exit(0)
@@ -18,6 +14,9 @@ import tkinter as tk
 import tkinter.messagebox as mb
 import chardet
 import IO_csv_util
+
+import IO_files_util
+import IO_user_interface_util
 
 # to detect encoding could use chardet (https://pypi.org/project/chardet/)
 # pip install chardet
@@ -97,6 +96,8 @@ def check_utf8_compliance(window,inputFilename,inputDir,outputDir,openOutputFile
     if len(inputDocs) == 0:
         mb.showwarning(title='Input error', message='There are no files of type txt in the selected input directory to be checked for utf-8 compliance.\n\nPlease, select a different directory (or file) and try again.')
         return
+    IO_user_interface_util.timed_alert(GUI_util.window, 2000, 'Analysis start',
+                                       'Started running utf8 compliance test at', True)
     nonUtf8CompliantNumber=0
     numberOfDocs=len(inputDocs)
     nonUtf8CompliantList=[['Document ID','Document','Line number', 'Line text', 'Non utf-8 Character Position','Non utf-8 Character']]
@@ -139,3 +140,47 @@ def check_utf8_compliance(window,inputFilename,inputDir,outputDir,openOutputFile
             else:
                 tk.messagebox.showinfo("Warning", "All " + str(numberOfDocs) + " files in the directory\n\n" + inputDir + "\n\nare utf-8 compliant.")
 
+def check_empty_file(inputFilename, inputDir):
+    # collecting input txt files
+    inputDocs = IO_files_util.getFileList(inputFilename, inputDir, fileType='.txt')
+    nDocs = len(inputDocs)
+    docID = 0
+    if nDocs == 0:
+        return
+
+    # DOCUMENTS WITH FULL STOPS ADDED
+    count = 0
+    docID = 0
+
+    emptyFiles = 0
+    for filename in inputDocs:
+        docID = docID + 1
+        _, tail = os.path.split(filename)
+        print("Processing file " + str(docID) + "/" + str(nDocs) + ' ' + tail)
+        edited = False
+        with open(filename, 'r', encoding='utf-8', errors='ignore') as myfile:
+            # read file into string
+            fulltext = myfile.read()
+            # end method if file is empty
+            if len(fulltext) < 1:
+                emptyFiles = emptyFiles + 1
+                # mb.showerror(title='File empty',
+                #              message='The file ' + filename + ' is empty.')
+                print('   Empty file', tail)
+            myfile.close()
+    if nDocs==1:
+        if emptyFiles == 0:
+            msg='The file "' + tail + '" is not empty'
+        else:
+            msg = 'The file "' + tail + '" is empty'
+    else:
+        if emptyFiles == 0:
+            msg = 'There are no empty files in the directory\n\n'+inputDir
+        else:
+            if emptyFiles == 1:
+                msg = '1 file is empty in the directory\n\n' + inputDir + '\n\nPlease, check the command line/prompt searching for the word "empty."'
+            else:
+                msg = str(emptyFiles) + 'files are empty in the directory\n\n' + inputDir + '\n\nPlease, check the command line/prompt searching for the word "empty."'
+    mb.showerror(title='File empty',
+                         message=msg)
+    return

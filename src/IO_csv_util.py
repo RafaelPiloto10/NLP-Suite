@@ -10,6 +10,7 @@ import csv
 import tkinter.messagebox as mb
 import pandas as pd
 import os
+import IO_csv_util
 
 #if any column header contains just numbers the function will return FALSE
 def csvFile_has_header(file_path):
@@ -134,7 +135,16 @@ def GetNumberOfDocumentsInCSVfile(inputFilename,algorithm,columnHeader='Document
                            message="The selected csv file\n\n" + inputFilename + "\n\ndoes not contain the column header\n\n" + columnHeader + "\n\nThe '" + algorithm + "' algorithm requires in input a csv file with a \'Document ID\' column.\n\nPlease, select a different csv file in input and try again!")
             return None
         columnNumber=get_columnNumber_from_headerValue(headers,columnHeader)
-        maxnum = max(int(column[columnNumber].replace(',', '')) for column in reader)
+
+        val_list = list()
+        for column in reader:
+            try:
+                val_list.append(int(float(column[columnNumber].replace(',', ''))))
+            except:
+                pass
+        maxnum = max(val_list)
+        # the following line would break in the presence of a blank field in column
+        # maxnum = max(int(column[columnNumber].replace(',', '')) for column in reader)
         f.close()
     return maxnum
 
@@ -230,4 +240,28 @@ def undressFilenameForCSVHyperlink(fileName):
     fileName=fileName.replace('=hyperlink("','')
     fileName=fileName.replace('")','')
     return fileName
+
+
+# If Column A is 'Word' (coming from CoreNLP NER annotator), rename to 'Location' in GIS files
+def rename_header(inputFilename, header1, header2):
+    headerFound=False
+    if not inputFilename.endswith('.csv'):
+        return True
+    headers = IO_csv_util.get_csvfile_headers(inputFilename)
+    # temp=None
+    for header in headers:
+        if header2 == header:  # the file already contains the header2
+            return True
+        if header1 == header:
+            ID=get_columnNumber_from_headerValue(headers, header1)
+            # If Column A is 'Word' (coming from CoreNLP NER annotator), rename to 'Location'
+            temp = pd.read_csv(inputFilename)
+            if temp.columns[ID] == header1:
+                temp = temp.rename(columns={header1: header2})
+                temp.to_csv(inputFilename, index=False)
+                headerFound = True
+                break
+    if headerFound==False:
+        mb.showwarning(title="File type error", message='The file\n\n' + inputFilename + "\n\ndoes not contain a header '" + header1 + "' to be converted to '" + header2 + "'.\n\nPlease, check the file and try again.")
+    return temp
 
