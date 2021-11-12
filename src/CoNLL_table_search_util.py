@@ -44,6 +44,27 @@ def find_children(sentence_children, ind_keyword, searchedCoNLLField):
     return list_children, list_children_index
 
 
+def search_deps(token_id_in_sentence, sentence, searchedCoNLLField):
+    '''
+    break the deps column to search each dependencies.
+
+    Parameters
+    ----------
+    token_id_in_sentence
+    sentence
+    searchedCoNLLField
+
+    Returns
+    -------
+
+    '''
+    
+
+
+
+
+
+
 def search_head(token_id_in_sentence, sentence, searchedCoNLLField):
     try:
         token = sentence[int(token_id_in_sentence) - 1]
@@ -310,11 +331,14 @@ def search_related_words2(desired_form, sentence, __field__='FORM', kw_desired_p
         token_id = keyword[0]
         # search head
         head, head_num = search_head(token_id, sentence, __field__)
+        #TODO: change search_head to search_deps which returns a list of heads.
+
         if head != "NO_HEAD":
             list_indices_related_word.append((head_num, 1, keyword))
         # search_children (the tokens whose head is the searched word)
         for child in find_children(sentence, int(token_id), __field__)[1]:
             list_indices_related_word.append((child, 0, keyword))
+
     for keyword in keyword_list:
         token_id = int(keyword[0])
         a, b = search_parsetree_loop_all_related(token_id, sentence, __field__)
@@ -440,9 +464,9 @@ def search_CoNLL_table(list_sentences, form_of_token, _field_='FORM', related_to
                 tok_form = row[2]
             tok_postag = row[3]
             tok_deprel = row[6]
-            tok_Sentence_ID = row[9]
-            tok_Document_ID = row[10]
-            tok_Document = row[11]
+            tok_Sentence_ID = row[10]
+            tok_Document_ID = row[11]
+            tok_Document = row[12]
             token_id = str(tok_Document_ID)[:-2] + str("-" + tok_Sentence_ID)
             # item[8] keyword[1]/SEARCHED TOKEN
             # item[9] keyword[3]/SEARCHED TOKEN POSTAG,

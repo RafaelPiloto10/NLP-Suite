@@ -68,8 +68,8 @@ def sentence_division(list_csv_rows):
         current_sentence = []
 
         for _index_, item in enumerate(list_csv_rows):
-            Sentence_ID = int(item[9])
-            Document_ID = item[10]
+            Sentence_ID = int(item[10])
+            Document_ID = item[11]
             # This includes the last sentence
             if _index_ + 1 == len(list_csv_rows):
                 list_sentences.append(current_sentence)

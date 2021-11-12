@@ -19,7 +19,7 @@ import IO_csv_util
 import IO_user_interface_util
 import Stanford_CoreNLP_tags_util
 import pandas as pd
-from data_manager_main import extract_from_csv
+#from data_manager_main import extract_from_csv
 
 # more imports (e.g., import CoNLL_clause_analysis_util) are called below under separate if statements
 
@@ -203,7 +203,8 @@ def run(inputFilename, outputDir, openOutputFiles, createExcelCharts,
 
         if len(data) <= 1000000:
             try:
-                data = sorted(data, key=lambda x: int(x[8]))
+
+                data = sorted(data, key=lambda x: int(x[9]))
             except:
                 mb.showwarning(title="CoNLLL table ill formed",
                                message="The CoNLL table is ill formed. You may have tinkered with it. Please, rerun the Stanford CoreNLP parser since many scripts rely on the CoNLL table.")
