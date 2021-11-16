@@ -18,6 +18,8 @@ import urllib
 import urllib.parse
 from urllib.request import urlopen
 import ssl
+# pip install pyOpenSSL
+# pip install requests[security]
 import shutil
 
 import IO_user_interface_util
@@ -86,15 +88,18 @@ def DBpedia_annotate(inputFile, inputDir, outputDir, openOutputFiles, annotation
 
     startTime = IO_user_interface_util.timed_alert(GUI_util.window, 2000, 'Analysis start',
                                                    'Started running DBpedia annotator at', True,
-                                                   'You can follow the DBpedia annotator in command line.\n\nAnnotating types: ' + str(
+                                                   '\n\nAnnotating types: ' + str(
                                                        annotationTypes) + '\nConfidence level: ' + str(
-                                                       confidence_level))
+                                                       confidence_level),True)
     print('\n\nAnnotating types: ', annotationTypes, 'with confidence level', str(confidence_level))
 
     sparql = SPARQLWrapper("http://dbpedia.org/sparql")
 
     # this will avoid an SSL certificate error ONLY for a specific url file
     url_certificate = ssl.SSLContext()  # Only for url
+    # this will renew the SSL certificate indefinitely
+    # pip install pyOpenSSL
+    # pip install requests[security]
 
     adjust = '\n\nIf DBpedia fails and returns in command line "The command line is too long", lower the value of the file size using the slider widget and try again.'
     if sys.platform == 'win32':
@@ -231,6 +236,7 @@ def DBpedia_annotate(inputFile, inputDir, outputDir, openOutputFiles, annotation
                     except:
                         continue
                 outfile.close()
+                # remove directory of split files
                 if os.path.exists(splitFilesDir):
                     shutil.rmtree(splitFilesDir)
         j = 0

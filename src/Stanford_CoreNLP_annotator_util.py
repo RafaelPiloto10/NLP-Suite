@@ -72,7 +72,7 @@ def CoreNLP_annotate(config_filename,inputFilename,
                      memory_var,
                      # print_json = False,
                      document_length=90000,
-                     sentence_length=100,
+                     sentence_length=1000, # unless otherwise specified; sentence length limit does not seem to work for parsers only for NER and POS but then it is useless
                      print_json = True,
                      **kwargs):
 
@@ -95,7 +95,7 @@ def CoreNLP_annotate(config_filename,inputFilename,
     # check available memory
     IO_libraries_util.check_avaialable_memory('Stanford CoreNLP')
 
-    startTime=IO_user_interface_util.timed_alert(GUI_util.window, 3000, 'Analysis start', 'Started running Stanford CoreNLP ' + str(annotator_params) + ' annotator at', True, "You can follow CoreNLP annotator in command line.")
+    startTime=IO_user_interface_util.timed_alert(GUI_util.window, 3000, 'Analysis start', 'Started running Stanford CoreNLP ' + str(annotator_params) + ' annotator at', True)
 
     # decide on directory or single file
     if inputDir != '':
@@ -182,7 +182,7 @@ def CoreNLP_annotate(config_filename,inputFilename,
                         "First Reference Sentence ID", "First Reference Sentence", "Pronoun Start ID in Reference Sentence", "Sentence ID", "Sentence", "Document ID", "Document"],
         'gender':['Word', 'Gender', 'Sentence','Sentence ID', 'Document ID', 'Document'],
         'normalized-date':["Word", "Normalized date", "tid","Information","Sentence ID", "Sentence", "Document ID", "Document"],
-        'SVO':['Document ID', 'Sentence ID', 'Document', 'S', 'V', 'O', "Negation","Location",'Person','Time','Time stamp','Sentence'],
+        'SVO':['Document ID', 'Sentence ID', 'Document', 'S', 'V', 'O', "Negation","Location",'Person','Time','Time normalized NER','Sentence'],
         'OpenIE':['Document ID', 'Sentence ID', 'Document', 'S', 'V', 'O', 'Sentence'],
         'parser (pcfg)':["ID", "Form", "Lemma", "POStag", "NER", "Head", "DepRel", "Deps", "Clause Tag", "Record ID", "Sentence ID", "Document ID", "Document"],
         'parser (nn)':["ID", "Form", "Lemma", "POStag", "NER", "Head", "DepRel", "Deps","Clause Tag", "Record ID", "Sentence ID", "Document ID", "Document"]
@@ -276,9 +276,10 @@ def CoreNLP_annotate(config_filename,inputFilename,
     # -d64 to use 64 bits JAVA, normally set to 32 as default; option not recognized in Mac
     if sys.platform == 'darwin':  # Mac OS
         # mx is the same as Xmx and refers to maximum Java heap size
+        # '-props spanish',
         CoreNLP_nlp = subprocess.Popen(
             ['java', '-mx' + str(memory_var) + "g", '-cp', os.path.join(CoreNLPdir, '*'),
-             'edu.stanford.nlp.pipeline.StanfordCoreNLPServer', '-parse.maxlen' + str(sentence_length), '-timeout', '999999'])
+             'edu.stanford.nlp.pipeline.StanfordCoreNLPServer',  '-parse.maxlen' + str(sentence_length), '-timeout', '999999'])
     else:
         CoreNLP_nlp = subprocess.Popen(
             ['java', '-mx' + str(memory_var) + "g", '-d64', '-cp',  os.path.join(CoreNLPdir, '*'),
@@ -308,18 +309,24 @@ def CoreNLP_annotate(config_filename,inputFilename,
     # record the time consumption before annotating text in each file
     processing_doc = ''
     for docName in inputDocs:
-        docTitle = os.path.basename(docName)
         docID = docID + 1
+        head, tail = os.path.split(docName)
+        print("Processing file " + str(docID) + "/" + str(nDocs) + ' ' + tail)
+        docTitle = os.path.basename(docName)
         sentenceID = 0
         # if the file is too long, it needs splitting to allow processing by the Stanford CoreNLP
         #   which has a maximum 100,000 characters doc size limit
         split_file = file_splitter_ByLength_util.splitDocument_byLength(GUI_util.window,config_filename,docName,'',document_length)
+        split_docID = 0
+        nSplitDocs = len(split_file)
         for doc in split_file:
+            split_docID = split_docID + 1
             annotated_length = 0#the number of tokens
             # doc_start_time = time.time()
             model_switch = False
             head, tail = os.path.split(doc)
-            print("Processing file " + str(docID) + "/" + str(nDocs) + ' ' + tail)
+            if docName != doc:
+                print("   Processing split file " + str(split_docID) + "/" + str(nSplitDocs) + ' ' + tail)
             text = open(doc, 'r', encoding='utf-8', errors='ignore').read().replace("\n", " ")
             if "%" in text:
                 reminders_util.checkReminder(config_filename, reminders_util.title_options_CoreNLP_percent,
@@ -404,7 +411,8 @@ def CoreNLP_annotate(config_filename,inputFilename,
                     else:
                         sub_result, recordID = routine(config_filename, docID, docName, sentenceID, recordID, False,CoreNLP_output, **kwargs)
                 elif "All POS" in annotator_chosen or "Lemma" in annotator_chosen:
-                    sub_result, recordID = routine(config_filename,docID, docName, sentenceID, recordID, annotator_chosen, CoreNLP_output, **kwargs)
+                    sub_result, recordID = routine(config_filename, docID, docName, sentenceID, recordID,
+                                               CoreNLP_output, **kwargs)
                 # elif "DepRel" in annotator_chosen or "All POS" in annotator_chosen or "Lemma" in annotator_chosen:
                 #      sub_result, recordID = routine(config_filename,docID, docName, sentenceID, recordID, CoreNLP_output, **kwargs)
                 else:
@@ -442,6 +450,7 @@ def CoreNLP_annotate(config_filename,inputFilename,
     #generate output csv files and write output
     output_start_time = time.time()
     # print("Length of Files to Open after generating output: ", len(filesToOpen))
+    outputFilename_tag = ''
     for run in routine_list:
         annotator_chosen = run[0]
         routine = run[1]
@@ -468,11 +477,21 @@ def CoreNLP_annotate(config_filename,inputFilename,
                 print("Stanford CoreNLP annotator: NER")
                 if len(kwargs['NERs']) == 1:
                     outputFilename_tag = str(kwargs['NERs'][0])
-                elif len(kwargs['NERs']) > 1:
-                    if 'CITY' in str(kwargs['NERs']) or 'STATE_OR_PROVINCE' in str(kwargs['NERs']) or 'COUNTRY' in str(kwargs['NERs']) or 'LOCATION' in str(kwargs['NERs']):
+                elif len(kwargs['NERs'])>10 and len(kwargs['NERs'])<20:
+                    outputFilename_tag = 'MISC'
+                elif len(kwargs['NERs'])>20:
+                    outputFilename_tag = 'ALL_NER'
+                else:
+                    if 'CITY' in str(kwargs['NERs']) and 'STATE_OR_PROVINCE' and str(kwargs['NERs']) and 'COUNTRY' in str(kwargs['NERs']) and 'LOCATION' in str(kwargs['NERs']):
                         outputFilename_tag='LOCATIONS'
-                    else:
-                        outputFilename_tag = 'Multi-tags'
+                    elif 'NUMBER' in str(kwargs['NERs']) and 'ORDINAL' and str(kwargs['NERs']) and 'PERCENT' in str(kwargs['NERs']):
+                        outputFilename_tag = 'NUMBERS'
+                    elif 'PERSON' in str(kwargs['NERs']) and 'ORGANIZATION' in str(kwargs['NERs']):
+                        outputFilename_tag = 'ACTORS'
+                    elif 'DATE' in str(kwargs['NERs']) and 'TIME' in str(kwargs['NERs']) and 'DURATION' in str(kwargs['NERs']) and 'SET' in str(kwargs['NERs']):
+                        outputFilename_tag = 'DATES'
+                    # else:
+                    #     outputFilename_tag = 'Multi-tags'
                 outputFilename = IO_files_util.generate_output_file_name(inputFilename, inputDir, outputDir, '.csv',
                                                                                  'CoreNLP_NER_'+outputFilename_tag)
             elif "parser" in annotator_chosen:#CoNLL
@@ -519,10 +538,12 @@ def CoreNLP_annotate(config_filename,inputFilename,
                     filesToOpen = visualize_Excel_chart(createExcelCharts, filesToVisualize[j], outputDir, filesToOpen,
                                                         [[1, 1]], 'bar',
                                                         'Frequency Distribution of Gender Types', 1, [],
-                                                        'gender_bar','Gender')
+                                                        'gender_types','Gender')
 
-                    filesToOpen=visualize_Excel_chart(createExcelCharts, filesToVisualize[j], outputDir, filesToOpen, [[0, 0]], 'bar',
-                                          'Frequency Distribution of Words by Gender Type', 1, ['Gender'], 'gender_word_bar','')
+                    filesToOpen=visualize_Excel_chart(createExcelCharts, filesToVisualize[j], outputDir, filesToOpen,
+                                                      [[0, 0]], 'bar',
+                                          'Frequency Distribution of Words by Gender Type', 1, ['Gender'], 'gender_words','')
+
                 elif 'quote' in str(file_df_name):
                     filesToOpen = visualize_Excel_chart(createExcelCharts, filesToVisualize[j], outputDir, filesToOpen,
                                                         [[5, 5]], 'bar',
@@ -840,9 +861,9 @@ def process_json_ner(config_filename,documentID, document, sentenceID, json, **k
     result = []
     index = 0
     while index < len(NER):
-        if index == len(NER) - 1:
-            break
         if NER[index][1] == 'CITY':
+            if index == len(NER)-1: # NER[index + 1] would break the code
+                break
             if NER[index + 1][1] == 'STATE_OR_PROVINCE' and NER[index][1] == NER[index + 1][1] and abs(
                     NER[index + 1][4] - NER[index][5]) <= 2:
                 temp = NER[index]
@@ -859,6 +880,8 @@ def process_json_ner(config_filename,documentID, document, sentenceID, json, **k
                 result.append(NER[index])
                 index = index + 1
         elif NER[index][1] == 'STATE_OR_PROVINCE':
+            if index == len(NER)-1: # NER[index + 1] would break the code
+                break
             if NER[index + 1][1] == 'COUNTRY' and NER[index][1] == NER[index + 1][1] and abs(
                     NER[index + 1][4] - NER[index][5]) <= 2:
                 temp = NER[index]
@@ -895,8 +918,6 @@ def process_json_sentiment(config_filename,documentID, document, sentenceID,json
                    text = text + token['originalText']
                else:
                    text = text + ' ' + token['originalText']
-        # text = " ".join([["word"] for token in sentence["tokens"]])
-        # temp = [documentID, IO_csv_util.dressFilenameForCSVHyperlink(document), sentence['index'] + 1, text, sentence["sentimentValue"], sentence["sentiment"].lower()]
 
         check_sentence_length(len(sentence['tokens']), sentenceID, config_filename)
 
@@ -1258,7 +1279,7 @@ def process_json_postag(config_filename,documentID, document, sentenceID, json, 
 # (round-up average length of one English word, check this reference:
 # https://wolfgarbe.medium.com/the-average-word-length-in-english-language-is-4-7-35750344870f)
 # return True, which means the two strings are very similar
-def process_json_all_postag(config_filename,documentID, document, sentenceID, recordID,json, **kwargs):
+def process_json_all_postag(config_filename,documentID, document, sentenceID, recordID, json, **kwargs):
     print("   Processing Json output file for All Postags")
     extract_date_from_filename_var = False
     for key, value in kwargs.items():
@@ -1544,8 +1565,9 @@ def visualize_Excel_chart(createExcelCharts,inputFilename,outputDir,filesToOpen,
                                                   column_xAxis_label_var=column_xAxis_label,
                                                   hover_info_column_list=hover_label,
                                                   count_var=count_var)
-        if len(Excel_outputFilename) > 0:
-            filesToOpen.append(Excel_outputFilename)
+        if Excel_outputFilename!=None:
+            if len(Excel_outputFilename) > 0:
+                filesToOpen.append(Excel_outputFilename)
 
         # by sentence index
         #

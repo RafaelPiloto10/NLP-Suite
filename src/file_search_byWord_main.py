@@ -36,8 +36,8 @@ def run(inputFilename,inputDir, outputDir,
 
     IO_user_interface_util.timed_alert(GUI_util.window, 3000, 'Word/collocation search start',
                         'Started running Word/collocation search at', True,
-                        'SEARCH options: ' + str(search_options_list)+'\nSEARCH words: '+search_keyword_values+'\n\nYou can follow the script in command line.')
-
+                        'SEARCH options: ' + str(search_options_list)+'\nSEARCH words: '+search_keyword_values,
+                                       True, '', True)
 
     outputFile = file_search_byWord_util.run(inputFilename, inputDir, outputDir, search_by_dictionary, search_by_keyword, search_keyword_values, search_options_list)
 
@@ -66,7 +66,7 @@ GUI_util.run_button.configure(command=run_script_command)
 # the GUIs are all setup to run with a brief I/O display or full display (with filename, inputDir, outputDir)
 #   just change the next statement to True or False IO_setup_display_brief=True
 IO_setup_display_brief=True
-GUI_width=1220
+GUI_width=GUI_IO_util.get_GUI_width(3)
 GUI_height=510 # height of GUI with full I/O display
 
 if IO_setup_display_brief:

@@ -73,15 +73,15 @@ def missing_character(CoreNLPdir, input_main_dir_path, input_secondary_dir_path,
 def intruder(CoreNLPdir,input_main_dir_path, output_dir_path, openOutputFiles, createExcelCharts, similarityIndex_Intruder_var):
 	if IO_libraries_util.inputProgramFileCheck('file_find_non_related_documents_util.py') == False:
 		return
-	startTime=IO_user_interface_util.timed_alert(GUI_util.window, 3000, 'Analysis start', 'Started running INTRUDER at', True,
-									   'You can follow INTRUDER in command line.')
+	startTime=IO_user_interface_util.timed_alert(GUI_util.window, 3000, 'Analysis start', 'Started running INTRUDER at',
+												 True, '', True, '', True)
 	# Windows...
 	outputFiles=file_find_non_related_documents_util.main(CoreNLPdir, input_main_dir_path, output_dir_path, openOutputFiles, createExcelCharts, similarityIndex_Intruder_var)
 
 	if outputFiles!='':
 		filesToOpen.extend(outputFiles)
 	# Nothing to plot; only one line in the output csv file
-	IO_user_interface_util.timed_alert(GUI_util.window, 3000, 'Analysis end', 'Finished running INTRUDER at', True, '', True, startTime)
+	IO_user_interface_util.timed_alert(GUI_util.window, 3000, 'Analysis end', 'Finished running INTRUDER at', True, '', True, startTime, True)
 
 
 def ancestor(input_main_dir_path, output_dir_path):
@@ -316,7 +316,7 @@ GUI_util.run_button.configure(command=run_script_command)
 # the GUIs are all setup to run with a brief I/O display or full display (with filename, inputDir, outputDir)
 #   just change the next statement to True or False IO_setup_display_brief=True
 IO_setup_display_brief=False
-GUI_width=1100
+GUI_width=GUI_IO_util.get_GUI_width(3)
 GUI_height=640 # height of GUI with full I/O display
 
 if IO_setup_display_brief:

@@ -8,7 +8,6 @@ import os
 import tkinter as tk
 from tkinter import ttk
 import tkinter.messagebox as mb
-from subprocess import call
 
 import config_util
 import IO_internet_util
@@ -83,8 +82,12 @@ def placeWidget(x_coordinate,y_multiplier_integer,widget_name,sameY=False, cente
         y_multiplier_integer = y_multiplier_integer+1
     return y_multiplier_integer
 
-
 if sys.platform == 'darwin': #Mac OS
+    about_button_x_coordinate = 330 # get_labels_x_coordinate() + 100
+    release_history_button_x_coordinate = 510 # get_labels_x_coordinate() + 100
+    team_button_x_coordinate = 690 # get_labels_x_coordinate() + 100
+    cite_button_x_coordinate = 870 # get_labels_x_coordinate() + 100
+
     help_button_x_coordinate = 70
     labels_x_coordinate = 150  # start point of all labels in the second column (first column after ? HELP)
     labels_x_indented_coordinate = 160
@@ -100,12 +103,21 @@ if sys.platform == 'darwin': #Mac OS
     run_button_x_coordinate = 850
     close_button_x_coordinate = 980
 
+    open_file_button_brief = 700
+    open_inputDir_button_brief = 740
+    open_outputDir_button_brief = 780
+
     # special internal GUI specific values
     SVO_2nd_column = 570
     SVO_2nd_column_top = 450
     SVO_3rd_column_top = 850
 
 else: #windows and anything else
+    about_button_x_coordinate = 230 # get_labels_x_coordinate() + 100
+    release_history_button_x_coordinate = 400 # get_labels_x_coordinate() + 100
+    team_button_x_coordinate = 570 # get_labels_x_coordinate() + 100
+    cite_button_x_coordinate = 740 # get_labels_x_coordinate() + 100
+    help_button_x_coordinate = 70
     help_button_x_coordinate = 50
     labels_x_coordinate = 120  # start point of all labels in the second column (first column after ? HELP)
     labels_x_indented_coordinate = 140
@@ -120,6 +132,9 @@ else: #windows and anything else
     open_reminders_x_coordinate = 550
     run_button_x_coordinate = 840
     close_button_x_coordinate = 960
+    open_file_button_brief = 760
+    open_inputDir_button_brief = 800
+    open_outputDir_button_brief = 840
 
     # special internal GUI specific values
     SVO_2nd_column = 520
@@ -128,6 +143,26 @@ else: #windows and anything else
 
 basic_y_coordinate = 90
 y_step = 40 #the line-by-line increment on the GUI
+
+def get_GUI_width(size_type=1):
+    if sys.platform == 'darwin':  # Mac OS
+        if size_type == 1: # for now we have one basic size
+            return 1400
+        if size_type == 2:
+            return 1400
+        if size_type == 3:
+            return 1400
+        if size_type == 4:
+            return 1400
+    elif sys.platform == 'win32': # for now we have two basic sizes
+        if size_type == 1:
+            return 1100
+        if size_type == 2:
+                return 1200
+        elif size_type==3:
+            return 1300
+        elif size_type==4:
+            return 1300
 
 def get_basic_y_coordinate():
     return basic_y_coordinate
@@ -182,8 +217,7 @@ def exit_window(window,configFilename, ScriptName, config_input_output_options, 
     if ScriptName!='NLP_menu_main' and config_input_output_options != [0, 0, 0, 0, 0, 0]:
         config_util.saveConfig(window,configFilename, configArray)
     window.destroy()
-    exit(0)
-
+    sys.exit(0)
 
 # missingIO is called from GUI_util
 def check_missingIO(window,missingIO,config_filename,IO_setup_display_brief,ScriptName,silent=False):
@@ -215,9 +249,9 @@ def check_missingIO(window,missingIO,config_filename,IO_setup_display_brief,Scri
         mutually_exclusive_msg='The two I/O options - "Input file" and "Input files directory" - are mutually exclusive. You can only select one or the other. In other words, you can choose to work with a sigle file in input or with many files stored in a directory.\n\n'
 
     if len(missingIO)>0:
+        Run_Button_Off = True
         if not silent:
             mb.showwarning(title='Warning', message='The following required INPUT/OUTPUT information is missing in config file ' + config_filename + ':\n\n' + missingIO + '\n\n' + mutually_exclusive_msg + run_button_disabled_msg + 'Please, click on the "' + IO_button_name + '" ' + button + ' at the top of the GUI and enter the required I/O information.')
-            Run_Button_Off=True
     if Run_Button_Off==True:
         run_button_state="disabled"
     else:
@@ -243,30 +277,31 @@ def readme_button(Window, xCoord, yCoord, text_title,text_msg):
         text_title='NLP Suite Help'
     mb.showinfo(title=text_title, message=text_msg)
 
-def dropdown_menu_widget(window,textCaption, lower_bound, upper_bound, default_value):
-    master = tk.Tk()
-    master.focus_force()
 
-    # https://www.geeksforgeeks.org/popup-menu-in-tkinter/
+# creating popup menu in tkinter
 
-    tk.Label(master,width=len(textCaption),text=textCaption).grid(row=0)
-    master.title(textCaption)
+def dropdown_menu_widget(window,textCaption, menu_values, default_value, callback):
 
-    # data_file_handling_tools_var = tk.StringVar()
-    # data_file_handling_tools_menu = ttk.Combobox(window, width=90, textvariable=data_file_handling_tools_var)
-    # data_file_handling_tools_menu['values'] = ['test','test2']
+    class App():
+        def __init__(self,master):
+            top = self.top = Toplevel()
+            top.wm_title(textCaption)
+            self.menuButton = ttk.Combobox(top, width=len(textCaption)+30)
+            self.menuButton['values'] = menu_values
+            self.menuButton.pack()
 
-    def get_value():
-        global val
-        val = s.get()
-        top.destroy()
-        top.update()
+            self.menuButton.grid(row=0, column=1) # , sticky=W)
+            self.callback = callback
 
-    def _delete_window():
-        mb.showwarning(title = "Invalid Operation", message = "Please click OK to save your choice of parameter.")
+            ok_button = tk.Button(self.top, text='OK', command=self.get_value)
+            ok_button.grid(row=0, column=1)
 
-    tk.Button(top, text='OK', command=lambda: get_value()).pack()
-    return val
+        def get_value(self):
+            val = self.menuButton.get()
+            self.top.destroy()
+            callback(val)
+
+    App(window)
 
 def slider_widget(window,textCaption, lower_bound, upper_bound, default_value):
     top = tk.Toplevel(window)
@@ -293,7 +328,7 @@ def slider_widget(window,textCaption, lower_bound, upper_bound, default_value):
 
 # TODO
 # 2 widgets max for now; should allow more, dynamically
-# called by
+# return a list; see comment at end of function
 def enter_value_widget(masterTitle,textCaption,numberOfWidgets=1,defaultValue='',textCaption2='',defaultValue2=''):
     value1=defaultValue
     value2=defaultValue2

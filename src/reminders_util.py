@@ -60,7 +60,7 @@ title_options_WordNet_input_file_button = ['WordNet input file button']
 message_WordNet_input_file_button = 'The Select INPUT file button is disabled (grayed out) when you open WordNet. Different options require either no file or different file types.\n\nPlease, tick a checkbox to activate the button.'
 
 title_options_WordNet_verb_aggregation = ['WordNet VERB aggregation']
-message_WordNet_verb_aggregation = "CAVEAT!\n\nFor VERBS, the aggregated 'stative' category includes the auxiliary 'be' probably making up the vast majority of stative verbs. Similarly, the category 'possession' include the auxiliary 'have' (and 'get'). You may wish to exclude these auxiliary verbs from frequencies."
+message_WordNet_verb_aggregation = "CAVEAT!\n\nFor VERBS, the aggregated 'stative' category includes the auxiliary 'be' probably making up the vast majority of stative verbs. Similarly, the category 'possession' include the auxiliary 'have' (and 'get'). You may wish to exclude these auxiliary verbs from frequencies.\n\nThe WordNet_UP function will automatically compute VERB frequencies with/without auxiliaries and display both Excel charts."
 
 title_options_Mallet_installation = ['Mallet download and installation']
 message_Mallet_installation = 'The Mallet topic modelling tool requires a copy of the FREEWARE Mallet installed on your machine. You can download the FREEWARE Mallet at http://mallet.cs.umass.edu/download.php.\n\nMallet in turn requires a copy of the JAVA development kit installed on your machine.\n\nRead carrefully the Mallet and Java installation TIPS.'
@@ -192,6 +192,21 @@ message_geocoder = 'After the geocoding and mapping is done, please, check caref
 
 title_options_wordclouds = ['Web-based word clouds services']
 message_wordclouds = "After the selected web-based word-clouds service opens up on your browser, you will need to either copy/paste the text you want to visualize or upload a text file, depending upon the word clouds service. If you wish to visualize the words in all the files in a directory, you would need to merge the files first via the file_merger_main, then use your merged file."
+
+title_options_data_manager_merge = ['Merge option']
+message_data_manager_merge1 = "Please, select next the field to be used as KEY for merging files."
+message_data_manager_merge2 = "Please, click next the + sign on this line to select another KEY to be used for merging files or click OK to accept current selection."
+# after clicking + to select another field as KEY
+message_data_manager_merge3 = "Please, select next the field to be used as secondary KEY for merging files."
+# after clicking OK with only one file selected
+message_data_manager_merge4 = "Please, click next the + sign next to File at the top of the GUI to select another csv file to merge."
+# after selecting a new file
+message_data_manager_merge5 = "Please, select next the field from the newly selected file to be used as KEY for merging the new file with the previous one(s)."
+# after selecting a field with at least two files selected
+message_data_manager_merge6 = "Please, click next the + sign next to File at the top of the GUI to select another csv file to merge or click OK to accept the merge options and then click RUN."
+# after clicking OK with at least two files selected
+message_data_manager_merge7 = "Please, click next the + sign next to File at the top of the GUI to select another csv file to merge or click RUN."
+
 
 def create_remindersFile() -> None:
     """
