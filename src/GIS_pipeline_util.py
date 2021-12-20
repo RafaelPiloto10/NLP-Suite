@@ -86,6 +86,9 @@ def GIS_pipeline(window, config_filename, inputFilename, outputDir,
     inputIsCoNLL, inputIsGeocoded, withHeader, headers, datePresent, filenamePositionInCoNLLTable = GIS_file_check_util.CoNLL_checker(inputFilename)
 
     locationColumnNumber=IO_csv_util.get_columnNumber_from_headerValue(headers,locationColumnName)
+    dateColumnNumber = -1
+    if datePresent == True:
+        dateColumnNumber=IO_csv_util.get_columnNumber_from_headerValue(headers,"Date")
 
     filesToOpen=[]
 
@@ -114,7 +117,8 @@ def GIS_pipeline(window, config_filename, inputFilename, outputDir,
                                                             datePresent)
     else:
         # locations is a list of names of locations
-        locations = GIS_location_util.extract_csvFile_locations(window, inputFilename, withHeader, locationColumnNumber,encodingValue)
+        locations = GIS_location_util.extract_csvFile_locations(window, inputFilename, withHeader,
+                                                                locationColumnNumber,encodingValue, datePresent, dateColumnNumber)
 
     if locations == None or len(locations) == 0:
         return '', ''  # empty output files
@@ -139,7 +143,7 @@ def GIS_pipeline(window, config_filename, inputFilename, outputDir,
         kmloutputFilename = geocodedLocationsoutputFilename.replace('.csv', '.kml')
 
         geocodedLocationsoutputFilename, locationsNotFoundoutputFilename = GIS_geocode_util.geocode(window, locations, inputFilename, outputDir,
-                                                                                    locationColumnName,geocoder,country_bias,area_var,restrict,encodingValue,split_locations_prefix,split_locations_suffix)
+                                                                                    locationColumnName, geocoder,country_bias,area_var,restrict,encodingValue,split_locations_prefix,split_locations_suffix)
         if geocodedLocationsoutputFilename=='' and locationsNotFoundoutputFilename=='': #when geocoding cannot run because of internet connection
             return '', ''
     else:
