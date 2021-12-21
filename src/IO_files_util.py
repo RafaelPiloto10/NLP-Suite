@@ -33,7 +33,6 @@ import GUI_IO_util
 # dirname returns the directory of a file
 # __file__ refers to the script's file name
 # pardir returns the representation of a parent directory in the OS (usually ..)
-from IO_user_interface_util import timed_alert
 
 dir_path = os.path.dirname(os.path.realpath(__file__))
 os.chdir(dir_path)
@@ -185,7 +184,7 @@ def getDateFromFileName(file_name, sep='_', date_field_position=2, date_format='
     if 1:
         startSearch = 0
         iteration = 0
-        while iteration < date_field_position - 1:
+        while iteration < date_field_position:
             startSearch = x.find(sep, startSearch + 1)
             iteration += 1
         # the altSeparator="."
@@ -193,7 +192,7 @@ def getDateFromFileName(file_name, sep='_', date_field_position=2, date_format='
         end = x.find(sep, startSearch + 1)
         if end == -1:
             end = x.find(altSeparator, startSearch + 1)
-        if date_field_position == 1:
+        if date_field_position == 0:
             raw_date = x[startSearch:end]
         else:
             raw_date = x[startSearch + 1:end]
@@ -329,7 +328,7 @@ def OpenOutputFiles(window, openOutputFiles, filesToOpen):
                                      'If csv ouput files open displaying weird characters in a Windows OS (e.g., a€), most likely the cause is due to non utf-8 compliant input text. Apostrophes and quotes are the typical culprits, but also other punctuation characters.\n\nPlease, run the tool to check documents for utf-8 compliance and, if necessary, run the tool for automatic apostrophe and quote conversion from non utf-8 to utf-8.\n\nTo learm more on utf-8 compliance, read the TIPS on utf-8 compliance.',
                                      True)
         routine_options = reminders_util.getReminders_list('*')
-        timed_alert(window, 2000, 'Warning',
+        IO_user_interface_util.timed_alert(window, 2000, 'Warning',
                     'Opening ' + str(len(filesToOpen)) + ' output ' + singularPlural + '... Please wait...', False,'',True,'',True)
         for file in filesToOpen:
             if os.path.isfile(file):

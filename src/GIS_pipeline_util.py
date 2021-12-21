@@ -21,7 +21,7 @@ import config_util
 # The script is used by SVO_main and by Google_Earth_main to run a csv file that 1. needs geocoding; 2. mapping geocoded location onto Google Earth Pro.
 import IO_user_interface_util
 
-# Google_config: 'Google-geocode-API-config.txt' or 'Google-Maps-API-config.txt'
+# Google_config: 'Google-geocode-API_config.csv' or 'Google-Maps-API_config.csv'
 def getGoogleAPIkey(Google_config):
     configFilePath = os.path.join(GUI_IO_util.configPath, Google_config)
     configAPIKey = []
@@ -90,11 +90,15 @@ def GIS_pipeline(window, config_filename, inputFilename, outputDir,
     if datePresent == True:
         dateColumnNumber=IO_csv_util.get_columnNumber_from_headerValue(headers,"Date")
 
+    dateColumnNumber = -1
+    if datePresent == True:
+        dateColumnNumber=IO_csv_util.get_columnNumber_from_headerValue(headers,"Date")
+
     filesToOpen=[]
 
     outputCsvLocationsOnly = ''
 
-    software=config_filename.replace('-config.txt','')
+    software=config_filename.replace('_config.csv','')
     GoogleEarthProDir, missing_external_software = IO_libraries_util.get_external_software_dir(software + ', with the option of mappping locations,','Google Earth Pro')
     if GoogleEarthProDir == None:
         return '', ''
@@ -117,8 +121,7 @@ def GIS_pipeline(window, config_filename, inputFilename, outputDir,
                                                             datePresent)
     else:
         # locations is a list of names of locations
-        locations = GIS_location_util.extract_csvFile_locations(window, inputFilename, withHeader,
-                                                                locationColumnNumber,encodingValue, datePresent, dateColumnNumber)
+        locations = GIS_location_util.extract_csvFile_locations(window, inputFilename, withHeader, locationColumnNumber,encodingValue, datePresent, dateColumnNumber)
 
     if locations == None or len(locations) == 0:
         return '', ''  # empty output files
@@ -223,7 +226,7 @@ def GIS_pipeline(window, config_filename, inputFilename, outputDir,
                            'The input csv file\n\n' + geocodedLocationsoutputFilename + '\n\ndoes not contain geocoded data with Latitude or Longitude columns required for Google Maps to produce heat maps.\n\nPlease, select a geocoded csv file in input and try again.')
             return
 
-        Google_Maps_API = getGoogleAPIkey('Google-Maps-API-config.txt')
+        Google_Maps_API = getGoogleAPIkey('Google_Maps_API_config.csv')
         if Google_Maps_API == '':
             return
 

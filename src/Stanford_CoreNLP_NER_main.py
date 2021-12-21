@@ -7,6 +7,7 @@ import IO_libraries_util
 if IO_libraries_util.install_all_packages(GUI_util.window,"Stanford_CoreNLP_NER_extractor",['os','pandas','tkinter'])==False:
     sys.exit(0)
 
+import os
 import tkinter as tk
 import tkinter.messagebox as mb
 from subprocess import call
@@ -94,44 +95,39 @@ GUI_util.run_button.configure(command=run_script_command)
 # the GUIs are all setup to run with a brief I/O display or full display (with filename, inputDir, outputDir)
 #   just change the next statement to True or False IO_setup_display_brief=True
 IO_setup_display_brief=True
-GUI_width=GUI_IO_util.get_GUI_width(3)
-GUI_height=550 # height of GUI with full I/O display
-
-if IO_setup_display_brief:
-    GUI_height = GUI_height - 80
-    y_multiplier_integer = GUI_util.y_multiplier_integer  # IO BRIEF display
-    increment=0 # used in the display of HELP messages
-else: # full display
-    # GUI CHANGES add following lines to every special GUI
-    # +3 is the number of lines starting at 1 of IO widgets
-    # y_multiplier_integer=GUI_util.y_multiplier_integer+2
-    y_multiplier_integer = GUI_util.y_multiplier_integer + 2  # IO FULL display
-    increment=2
-
-GUI_size = str(GUI_width) + 'x' + str(GUI_height)
+GUI_size, y_multiplier_integer, increment = GUI_IO_util.GUI_settings(IO_setup_display_brief,
+                             GUI_width=GUI_IO_util.get_GUI_width(3),
+                             GUI_height_brief=480, # height at brief display
+                             GUI_height_full=550, # height at full display
+                             y_multiplier_integer=GUI_util.y_multiplier_integer,
+                             y_multiplier_integer_add=2, # to be added for full display
+                             increment=2)  # to be added for full display
 
 GUI_label='Graphical User Interface (GUI) for NER (Named Entity Recognition) Extraction'
 config_filename='NER_config.txt'
-# The 6 values of config_option refer to:
-#   software directory
-#   input file 1 for CoNLL file 2 for TXT file 3 for csv file 4 for any type of file
+# The 4 values of config_option refer to:
+#   input file
+        # 1 for CoNLL file
+        # 2 for TXT file
+        # 3 for csv file
+        # 4 for any type of file
+        # 5 for txt or html
+        # 6 for txt or csv
 #   input dir
 #   input secondary dir
-#   output file
 #   output dir
-config_option=[0,4,1,0,0,1]
+config_input_output_numeric_options=[2,1,0,1]
 
-GUI_util.set_window(GUI_size, GUI_label, config_filename, config_option)
+head, scriptName = os.path.split(os.path.basename(__file__))
+
+GUI_util.set_window(GUI_size, GUI_label, config_filename, config_input_output_numeric_options)
 
 window=GUI_util.window
-config_input_output_options=GUI_util.config_input_output_options
-config_filename=GUI_util.config_filename
 inputFilename=GUI_util.inputFilename
 
-inputFilename=GUI_util.inputFilename
 input_main_dir_path=GUI_util.input_main_dir_path
 
-GUI_util.GUI_top(config_input_output_options,config_filename,IO_setup_display_brief)
+GUI_util.GUI_top(config_input_output_numeric_options,config_filename,IO_setup_display_brief)
 
 NER_list=[]
 
@@ -421,7 +417,7 @@ def help_buttons(window,help_button_x_coordinate,basic_y_coordinate,y_step):
                                   "Please, click on the 'Pre-processing tools' button to open the GUI where you will be able to perform a variety of\n   file checking options (e.g., utf-8 encoding compliance of your corpus or sentence length);\n   file cleaning options (e.g., convert non-ASCII apostrophes & quotes and % to percent).\n\nNon utf-8 compliant texts are likely to lead to code breakdown in various algorithms.\n\nASCII apostrophes & quotes (the slanted punctuation symbols of Microsoft Word), will not break any code but they will display in a csv document as weird characters.\n\n% signs will lead to code breakdon of Stanford CoreNLP.\n\nSentences without an end-of-sentence marker (. ! ?) in Stanford CoreNLP will be processed together with the next sentence, potentially leading to very long sentences.\n\nSentences longer than 70 or 100 words may pose problems to Stanford CoreNLP (the average sentence length of modern English is 20 words). Please, read carefully the TIPS_NLP_Stanford CoreNLP memory issues.pdf.")
     GUI_IO_util.place_help_button(window, help_button_x_coordinate, basic_y_coordinate + y_step * (increment+3), "Help",
                                   "The Stanford CoreNLP performance is affected by various issues: memory size of your computer, document size, sentence length\n\nPlease, select the memory size Stanford CoreNLP will use. Default = 4. Lower this value if CoreNLP runs out of resources.\n   For CoreNLP co-reference resolution you may wish to increase the value when processing larger files (compatibly with the memory size of your machine).\n\nLonger documents affect performace. Stanford CoreNLP has a limit of 100,000 characters processed (the NLP Suite limits this to 90,000 as default). If you run into performance issues you may wish to further reduce the document size.\n\nSentence length also affect performance. The Stanford CoreNLP recommendation is to limit sentence length to 70 or 100 words.\n   You may wish to compute the sentence length of your document(s) so that perhaps you can edit the longer sentences.\n\nOn these issues, please, read carefully the TIPS_NLP_Stanford CoreNLP memory issues.pdf.")
-    GUI_IO_util.place_help_button(window,help_button_x_coordinate,basic_y_coordinate+y_step*(increment+4),"Help","The GIS algorithms allow you to extract a date to be used to build dynamic GIS maps. You can extract dates from the document content or from the filename if this embeds a date.\n\nPlease, the tick the checkbox 'From document content' if you wish to extract normalized NER dates from the text itself.\n\nPlease, tick the checkbox 'From filename' if filenames embed a date (e.g., The New York Times_12-05-1885).\n\nDATE WIDGETS ARE NOT VISIBLE WHEN SELECTING A CSV INPUT FILE."+GUI_IO_util.msg_Esc)
+    GUI_IO_util.place_help_button(window,help_button_x_coordinate,basic_y_coordinate+y_step*(increment+4),"Help","The GIS algorithms allow you to extract a date to be used to build dynamic GIS maps. You can extract dates from the document content or from the filename if this embeds a date.\n\nPlease, the tick the checkbox 'From document content' if you wish to extract normalized NER dates from the text itself.\n\nPlease, tick the checkbox 'From filename' if filenames embed a date (e.g., The New York Times_12-05-1885).\n\nDATE WIDGETS ARE NOT VISIBLE WHEN SELECTING A CSV INPUT FILE.\n\nOnce you have ticked the 'Filename embeds date' option, you will need to provide the follwing information:\n   1. the date format of the date embedded in the filename (default mm-dd-yyyy); please, select.\n   2. the character used to separate the date field embedded in the filenames from the other fields (e.g., _ in the filename The New York Times_12-23-1992) (default _); please, enter.\n   3. the position of the date field in the filename (e.g., 2 in the filename The New York Times_12-23-1992; 4 in the filename The New York Times_1_3_12-23-1992 where perhaps fields 2 and 3 refer respectively to the page and column numbers); please, select.\n\nIF THE FILENAME EMBEDS A DATE AND THE DATE IS THE ONLY FIELD AVAILABLE IN THE FILENAME (e.g., 2000.txt), enter . in the 'Date character separator' field and enter 1 in the 'Date position' field."+GUI_IO_util.msg_Esc)
     GUI_IO_util.place_help_button(window,help_button_x_coordinate,basic_y_coordinate+y_step*(increment+5),"Help","Please, using the dropdown menu, select the 23 NER tags that you would like to extract.\n\nFor English, the Stanford CoreNLP, by default through the NERClassifierCombiner annotator, recognizes the following NER values:\n  named (PERSON, LOCATION, ORGANIZATION, MISC);\n  numerical (MONEY, NUMBER, ORDINAL, PERCENT);\n  temporal (DATE, TIME, DURATION, SET).\n  In addition, via regexner, the following entity classes are tagged: EMAIL, URL, CITY, STATE_OR_PROVINCE, COUNTRY, NATIONALITY, RELIGION, (job) TITLE, IDEOLOGY, CRIMINAL_CHARGE, CAUSE_OF_DEATH.\n\nClick on the + button to add more NER tags.\nClick on the Reset button (or ESCape) to cancel all selected options and start over."+GUI_IO_util.msg_Esc)
     # GUI_IO_util.place_help_button(window,help_button_x_coordinate,basic_y_coordinate+y_step*8,"Help","Please, edit the list of split names, entering only the FIRST part - prefix - of the name.\n\nYOU HAVE 2 OPTIONS:\n  1. You can click on the little button to the left of the label 'NER split values (Prefix)' to open a csv file where you can enter any prefix (and suffix) values of your choice (these are the values used to populate the \'NER split values\' widgets);\n  2. You can enter comma separated values directly in the \'NER split values\' (this, however, will only be a temporary solution).\n\nEntering prefix and suffix values is particularly useful for geographic locations (e.g., hong for Hong Kong), but could be used to group together peoples' names (e.g. Mary for Mary Ann, de for de Witt)."+GUI_IO_util.msg_Esc)
     # GUI_IO_util.place_help_button(window,help_button_x_coordinate,basic_y_coordinate+y_step*9,"Help","Please, edit the list of split names, entering only the LAST part - suffix - of the name.\n\nYOU HAVE 2 OPTIONS:\n  1. You can click on the little button to the left of the label 'NER split values (Prefix)' to open a csv file where you can enter any suffix (or prefix) values of your choice (these are the values used to populate the \'NER split values\' widgets);\n  2. You can enter comma separated values directly in the \'NER split values\' (this, however, will only be a temporary solution).\n\nEntering prefix and suffix values is particularly useful for geographic locations (e.g., city for Atlantic City), but could be used to group together peoples' names (e.g. Ann for Mary Ann or Jo Ann)."+GUI_IO_util.msg_Esc)
@@ -433,7 +429,7 @@ help_buttons(window,GUI_IO_util.get_help_button_x_coordinate(),GUI_IO_util.get_b
 # change the value of the readMe_message
 readMe_message="This Python 3 script will extract NER tags from either a CoNLL table obtained from the Stanford CoreNLP parser or from a text file."
 readMe_command=lambda: GUI_IO_util.readme_button(window,GUI_IO_util.get_help_button_x_coordinate(),GUI_IO_util.get_basic_y_coordinate(),"Help",readMe_message)
-GUI_util.GUI_bottom(config_filename, config_input_output_options, y_multiplier_integer, readMe_command, videos_lookup, videos_options, TIPS_lookup, TIPS_options, IO_setup_display_brief)
+GUI_util.GUI_bottom(config_filename, config_input_output_numeric_options, y_multiplier_integer, readMe_command, videos_lookup, videos_options, TIPS_lookup, TIPS_options, IO_setup_display_brief, scriptName)
 
 GUI_util.window.mainloop()
 
