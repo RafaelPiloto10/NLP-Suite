@@ -1589,11 +1589,8 @@ def process_json_parser(config_filename, documentID, document, sentenceID, recor
             #
             #     return result, recordIDateStr)
 
-<<<<<<< HEAD
-        return result, recordID
-=======
     return result, recordID
->>>>>>> 9333d245883352d8f6ae2cf2b4ae179f430a2b3b
+
 
 
 
