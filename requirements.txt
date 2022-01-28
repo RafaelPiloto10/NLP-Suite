@@ -1,6 +1,11 @@
 #pip install -r requirements.txt
 
+
 #lines preceded by # are comments
+
+#used in update_util for the automatic update to the latest release available on GitHub using git
+pygit2
+
 #used to parse arguments that are passed to a script via command line
 argparse~=1.4.0
 
@@ -10,8 +15,11 @@ Pillow
 
 striprtf
 
-#used by nominalization; MUST USE THIS VERSION OR CODE WILL BREAK
-pywsd==1.2.4
+#used by nominalization; pyword sense disambiguation; MUST USE THIS VERSION OR CODE WILL BREAK; no longer true
+# pywsd==1.2.4
+pywsd
+# pywsd depends upon wn==0.0.23
+wn
 
 #used by stats_visuals_util.text_readability
 textstat~=0.7.0
@@ -76,6 +84,9 @@ IPython # THIS SHOULD BE AUTOMATICALLY INSTALLED BY ANACONDA; but... not!
 spacy
 # pprint #THIS SHOULD BE AUTOMATICALLY INSTALLED BY ANACONDA
 # matplotlib #THIS SHOULD BE AUTOMATICALLY INSTALLED BY ANACONDA
+
+# used by Word2Vec
+plotly
 
 pandas~=1.2.1
 future~=0.18.2

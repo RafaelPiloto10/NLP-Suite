@@ -7,10 +7,11 @@ if IO_libraries_util.install_all_packages(GUI_util.window, "CoNLL table_analyzer
 
 import os
 import tkinter as tk
+from tkinter import ttk
 import tkinter.messagebox as mb
 
 import GUI_IO_util
-import IO_CoNLL_util
+import CoNLL_util
 import CoNLL_table_search_util
 import statistics_csv_util
 import Excel_util
@@ -26,7 +27,6 @@ import pandas as pd
 
 # RUN section ______________________________________________________________________________________________________________________________________________________
 
-
 # the values of the GUI widgets MUST be entered in the command otherwise they will not be updated
 def run(inputFilename, outputDir, openOutputFiles, createExcelCharts,
         searchedCoNLLField, searchField_kw, postag, deprel, co_postag, co_deprel,
@@ -34,19 +34,27 @@ def run(inputFilename, outputDir, openOutputFiles, createExcelCharts,
         noun_analysis_var,
         verb_analysis_var,
         function_words_analysis_var):
+
     global recordID_position, documentId_position, data, data_divided_sents
+    recordID_position = 9 # NEW CoNLL_U
+    documentId_position = 11 # NEW CoNLL_U
 
     noResults = "No results found matching your search criteria for your input CoNLL file. Please, try different search criteria.\n\nTypical reasons for this warning are:\n   1.  You are searching for a token/word not found in the FORM or LEMMA fields (e.g., 'child' in FORM when in fact FORM contains 'children', or 'children' in LEMMA when in fact LEMMA contains 'child'; the same would be true for the verbs 'running' in LEMMA instead of 'run');\n   2. you are searching for a token that is a noun (e.g., 'children'), but you select the POS value 'VB', i.e., verb, for the POSTAG of searched token."
     filesToOpen = []  # Store all files that are to be opened once finished
     outputFiles = []
 
+    if searchField_kw == 'e.g.: father':
+        if not compute_sentence_var.get() and not extract_var.get():
+            if clausal_analysis_var==False and noun_analysis_var==False and verb_analysis_var==False and function_words_analysis_var==False:
+                mb.showwarning(title='No option selected',
+                           message="No option has been selected.\n\nPlease, select an option and try again.")
+                return  # breaks loop
+
     withHeader = True
-    recordID_position = 8
-    documentId_position = 10
     data, header = IO_csv_util.get_csv_data(inputFilename, withHeader)
     if len(data) == 0:
         return
-    data_divided_sents = IO_CoNLL_util.sentence_division(data)
+    data_divided_sents = CoNLL_util.sentence_division(data)
     if data_divided_sents == None:
         return
     if len(data_divided_sents) == 0:
@@ -55,17 +63,21 @@ def run(inputFilename, outputDir, openOutputFiles, createExcelCharts,
     right_hand_side = False
 
     if compute_sentence_var.get():
-        tempOutputFile = IO_CoNLL_util.compute_sentence_table(inputFilename, outputDir)
+        tempOutputFile = CoNLL_util.compute_sentence_table(inputFilename, outputDir)
         filesToOpen.append(tempOutputFile)
 
     if extract_var.get():
         df = pd.read_csv(inputFilename)
         data_files = [df]
-        print(csv_file_field_list)
+        # print(csv_file_field_list)
         outputFiles: list = extract_from_csv(path=[inputFilename], output_path=outputDir, data_files=data_files,
                                                  csv_file_field_list=csv_file_field_list)
         if outputFiles != None:
             filesToOpen.extend(outputFiles)
+
+    if clausal_analysis_var or noun_analysis_var or verb_analysis_var or function_words_analysis_var:
+        startTime=IO_user_interface_util.timed_alert(GUI_util.window, 3000, 'Analysis start', 'Started running CoNLL table analyses at',
+                                                     True, '', True, '', False)
 
     if clausal_analysis_var:
         import CoNLL_clause_analysis_util
@@ -97,7 +109,7 @@ def run(inputFilename, outputDir, openOutputFiles, createExcelCharts,
     if verb_analysis_var == True:
         import CoNLL_verb_analysis_util
 
-        outputFiles = CoNLL_verb_analysis_util.verb_stats(inputFilename, outputDir, data, data_divided_sents,
+        outputFiles = CoNLL_verb_analysis_util.verb_stats(config_filename, inputFilename, outputDir, data, data_divided_sents,
                                                           openOutputFiles, createExcelCharts)
 
         # only open the chart files
@@ -125,6 +137,10 @@ def run(inputFilename, outputDir, openOutputFiles, createExcelCharts,
         right_hand_side = True
 
     if right_hand_side == True:
+        if clausal_analysis_var or noun_analysis_var or verb_analysis_var or function_words_analysis_var:
+            IO_user_interface_util.timed_alert(GUI_util.window, 3000, 'Analysis end',
+                                               'Finished running CoNLL table analyses at',
+                                               True, '', True, startTime, False)
         if openOutputFiles == True:
             IO_files_util.OpenOutputFiles(GUI_util.window, openOutputFiles, filesToOpen)
             mb.showwarning(title='Output files',
@@ -135,8 +151,6 @@ def run(inputFilename, outputDir, openOutputFiles, createExcelCharts,
 
     if searchField_kw == 'e.g.: father':
         if not compute_sentence_var.get() and not extract_var.get():
-            mb.showwarning(title='No option selected',
-                           message="No option has been selected.\n\nPlease, select an option and try again.")
             return  # breaks loop
     else:
         if searchedCoNLLField.lower() not in ['lemma', 'form']:
@@ -162,25 +176,6 @@ def run(inputFilename, outputDir, openOutputFiles, createExcelCharts,
         else:
             co_deprel = '*'
 
-        POS_tags = ['*', 'JJ*', 'NN*', 'VB*'] + [k for k, v in Stanford_CoreNLP_tags_util.dict_POSTAG.items()]
-        POS_descriptions = [v for k, v in Stanford_CoreNLP_tags_util.dict_POSTAG.items()]
-
-        DEPREL_tags = [k for k, v in Stanford_CoreNLP_tags_util.dict_DEPREL.items()]
-        DEPREL_descriptions = [v for k, v in Stanford_CoreNLP_tags_util.dict_DEPREL.items()]
-
-        if postag != '*' and postag not in POS_tags:
-            postag = '*'
-        if deprel != '*' and deprel not in DEPREL_tags:  # dict_DEPREL:
-            print("The routine cannot recognize your input. The default value\'*\'(i.e. ANY VALUE) will be used.")
-            deprel = '*'
-
-        if co_postag != '*' and co_postag not in POS_tags:  # set_POSTAG: #search_CoNLL_table:
-            co_postag = '*'
-
-        if co_deprel != '*' and co_deprel not in DEPREL_tags:  # set_DEPREL: #dict_DEPREL:
-            print("The routine cannot recognize your input. The default value\'*\'(i.e. ANY VALUE) will be used.")
-            co_deprel = '*'
-
         if (not os.path.isfile(inputFilename.strip())) and (not inputFilename.strip()[-6:] == '.conll') and (
                 not inputFilename.strip()[-4:] == '.csv'):
             mb.showwarning(title='INPUT File Path Error',
@@ -195,16 +190,16 @@ def run(inputFilename, outputDir, openOutputFiles, createExcelCharts,
             mb.showwarning(title='Searched Token Input Error', message=msg)
             return  # breaks loop
 
-        startTime=IO_user_interface_util.timed_alert(GUI_util.window, 3000, 'Analysis start', 'Started running CoNLL search at', True)
+        startTime=IO_user_interface_util.timed_alert(GUI_util.window, 3000, 'Analysis start', 'Started running CoNLL search at',
+                                                     True, '', True, '', True)
 
         withHeader = True
-        documentId_position = 10
         data, header = IO_csv_util.get_csv_data(inputFilename, withHeader)
 
         if len(data) <= 1000000:
             try:
 
-                data = sorted(data, key=lambda x: int(x[9]))
+                data = sorted(data, key=lambda x: int(x[recordID_position]))
             except:
                 mb.showwarning(title="CoNLLL table ill formed",
                                message="The CoNLL table is ill formed. You may have tinkered with it. Please, rerun the Stanford CoreNLP parser since many scripts rely on the CoNLL table.")
@@ -212,7 +207,7 @@ def run(inputFilename, outputDir, openOutputFiles, createExcelCharts,
 
         if len(data) == 0:
             return
-        all_sents = IO_CoNLL_util.sentence_division(data)
+        all_sents = CoNLL_util.sentence_division(data)
         if len(all_sents) == 0:
             return
         queried_list = CoNLL_table_search_util.search_CoNLL_table(all_sents, searchField_kw, searchedCoNLLField,
@@ -346,10 +341,10 @@ run_script_command = lambda: run(GUI_util.inputFilename.get(),
                                  GUI_util.create_Excel_chart_output_checkbox.get(),
                                  searchedCoNLLField.get(),
                                  searchField_kw.get(),
-                                 postag_field.get(),
-                                 deprel_field.get(),
-                                 co_postag_field.get(),
-                                 co_deprel_field.get(),
+                                 postag_var.get(),
+                                 deprel_var.get(),
+                                 co_postag_var.get(),
+                                 co_deprel_var.get(),
                                  clausal_analysis_var.get(),
                                  noun_analysis_var.get(),
                                  verb_analysis_var.get(),
@@ -362,49 +357,47 @@ GUI_util.run_button.configure(command=run_script_command)
 # the GUIs are all setup to run with a brief I/O display or full display (with filename, inputDir, outputDir)
 #   just change the next statement to True or False IO_setup_display_brief=True
 IO_setup_display_brief=True
-GUI_width=GUI_IO_util.get_GUI_width(3)
-GUI_height=630 # height of GUI with full I/O display
-
-if IO_setup_display_brief:
-    GUI_height = GUI_height - 40
-    y_multiplier_integer = GUI_util.y_multiplier_integer  # IO BRIEF display
-    increment=0 # used in the display of HELP messages
-else: # full display
-    # GUI CHANGES add following lines to every special GUI
-    # +3 is the number of lines starting at 1 of IO widgets
-    # y_multiplier_integer=GUI_util.y_multiplier_integer+2
-    y_multiplier_integer = GUI_util.y_multiplier_integer + 1  # IO FULL display
-    increment=1
-
-GUI_size = str(GUI_width) + 'x' + str(GUI_height)
+GUI_size, y_multiplier_integer, increment = GUI_IO_util.GUI_settings(IO_setup_display_brief,
+                                                 GUI_width=GUI_IO_util.get_GUI_width(3),
+                                                 GUI_height_brief=590, # height at brief display
+                                                 GUI_height_full=630, # height at full display
+                                                 y_multiplier_integer=GUI_util.y_multiplier_integer,
+                                                 y_multiplier_integer_add=1, # to be added for full display
+                                                 increment=1)  # to be added for full display
 
 GUI_label = 'Graphical User Interface (GUI) for CoNLL Table Analyzer'
-config_filename = 'conll-table-analyzer-config.txt'  # filename used in Stanford_CoreNLP_main
-# The 6 values of config_option refer to:
-#   software directory
-#   input file 1 for CoNLL file 2 for TXT file 3 for csv file 4 for any type of file
+head, scriptName = os.path.split(os.path.basename(__file__))
+config_filename = scriptName.replace('main.py', 'config.csv')
+
+# The 4 values of config_option refer to:
+#   input file
+        # 1 for CoNLL file
+        # 2 for TXT file
+        # 3 for csv file
+        # 4 for any type of file
+        # 5 for txt or html
+        # 6 for txt or csv
 #   input dir
 #   input secondary dir
-#   output file
 #   output dir
-config_option = [0, 1, 0, 0, 0, 1]
+config_input_output_numeric_options=[1,0,0,1]
 
-GUI_util.set_window(GUI_size, GUI_label, config_filename, config_option)
+GUI_util.set_window(GUI_size, GUI_label, config_filename, config_input_output_numeric_options)
 
 window = GUI_util.window
-config_input_output_options = GUI_util.config_input_output_options
-config_filename = GUI_util.config_filename
+# config_input_output_numeric_options = GUI_util.config_input_output_numeric_options
+# config_filename = GUI_util.config_filename
 inputFilename = GUI_util.inputFilename
 
-GUI_util.GUI_top(config_input_output_options, config_filename,IO_setup_display_brief)
+GUI_util.GUI_top(config_input_output_numeric_options, config_filename,IO_setup_display_brief)
 
 searchField_kw = tk.StringVar()
 searchedCoNLLField = tk.StringVar()
-postag_field = tk.StringVar()
-deprel_field = tk.StringVar()
-searchField_co_postag = tk.StringVar()
-co_postag_field = tk.StringVar()
-co_deprel_field = tk.StringVar()
+postag_var = tk.StringVar()
+deprel_var = tk.StringVar()
+co_postag_var = tk.StringVar()
+co_postag_var = tk.StringVar()
+co_deprel_var = tk.StringVar()
 SVO_var = tk.IntVar()
 csv_file_field_list = []
 
@@ -426,14 +419,16 @@ all_analyses_var = tk.IntVar()
 buildString = ''
 menu_values = []
 
+postag_menu = '*', 'JJ* - Any adjective', 'NN* - Any noun', 'VB* - Any verb', *sorted([k + " - " + v for k, v in Stanford_CoreNLP_tags_util.dict_POSTAG.items()])
+deprel_menu = '*', *sorted([k + " - " + v for k, v in Stanford_CoreNLP_tags_util.dict_DEPREL.items()])
 
 def clear(e):
     searchField_kw.set('e.g.: father')
-    postag_field.set('*')
-    deprel_field.set('*')
-    searchField_co_postag.set('*')
-    co_postag_field.set('*')
-    co_deprel_field.set('*')
+    postag_var.set('*')
+    deprel_var.set('*')
+    co_postag_var.set('*')
+    co_postag_var.set('*')
+    co_deprel_var.set('*')
     activate_options()
     activate_csv_fields_selection(extract_var.get(), False, False)
     reset_all_values()
@@ -463,7 +458,7 @@ searchField_kw.set('e.g.: father')
 y_multiplier_integer_top = y_multiplier_integer
 
 entry_searchField_kw = tk.Entry(window, textvariable=searchField_kw)
-y_multiplier_integer = GUI_IO_util.placeWidget(GUI_IO_util.get_labels_x_coordinate() + 200, y_multiplier_integer,
+y_multiplier_integer = GUI_IO_util.placeWidget(GUI_IO_util.get_labels_x_coordinate() + GUI_IO_util.combobox_position, y_multiplier_integer,
                                                entry_searchField_kw)
 
 # Search type var (FORM/LEMMA)
@@ -474,69 +469,52 @@ y_multiplier_integer = GUI_IO_util.placeWidget(GUI_IO_util.get_labels_x_coordina
 
 searchedCoNLLdescription_csv_field_menu_lb = tk.OptionMenu(window, searchedCoNLLField, 'FORM', 'LEMMA')
 searchedCoNLLdescription_csv_field_menu_lb.configure(state='disabled')
-y_multiplier_integer = GUI_IO_util.placeWidget(GUI_IO_util.get_labels_x_coordinate() + 200, y_multiplier_integer,
+y_multiplier_integer = GUI_IO_util.placeWidget(GUI_IO_util.get_labels_x_coordinate() + GUI_IO_util.combobox_position, y_multiplier_integer,
                                                searchedCoNLLdescription_csv_field_menu_lb)
 
 # POSTAG variable
 
-postag_field.set('*')
+postag_var.set('*')
 tk.Label(window, text='POSTAG of searched token').place(x=GUI_IO_util.get_labels_x_coordinate(),
                                                         y=GUI_IO_util.get_basic_y_coordinate() + GUI_IO_util.get_y_step() * y_multiplier_integer)
-postag_description_csv_field_menu_lb = tk.Label(window, text='POSTAG')
-# postag_menu = tk.OptionMenu(window,postag_field,'*','CC - Coordinating conjunction','CD - Cardinal number', 'DT - Determinant', 'EX - Existential there', 'FW - Foreign word', 'IN - Preposition or subordinating conjunction', 'JJ* - Any adjective','JJ - Adjective', 'JJR - Adjective, comparative', 'JJS - Adjective, superlative', 'LS - List marker','MD - Modal verb', 'NN* - Any noun','NN - Noun, singular or mass', 'NNS - Noun, plural', 'NNP - Proper noun, singluar', 'NNPS - Proper noun, plural', 'PDT - Predeterminer', 'POS - Possessive ending', 'PRP - Personal pronoun', 'RB* - Any adverb','RB - Adverb', 'RBR - Adverb, comparative', 'RBS - Adverb, superlative','RP - Particle', 'SYM - Symbol', 'TO - To', 'UH - Interjection', 'VB* - Any verb','VB - Verb, base form', 'VBD - Verb, past tense', 'VBG - Verb, gerundive or present participle', 'VBN - Verb, past participle', 'VBP - Verb, non-3rd person singular present', 'VBZ - Verb, 3rd person singular present','WDT - Wh-determiner (what, which, whose)', 'WP - Wh-pronoun (how, what, which, where, when, who, whom, whose, whether', 'WP - Possessive wh-pronoun', 'WRB - Wh-adverb (when, where, how, and why)','( - (',') - )','. - .',', - ,',': - :','\' - \'','\" - \"','# - #')
-postag_menu_lb = tk.OptionMenu(window, postag_field, '*', 'JJ* - Any adjective', 'NN* - Any noun', 'VB* - Any verb',
-                               *sorted([k + " - " + v for k, v in Stanford_CoreNLP_tags_util.dict_POSTAG.items()],
-                                       key=lambda s: (custom_sort(s), s)))
+postag_menu_lb = ttk.Combobox(window, width = GUI_IO_util.combobox_width, textvariable = postag_var)
+postag_menu_lb['values'] = postag_menu
 postag_menu_lb.configure(state='disabled')
-y_multiplier_integer = GUI_IO_util.placeWidget(GUI_IO_util.get_labels_x_coordinate() + 200, y_multiplier_integer,
+y_multiplier_integer = GUI_IO_util.placeWidget(GUI_IO_util.get_labels_x_coordinate() + GUI_IO_util.combobox_position, y_multiplier_integer,
                                                postag_menu_lb)
 
 # DEPREL variable
 
-deprel_field.set('*')
+deprel_var.set('*')
 tk.Label(window, text='DEPREL of searched token').place(x=GUI_IO_util.get_labels_x_coordinate(),
                                                         y=GUI_IO_util.get_basic_y_coordinate() + GUI_IO_util.get_y_step() * y_multiplier_integer)
-# deprel_description_csv_field_menu_lb = tk.OptionMenu(window,deprel_field,'*','acl - clausal modifier of noun (adjectival clause)', 'acl:relcl - relative clause modifier', 'acomp - adjectival complement', 'advcl - adverbial clause modifier', 'advmod - adverbial modifier', 'agent - agent', 'amod - adjectival modifier', 'appos - appositional modifier', 'arg - argument', 'aux - auxiliary', 'auxpass - passive auxiliary', 'case - case marking', 'cc - coordinating conjunction', 'ccomp - clausal complement with internal subject', 'cc:preconj - preconjunct','compound - compound','compound:prt - phrasal verb particle','conj - conjunct','cop - copula conjunction','csubj - clausal subject','csubjpass - clausal passive subject','dep - unspecified dependency','det - determiner','det:predet - predeterminer','discourse - discourse element','dislocated - dislocated element','dobj - direct object','expl - expletive','foreign - foreign words','goeswith - goes with','iobj - indirect object','list - list','mark - marker','mod - modifier','mwe - multi-word expression','name - name','neg - negation modifier','nn - noun compound modifier','nmod - nominal modifier','nmod:npmod - noun phrase as adverbial modifier','nmod:poss - possessive nominal modifier','nmod:tmod - temporal modifier','nummod - numeric modifier','npadvmod - noun phrase adverbial modifier','nsubj - nominal subject','nsubjpass - passive nominal subject','num - numeric modifier','number - element of compound number','parataxis - parataxis','pcomp - prepositional complement','pobj - object of a preposition','poss - possession modifier', 'possessive - possessive modifier','preconj - preconjunct','predet - predeterminer','prep - prepositional modifier','prepc - prepositional clausal modifier','prt - phrasal verb particle','punct - punctuation','quantmod - quantifier phrase modifier','rcmod - relative clause modifier','ref - referent','remnant - remnant in ellipsis','reparandum - overridden disfluency','ROOT - root','sdep - semantic dependent','subj - subject','tmod - temporal modifier','vmod - reduced non-finite verbal modifier','vocative - vocative','xcomp - clausal complement with external subject','xsubj - controlling subject','# - #')
-deprel_description_csv_field_menu_lb = tk.OptionMenu(window, deprel_field, '*', *sorted(
-    [k + " - " + v for k, v in Stanford_CoreNLP_tags_util.dict_DEPREL.items()], key=lambda s: (custom_sort(s), s)))
-deprel_description_csv_field_menu_lb.configure(state='disabled')
-y_multiplier_integer = GUI_IO_util.placeWidget(GUI_IO_util.get_labels_x_coordinate() + 200, y_multiplier_integer,
-                                               deprel_description_csv_field_menu_lb)
+deprel_menu_lb = ttk.Combobox(window, width = GUI_IO_util.combobox_width, textvariable = deprel_var)
+deprel_menu_lb['values'] = deprel_menu
+deprel_menu_lb.configure(state='disabled')
+y_multiplier_integer = GUI_IO_util.placeWidget(GUI_IO_util.get_labels_x_coordinate() + GUI_IO_util.combobox_position, y_multiplier_integer,
+                                               deprel_menu_lb)
 
 # Co-Occurring POSTAG menu
 
-searchField_co_postag.set('*')
+co_postag_var.set('*')
 
-co_postag_field.set('*')
 tk.Label(window, text='POSTAG of co-occurring tokens').place(x=GUI_IO_util.get_labels_x_coordinate(),
                                                              y=GUI_IO_util.get_basic_y_coordinate() + GUI_IO_util.get_y_step() * y_multiplier_integer)
-# co_postag_description_csv_field_menu_lb = tk.OptionMenu(window,co_postag_field,'*','CC - Coordinating conjunction','CD - Cardinal number', 'DT - Determinant', 'EX - Existential there', 'FW - Foreign word', 'IN - Preposition or subordinating conjunction', 'JJ* - Any adjective', 'JJ - Adjective', 'JJR - Adjective, comparative', 'JJS - Adjective, superlative', 'LS - List marker','MD - Modal verb', 'NN* - Any noun', 'NN - Noun, singular or mass', 'NNS - Noun, plural', 'NNP - Proper noun, singluar', 'NNPS - Proper noun, plural', 'PDT - Predeterminer', 'POS - Possessive ending', 'PRP - Personal pronoun', 'RB* - Any adverb','RB - Adverb', 'RBR - Adverb, comparative', 'RBS - Adverb, superlative','RP - Particle', 'SYM - Symbol', 'TO - To', 'UH - Interjection', 'VB* - Any verb', 'VB - Verb, base form', 'VBD - Verb, past tense', 'VBG - Verb, gerundive or present participle', 'VBN - Verb, past participle', 'VBP - Verb, non-3rd person singular present', 'VBZ - Verb, 3rd person singular present','WDT - Wh-determiner (what, which, whose)', 'WP - Wh-pronoun (how, what, which, where, when, who, whom, whose, whether', 'WP - Possessive wh-pronoun', 'WRB - Wh-adverb (when, where, how, and why)','( - (',') - )','. - .',', - ,',': - :','\' - \'','\" - \"','# - #')
-# postag_menu = tk.OptionMenu(window,postag_field,'*',*IO_CoNLL_util.dict_POSTAG)
-co_postag_description_csv_field_menu_lb = tk.OptionMenu(window, co_postag_field, '*', 'JJ* - Any adjective',
-                                                        'NN* - Any noun', 'VB* - Any verb', *sorted(
-        [k + " - " + v for k, v in Stanford_CoreNLP_tags_util.dict_POSTAG.items()], key=lambda s: (custom_sort(s), s)))
-co_postag_description_csv_field_menu_lb.configure(state='disabled')
-y_multiplier_integer = GUI_IO_util.placeWidget(GUI_IO_util.get_labels_x_coordinate() + 200, y_multiplier_integer,
-                                               co_postag_description_csv_field_menu_lb)
+co_postag_menu_lb = ttk.Combobox(window, width = GUI_IO_util.combobox_width, textvariable = co_postag_var)
+co_postag_menu_lb['values'] = postag_menu
+co_postag_menu_lb.configure(state='disabled')
+y_multiplier_integer = GUI_IO_util.placeWidget(GUI_IO_util.get_labels_x_coordinate() + GUI_IO_util.combobox_position, y_multiplier_integer,
+                                               co_postag_menu_lb)
 
-# Co-Occurring DEPREL menu
-co_deprel_field.set('*')
+co_deprel_menu = '*','acl - clausal modifier of noun (adjectival clause)', 'acl:relcl - relative clause modifier', 'acomp - adjectival complement', 'advcl - adverbial clause modifier', 'advmod - adverbial modifier', 'agent - agent', 'amod - adjectival modifier', 'appos - appositional modifier', 'arg - argument', 'aux - auxiliary', 'auxpass - passive auxiliary', 'case - case marking', 'cc - coordinating conjunction', 'ccomp - clausal complement with internal subject', 'cc:preconj - preconjunct','compound - compound','compound:prt - phrasal verb particle','conj - conjunct','cop - copula conjunction','csubj - clausal subject','csubjpass - clausal passive subject','dep - unspecified dependency','det - determiner','det:predet - predeterminer','discourse - discourse element','dislocated - dislocated element','dobj - direct object','expl - expletive','foreign - foreign words','goeswith - goes with','iobj - indirect object','list - list','mark - marker','mod - modifier','mwe - multi-word expression','name - name','neg - negation modifier','nn - noun compound modifier','nmod - nominal modifier','nmod:npmod - noun phrase as adverbial modifier','nmod:poss - possessive nominal modifier','nmod:tmod - temporal modifier','nummod - numeric modifier','npadvmod - noun phrase adverbial modifier','nsubj - nominal subject','nsubjpass - passive nominal subject','num - numeric modifier','number - element of compound number','parataxis - parataxis','pcomp - prepositional complement','pobj - object of a preposition','poss - possession modifier', 'possessive - possessive modifier','preconj - preconjunct','predet - predeterminer','prep - prepositional modifier','prepc - prepositional clausal modifier','prt - phrasal verb particle','punct - punctuation','quantmod - quantifier phrase modifier','rcmod - relative clause modifier','ref - referent','remnant - remnant in ellipsis','reparandum - overridden disfluency','ROOT - root','sdep - semantic dependent','subj - subject','tmod - temporal modifier','vmod - reduced non-finite verbal modifier','vocative - vocative','xcomp - clausal complement with external subject','xsubj - controlling subject','# - #'
+
+co_deprel_var.set('*')
 tk.Label(window, text='DEPREL of co-occurring tokens').place(x=GUI_IO_util.get_labels_x_coordinate(),
-                                                             y=GUI_IO_util.get_basic_y_coordinate() + GUI_IO_util.get_y_step() * y_multiplier_integer)
-# co_deprel_description_csv_field_menu_lb = tk.OptionMenu(window,co_deprel_field,'*','acl - clausal modifier of noun (adjectival clause)', 'acl:relcl - relative clause modifier', 'acomp - adjectival complement', 'advcl - adverbial clause modifier', 'advmod - adverbial modifier', 'agent - agent', 'amod - adjectival modifier', 'appos - appositional modifier', 'arg - argument', 'aux - auxiliary', 'auxpass - passive auxiliary', 'case - case marking', 'cc - coordinating conjunction', 'ccomp - clausal complement with internal subject', 'cc:preconj - preconjunct','compound - compound','compound:prt - phrasal verb particle','conj - conjunct','cop - copula conjunction','csubj - clausal subject','csubjpass - clausal passive subject','dep - unspecified dependency','det - determiner','det:predet - predeterminer','discourse - discourse element','dislocated - dislocated element','dobj - direct object','expl - expletive','foreign - foreign words','goeswith - goes with','iobj - indirect object','list - list','mark - marker','mod - modifier','mwe - multi-word expression','name - name','neg - negation modifier','nn - noun compound modifier','nmod - nominal modifier','nmod:npmod - noun phrase as adverbial modifier','nmod:poss - possessive nominal modifier','nmod:tmod - temporal modifier','nummod - numeric modifier','npadvmod - noun phrase adverbial modifier','nsubj - nominal subject','nsubjpass - passive nominal subject','num - numeric modifier','number - element of compound number','parataxis - parataxis','pcomp - prepositional complement','pobj - object of a preposition','poss - possession modifier', 'possessive - possessive modifier','preconj - preconjunct','predet - predeterminer','prep - prepositional modifier','prepc - prepositional clausal modifier','prt - phrasal verb particle','punct - punctuation','quantmod - quantifier phrase modifier','rcmod - relative clause modifier','ref - referent','remnant - remnant in ellipsis','reparandum - overridden disfluency','ROOT - root','sdep - semantic dependent','subj - subject','tmod - temporal modifier','vmod - reduced non-finite verbal modifier','vocative - vocative','xcomp - clausal complement with external subject','xsubj - controlling subject','# - #')
-co_deprel_description_csv_field_menu_lb = tk.OptionMenu(window, co_deprel_field, '*', *sorted(
-    [k + " - " + v for k, v in Stanford_CoreNLP_tags_util.dict_DEPREL.items()], key=lambda s: (custom_sort(s), s)))
-co_deprel_description_csv_field_menu_lb.configure(state='disabled')
-y_multiplier_integer = GUI_IO_util.placeWidget(GUI_IO_util.get_labels_x_coordinate() + 200, y_multiplier_integer,
-                                               co_deprel_description_csv_field_menu_lb)
-
-
-# selected_fields_var = tk.StringVar()
-# selected_fields_var.set('')
-# selected_fields = tk.Entry(window, width=100, textvariable=selected_fields_var)
-# selected_fields.configure(state="disabled")
-# y_multiplier_integer = GUI_IO_util.placeWidget(GUI_IO_util.entry_box_x_coordinate, y_multiplier_integer,
-#                                                selected_fields)
+                                                        y=GUI_IO_util.get_basic_y_coordinate() + GUI_IO_util.get_y_step() * y_multiplier_integer)
+co_deprel_menu_lb = ttk.Combobox(window, width = GUI_IO_util.combobox_width, textvariable = co_deprel_var)
+co_deprel_menu_lb['values'] = deprel_menu
+co_deprel_menu_lb.configure(state='disabled')
+y_multiplier_integer=GUI_IO_util.placeWidget(GUI_IO_util.get_labels_x_coordinate()+GUI_IO_util.combobox_position, y_multiplier_integer,co_deprel_menu_lb)
 
 def reset_all_values():
     global buildString
@@ -598,7 +576,7 @@ y_multiplier_integer = GUI_IO_util.placeWidget(GUI_IO_util.get_labels_x_coordina
                                                extract_checkbox, True)
 
 select_csv_field_lb = tk.Label(window, text='Select field')
-y_multiplier_integer = GUI_IO_util.placeWidget(GUI_IO_util.get_labels_x_coordinate() + 200, y_multiplier_integer,
+y_multiplier_integer = GUI_IO_util.placeWidget(GUI_IO_util.get_labels_x_coordinate() + GUI_IO_util.combobox_position, y_multiplier_integer,
                                                select_csv_field_lb, True)
 
 if len(menu_values) > 0:
@@ -606,7 +584,7 @@ if len(menu_values) > 0:
 else:
     select_csv_field_extract_menu = tk.OptionMenu(window, select_csv_field_extract_var, menu_values)
 select_csv_field_extract_menu.configure(state='disabled')
-y_multiplier_integer = GUI_IO_util.placeWidget(GUI_IO_util.get_labels_x_coordinate() + 280, y_multiplier_integer,
+y_multiplier_integer = GUI_IO_util.placeWidget(GUI_IO_util.get_labels_x_coordinate() + GUI_IO_util.combobox_position+80, y_multiplier_integer,
                                                select_csv_field_extract_menu, True)
 
 comparator_var = tk.StringVar()
@@ -781,9 +759,9 @@ def activate_options(*args):
 
         searchedCoNLLdescription_csv_field_menu_lb.configure(state='normal')
         postag_menu_lb.configure(state='normal')
-        deprel_description_csv_field_menu_lb.configure(state='normal')
-        co_postag_description_csv_field_menu_lb.configure(state='normal')
-        co_deprel_description_csv_field_menu_lb.configure(state='normal')
+        deprel_menu_lb.configure(state='normal')
+        co_postag_menu_lb.configure(state='normal')
+        co_deprel_menu_lb.configure(state='normal')
 
         all_analyses_checkbox.configure(state='disabled')
         clausal_analysis_checkbox.configure(state='disabled')
@@ -793,9 +771,9 @@ def activate_options(*args):
     else:
         searchedCoNLLdescription_csv_field_menu_lb.configure(state='disabled')
         postag_menu_lb.configure(state='disabled')
-        deprel_description_csv_field_menu_lb.configure(state='disabled')
-        co_postag_description_csv_field_menu_lb.configure(state='disabled')
-        co_deprel_description_csv_field_menu_lb.configure(state='disabled')
+        deprel_menu_lb.configure(state='disabled')
+        co_postag_menu_lb.configure(state='disabled')
+        co_deprel_menu_lb.configure(state='disabled')
 
         all_analyses_checkbox.configure(state='normal')
         clausal_analysis_checkbox.configure(state='normal')
@@ -813,9 +791,9 @@ def activate_options(*args):
 
             searchedCoNLLdescription_csv_field_menu_lb.configure(state='disabled')
             postag_menu_lb.configure(state='disabled')
-            deprel_description_csv_field_menu_lb.configure(state='disabled')
-            co_postag_description_csv_field_menu_lb.configure(state='disabled')
-            co_deprel_description_csv_field_menu_lb.configure(state='disabled')
+            deprel_menu_lb.configure(state='disabled')
+            co_postag_menu_lb.configure(state='disabled')
+            co_deprel_menu_lb.configure(state='disabled')
 
             clausal_analysis_checkbox.configure(state='normal')
             noun_analysis_checkbox.configure(state='normal')
@@ -846,16 +824,16 @@ def activate_CoNLL_options(*args):
         entry_searchField_kw.configure(state='disabled')
         searchedCoNLLdescription_csv_field_menu_lb.configure(state='disabled')
         postag_menu_lb.configure(state='disabled')
-        deprel_description_csv_field_menu_lb.configure(state='disabled')
-        co_postag_description_csv_field_menu_lb.configure(state='disabled')
-        co_deprel_description_csv_field_menu_lb.configure(state='disabled')
+        deprel_menu_lb.configure(state='disabled')
+        co_postag_menu_lb.configure(state='disabled')
+        co_deprel_menu_lb.configure(state='disabled')
     else:
         entry_searchField_kw.configure(state='normal')
         searchedCoNLLdescription_csv_field_menu_lb.configure(state='normal')
         postag_menu_lb.configure(state='normal')
-        deprel_description_csv_field_menu_lb.configure(state='normal')
-        co_postag_description_csv_field_menu_lb.configure(state='normal')
-        co_deprel_description_csv_field_menu_lb.configure(state='normal')
+        deprel_menu_lb.configure(state='normal')
+        co_postag_menu_lb.configure(state='normal')
+        co_deprel_menu_lb.configure(state='normal')
 
 
 clausal_analysis_var.trace('w', activate_CoNLL_options)
@@ -978,9 +956,18 @@ help_buttons(window, GUI_IO_util.get_help_button_x_coordinate(), GUI_IO_util.get
              GUI_IO_util.get_y_step())
 
 # change the value of the readMe_message
-readMe_message = "This Python 3 script will allow you to analyze in depth the contents of the CoNLL table, the table produced by Stanford CoreNLP parser. You can do two things in this GUI, depending upon whether you use the tools on the left-hand side (a search tool) or the tools on the right-hand side (statistical frequency tools).\n\nON THE LEFT-HAND SIDE, you can search all the tokens (i.e., words) related to a user-supplied keyword, found in either FORM or LEMMA of a user-supplied CoNLL table.\n\nYou can filter results by specific POSTAG and DEPREL values for both searched and co-occurring tokens (e.g., POSTAG ‘NN for nouns, DEPREL nsubjpass for passive nouns that are subjects.)\n\nIn INPUT the script expects a CoNLL table generated by the python script StanfordCoreNLP.py. \n\nIn OUTPUT the script creates a tab-separated csv file with a user-supplied filename and path.\n\nThe script also displays the same infomation in the command line.\n\nON THE RIGHT-HAND SIDE, the tools provide frequency distributions of various types of linguistic objects: clauses, nouns, verbs, and function words." + GUI_IO_util.msg_multipleDocsCoNLL
+readMe_message = "This Python 3 script will allow you to analyze in depth the contents of the CoNLL table (CoNLL U format), the table produced by Stanford CoreNLP parser. You can do two things in this GUI, depending upon whether you use the tools on the left-hand side (a search tool) or the tools on the right-hand side (statistical frequency tools).\n\nON THE LEFT-HAND SIDE, you can search all the tokens (i.e., words) related to a user-supplied keyword, found in either FORM or LEMMA of a user-supplied CoNLL table.\n\nYou can filter results by specific POSTAG and DEPREL values for both searched and co-occurring tokens (e.g., POSTAG ‘NN for nouns, DEPREL nsubjpass for passive nouns that are subjects.)\n\nIn INPUT the script expects a CoNLL table generated by the python script StanfordCoreNLP.py. \n\nIn OUTPUT the script creates a tab-separated csv file with a user-supplied filename and path.\n\nThe script also displays the same infomation in the command line.\n\nON THE RIGHT-HAND SIDE, the tools provide frequency distributions of various types of linguistic objects: clauses, nouns, verbs, and function words." + GUI_IO_util.msg_multipleDocsCoNLL
 readMe_command = lambda: GUI_IO_util.readme_button(window, GUI_IO_util.get_help_button_x_coordinate(),
                                                    GUI_IO_util.get_basic_y_coordinate(), "Help", readMe_message)
-GUI_util.GUI_bottom(config_filename, config_input_output_options, y_multiplier_integer, readMe_command, videos_lookup, videos_options, TIPS_lookup, TIPS_options, IO_setup_display_brief)
+scriptName=os.path.basename(__file__)
+
+GUI_util.GUI_bottom(config_filename, config_input_output_numeric_options, y_multiplier_integer, readMe_command, videos_lookup, videos_options, TIPS_lookup, TIPS_options, IO_setup_display_brief,scriptName,True)
+
+if GUI_util.input_main_dir_path.get()!='':
+    mb.showwarning(title='Input file',
+                   message="The CoNLL Table Analyzer scripts require in input a csv CoNLL table.\n\nThe RUN button is disabled until the expected CoNLL file is seleted in input.\n\nPlease, select in input a CoNLL file.")
+else:
+    if inputFilename.get()!='':
+        CoNLL_util.check_CoNLL(inputFilename.get())
 
 GUI_util.window.mainloop()

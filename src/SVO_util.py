@@ -8,6 +8,7 @@ import IO_files_util
 import IO_user_interface_util
 import Excel_util
 import IO_csv_util
+import reminders_util
 
 def count_frequency_two_svo(CoreNLP_csv, senna_csv, inputFilename, inputDir, outputDir) -> list:
     """
@@ -160,6 +161,7 @@ def visualize_Excel_chart(createExcelCharts, inputFilename, outputDir, filesToOp
                                                   count_var=count_var)
         return Excel_outputFilename
 
+
 def filter_svo(window,svo_file_name, filter_s_fileName, filter_v_fileName, filter_o_fileName, lemmatize_s, lemmatize_v,lemmatize_o, outputDir, createExcelCharts=True):
     """
     Filters a svo csv file based on the dictionaries given, and replaces the original output csv file
@@ -174,7 +176,9 @@ def filter_svo(window,svo_file_name, filter_s_fileName, filter_v_fileName, filte
                                                    True, '', True)
 
     df = pd.read_csv(svo_file_name)
-    filtered_df = pd.DataFrame(columns=df.columns)
+    unfiltered_svo = df.to_dict('index')
+    filtered_svo = {}
+    num_rows = df.shape[0]
     lemmatizer = WordNetLemmatizer()
 
     # Generating filter dicts
@@ -189,17 +193,17 @@ def filter_svo(window,svo_file_name, filter_s_fileName, filter_v_fileName, filte
         o_set = set(o_set)
 
     # Adding rows to filtered df
-    for i in range(len(df)):
+    for i in range(num_rows):
         subject, verb, object = '', '', ''
-        if pd.notnull(df.loc[i, 'S']):
+        if not pd.isna(unfiltered_svo[i]['S']):
             # words = stannlp(df.loc[i, 'S'])
             # ((word.pos == "VERB") or (word.pos == "NN") or (word.pos == "NNS")):
             # subject = words.lemma
-            subject = lemmatizer.lemmatize(df.loc[i, 'S'], 'n')
-        if pd.notnull(df.loc[i, 'V']):
-            verb = lemmatizer.lemmatize(df.loc[i, 'V'], 'v')
-        if pd.notnull(df.loc[i, 'O']):
-            object = lemmatizer.lemmatize(df.loc[i, 'O'], 'n')
+            subject = lemmatizer.lemmatize(unfiltered_svo[i]['S'], 'n')
+        if not pd.isna(unfiltered_svo[i]['V']):
+            verb = lemmatizer.lemmatize(unfiltered_svo[i]['V'], 'v')
+        if not pd.isna(unfiltered_svo[i]['O']):
+            object = lemmatizer.lemmatize(unfiltered_svo[i]['O'], 'n')
 
         # The s_set, v_set, and o_set are sets. The “in” in set is equivalent to “==” in string.
         if subject and filter_s_fileName and subject not in s_set:
@@ -212,19 +216,19 @@ def filter_svo(window,svo_file_name, filter_s_fileName, filter_v_fileName, filte
         # the next line does NOT replace the original SVO;
         #   must replace SVO with the values computed above: subject, verb, object
         if lemmatize_s:
-            df.loc[i, 'S'] = subject
+            unfiltered_svo[i]['S'] = subject
         if lemmatize_v:
-            df.loc[i, 'V'] = verb
+            unfiltered_svo[i]['V'] = verb
         if lemmatize_o:
-            df.loc[i, 'O'] = object
+            unfiltered_svo[i]['O'] = object
 
-        filtered_df = filtered_df.append(df.loc[i, :], ignore_index=True)
+        filtered_svo[i] = unfiltered_svo[i]
 
     IO_user_interface_util.timed_alert(window, 3000, 'Analysis end', 'Finished running SVO filter algorithm at', True, '', True,
                                        startTime, True)
 
     # Replacing the original csv file
-    filtered_df.to_csv(svo_file_name, index=False)
+    pd.DataFrame.from_dict(filtered_svo, orient='index').to_csv(svo_file_name, index=False)
 
     filesToOpen = []
 

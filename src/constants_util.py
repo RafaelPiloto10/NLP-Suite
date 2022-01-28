@@ -71,12 +71,12 @@ NLP_Suite_corpus_tools_menu = 'WHAT\'S IN YOUR CORPUS? A SWEEPING VIEW', \
 'Corpus statistics (Sentences, words, lines)', 'Co-Occurrences viewer', 'N-grams viewer', \
 'Shape of stories', 'Similarities between documents (via Python difflib)', \
 'Similarities between documents (via Java Lucene)', 'Topic modeling (via Gensim)', \
-'Topic modeling (via Mallet)', 'Word2Vec (via Gensim)'
+'Topic modeling (via MALLET)', 'Word2Vec (via Gensim)'
 
 NLP_Suite_corpus_document_tools_menu = 'Stanford CoreNLP', 'CoNLL table analyzer - Search the CoNLL table', \
 'CoNLL table analyzer - Clause, noun, verb, function words frequencies', 'CoreNLP annotator - date (NER normalized date)', \
 'CoreNLP annotator - gender (male & female names; via CoreNLP and dictionaries)', 'CoreNLP annotator - quote', \
-'CoreNLP annotator - coreference (pronominal)', 'HTML annotator - dictionary, gender, DBpedia, YAGO',\
+'CoreNLP annotator - coreference (pronominal)', 'Knowledge graphs: DBpedia & YAGO', 'HTML annotator',\
 'HTML annotator extractor',  'Annotator - hedge/uncertainty', 'Narrative analysis', 'Style analysis', \
 'Sentiment analysis', 'Gender guesser', 'Geographic maps: From texts to maps', 'Geographic maps: Google Earth Pro', \
 'NER (Named Entity Recognition) extractor', 'N-grams (word & character)', 'Nominalization', 'Search CoNLL table', \

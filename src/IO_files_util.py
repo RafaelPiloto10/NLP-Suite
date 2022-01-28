@@ -23,7 +23,7 @@ import ntpath  # to split the path from filename
 from pathlib import Path
 
 import reminders_util
-import IO_CoNLL_util
+import CoNLL_util
 import IO_user_interface_util
 import GUI_IO_util
 
@@ -33,7 +33,6 @@ import GUI_IO_util
 # dirname returns the directory of a file
 # __file__ refers to the script's file name
 # pardir returns the representation of a parent directory in the OS (usually ..)
-from IO_user_interface_util import timed_alert
 
 dir_path = os.path.dirname(os.path.realpath(__file__))
 os.chdir(dir_path)
@@ -149,7 +148,7 @@ def selectFile(window, IsInputFile, checkCoNLL, title, fileType, extension, outp
     if len(inputFilename) < 3:
         inputFilename = ""
     if (checkCoNLL == True) and (IsInputFile == 1) and (extension == ".csv") and (len(inputFilename) > 3):
-        if IO_CoNLL_util.check_CoNLL(inputFilename, False) == False:
+        if CoNLL_util.check_CoNLL(inputFilename, False) == False:
             inputFilename = ""
     return inputFilename
 
@@ -329,7 +328,7 @@ def OpenOutputFiles(window, openOutputFiles, filesToOpen):
                                      'If csv ouput files open displaying weird characters in a Windows OS (e.g., a€), most likely the cause is due to non utf-8 compliant input text. Apostrophes and quotes are the typical culprits, but also other punctuation characters.\n\nPlease, run the tool to check documents for utf-8 compliance and, if necessary, run the tool for automatic apostrophe and quote conversion from non utf-8 to utf-8.\n\nTo learm more on utf-8 compliance, read the TIPS on utf-8 compliance.',
                                      True)
         routine_options = reminders_util.getReminders_list('*')
-        timed_alert(window, 2000, 'Warning',
+        IO_user_interface_util.timed_alert(window, 2000, 'Warning',
                     'Opening ' + str(len(filesToOpen)) + ' output ' + singularPlural + '... Please wait...', False,'',True,'',True)
         for file in filesToOpen:
             if os.path.isfile(file):
@@ -370,7 +369,7 @@ def generate_output_file_name(inputFilename, inputDir, outputDir, outputExtensio
         inputfile = getFilename(inputFilename)
     default_outputFilename_str =''
     # do not add the NLP_ prefix if processing a file previously processed and with the prefix already added
-    if "NLP_" not in inputfile:
+    if inputfile[0:4]!='NLP_': #"NLP_" not in inputfile:
         if label1=='':
             default_outputFilename_str = 'NLP_' + inputfile  # adding to front of file name
         else:
@@ -379,7 +378,8 @@ def generate_output_file_name(inputFilename, inputDir, outputDir, outputExtensio
         if label1=='':
             default_outputFilename_str=inputfile
         else:
-            default_outputFilename_str = inputfile.replace("NLP_", "NLP_" + label1 + "_")
+            if inputfile[0:4]=='NLP_': #only replace first 4 characters since NLP may occur elsewhere in the filename
+                default_outputFilename_str = inputfile[0:4].replace('NLP_','NLP_' + label1 + '_') + inputfile[4:]
     if len(str(label2)) > 0:
         default_outputFilename_str = default_outputFilename_str + "_" + str(label2)
     if len(str(label3)) > 0:

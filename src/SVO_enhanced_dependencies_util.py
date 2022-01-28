@@ -234,7 +234,6 @@ def verb_root_svo_building(verb, sent_data, v_obj_obl_json, v_prep_json):#extrac
     if "nsubj" in vgd.keys():
         s, s_idx = s_o_formation(vgd["nsubj"], sent_data)
         s_dep = "nsubj"
-        
 
         
     elif 'obl:agent' in vgd.keys():#subject in passive sentence
@@ -486,6 +485,7 @@ def SVO_extraction (sent_data, entitymentions): #returns columns of the final ou
     CollectedVs = []#list of processed verbs
     SVO = []#list that store the subject-verb-object triplets
     L = []#list that stores the location information appear in sentences
+    NER_value = []
     T = []#list that stores the time information appear in sentences
     T_S = []#list that stores normalized form of the time information appear in sentences
     P = []#list that stores person names appear in sentences
@@ -499,9 +499,10 @@ def SVO_extraction (sent_data, entitymentions): #returns columns of the final ou
     for item in entitymentions:
         if item["ner"] is not None and item["ner"] in ['STATE_OR_PROVINCE', 'COUNTRY', "CITY", "LOCATION"]:
             L.append(item["text"])
+            NER_value.append(item["ner"])
 
     link_verb_LVC_text = GUI_IO_util.CoreNLP_enhanced_dependencies_libPath + os.sep + "verb_obj_obl_json.txt"
-    for key in sent_data.keys():#traverse each token token in that sentence
+    for key in sent_data.keys():#traverse each token in that sentence
         negation = False 
         token = sent_data[key]
 
@@ -538,8 +539,7 @@ def SVO_extraction (sent_data, entitymentions): #returns columns of the final ou
                     if s != 'Someone?' or o != '':
                         SVO.append([s, v, o])
                         N.append(n)
-               
-        
+
         
         else:#if that token is not a verb 
             #check if that token is a part of an LVC that starts with a link verb (like "be responsible for")
@@ -585,7 +585,7 @@ def SVO_extraction (sent_data, entitymentions): #returns columns of the final ou
                     SVO.extend(svo_acl)
                     N.extend(negation_acl)
  
-    return SVO, L, T, T_S, P, N
+    return SVO, L, NER_value, T, T_S, P, N
             
                         
 # Dec. 21

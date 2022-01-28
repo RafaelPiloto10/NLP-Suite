@@ -12,7 +12,7 @@ if IO_libraries_util.install_all_packages(GUI_util.window, "SVO extractor",
                                           ['subprocess', 'os', 'tkinter', 'csv']) == False:
     sys.exit(0)
 
-from collections import defaultdict
+# from collections import defaultdict
 import os
 import SVO_util
 import csv
@@ -27,7 +27,6 @@ from subprocess import call
 
 import GUI_IO_util
 import IO_files_util
-import IO_user_interface_util
 import Gephi_util
 import GIS_pipeline_util
 import wordclouds_util
@@ -36,7 +35,7 @@ import Stanford_CoreNLP_coreference_util
 import Stanford_CoreNLP_annotator_util
 import semantic_role_labeling_senna
 import reminders_util
-import WordNet_util
+import knowledge_graphs_WordNet_util
 
 # RUN section ______________________________________________________________________________________________________________________________________________________
 
@@ -155,6 +154,7 @@ def run(inputFilename, inputDir, outputDir, openOutputFiles, createExcelCharts,
 
     outputCorefedDir = ''
     outputSVODir = ''
+    outputLocations = []
 
     filesToOpen = []
 
@@ -177,8 +177,7 @@ def run(inputFilename, inputDir, outputDir, openOutputFiles, createExcelCharts,
             mb.showerror(title='Input file error',
                          message="The selected input is a csv file, but... not an _svo.csv file.\n\nPlease, select an _svo.csv file (or txt file(s)) and try again.")
             return
-        if (
-                utf8_var == True or Coref == True or memory_var == True or Manual_Coref_var == True or normalized_NER_date_extractor_var == True or CoreNLP_SVO_extractor_var == True):
+        if (utf8_var == True or Coref == True or memory_var == True or Manual_Coref_var == True or normalized_NER_date_extractor_var == True or CoreNLP_SVO_extractor_var == True):
             mb.showerror(title='Input file/option error',
                          message="The data analysis option(s) you have selected require in input a txt file, rather than a csv file.\n\nPlease, check your input file and/or algorithm selections and try again.")
             return
@@ -233,13 +232,12 @@ def run(inputFilename, inputDir, outputDir, openOutputFiles, createExcelCharts,
         if error_indicator != 0:
             return
 
-        if isFile:
-            inputFilename = str(file_open)
-            inputDir = ''
-        else:
-            # processing a directory
-            inputFilename = ''
-            inputDir = outputCorefedDir
+        for f in file_open:
+            # Only txt file is the actual corefed file we need for SVO. We don't need coref table
+            if os.path.splitext(f)[1] == ".txt":
+                inputFilename = f
+        isFile = True
+        inputDir = ""
 
         if len(file_open) > 0:
             filesToOpen.extend(file_open)
@@ -252,7 +250,7 @@ def run(inputFilename, inputDir, outputDir, openOutputFiles, createExcelCharts,
                                                                  'normalized-date', False, memory_var, document_length_var, limit_sentence_length_var)
         filesToOpen.extend(files)
 
-    if SENNA_SVO_extractor_var or CoreNLP_SVO_extractor_var:
+    if SENNA_SVO_extractor_var or CoreNLP_SVO_extractor_var or CoreNLP_OpenIE_var:
         if isFile:
             inputFileBase = os.path.basename(inputFilename)[0:-4]  # without .txt
             # remove NLP_CoreNLP_ from filename (could have been added to filename in case of coref)
@@ -280,15 +278,21 @@ def run(inputFilename, inputDir, outputDir, openOutputFiles, createExcelCharts,
         if IO_libraries_util.inputProgramFileCheck('Stanford_CoreNLP_annotator_util.py') == False:
             return
 
+        location_filename = IO_files_util.generate_output_file_name(inputFilename, inputDir, outputDir, '.csv',
+                                                                     'CoreNLP_SVO_LOCATIONS')
+        outputLocations.append(location_filename)
         tempOutputFiles = Stanford_CoreNLP_annotator_util.CoreNLP_annotate(config_filename, inputFilename, inputDir,
                                                                        outputDir, openOutputFiles,
                                                                        createExcelCharts,
                                                                        'SVO', False,
                                                                        memory_var, document_length_var, limit_sentence_length_var,
-                                                                       extract_date_from_filename_var=False,
-                                                                       date_format_var='',
-                                                                       date_separator_var='',
-                                                                       date_position_var=0)
+                                                                       extract_date_from_text_var=extract_date_from_text_var,
+                                                                       extract_date_from_filename_var=extract_date_from_filename_var,
+                                                                       date_format=date_format_var,
+                                                                       date_separator_var=date_separator_var,
+                                                                       date_position_var=date_position_var,
+                                                                       google_earth_var=google_earth_var,
+                                                                       location_filename = location_filename)
         if len(tempOutputFiles)>0:
             if subjects_dict_var or verbs_dict_var or objects_dict_var or lemmatize_subjects or lemmatize_verbs or lemmatize_objects:
                 output = SVO_util.filter_svo(window,tempOutputFiles[0], subjects_dict_var, verbs_dict_var, objects_dict_var,
@@ -300,12 +304,18 @@ def run(inputFilename, inputDir, outputDir, openOutputFiles, createExcelCharts,
                     # tempOutputFiles[0] is the filename with lemmatized SVO values
                     # we want to aggregate with WordNet the verbs in column 'V'
                     outputFilename = IO_csv_util.extract_from_csv(tempOutputFiles[0],outputDir,'',['V'])
+                    # check that SVO output file contains records
                     if IO_csv_util.GetNumberOfRecordInCSVFile(tempOutputFiles[0], encodingValue='utf-8') > 1:
-                        output = WordNet_util.aggregate_GoingUP(WordNetDir, outputFilename, outputDir, config_filename, 'VERB',
+                        output = knowledge_graphs_WordNet_util.aggregate_GoingUP(WordNetDir, outputFilename, outputDir, config_filename, 'VERB',
                                                                openOutputFiles, createExcelCharts)
                         if output != None:
                             filesToOpen.extend(output)
-
+                    else:
+                        reminders_util.checkReminder(config_filename, reminders_util.title_options_no_SVO_records,
+                                                     reminders_util.message_no_SVO_records, True)
+            pronoun_files = Stanford_CoreNLP_annotator_util.check_pronouns(window, config_filename, tempOutputFiles[0],
+                                                                           outputDir, createExcelCharts, "SVO")
+            filesToOpen.extend(pronoun_files)
             filesToOpen.extend(tempOutputFiles)
             svo_result_list.append(tempOutputFiles[0])
 
@@ -404,17 +414,23 @@ def run(inputFilename, inputDir, outputDir, openOutputFiles, createExcelCharts,
 # CoreNLP OpenIE _____________________________________________________
 
     if CoreNLP_OpenIE_var:
+        location_filename = IO_files_util.generate_output_file_name(inputFilename, inputDir, outputDir, '.csv',
+                                                                     'CoreNLP_SVO_OpenIE_LOCATIONS')
+        outputLocations.append(location_filename)
         tempOutputFiles = Stanford_CoreNLP_annotator_util.CoreNLP_annotate(config_filename, inputFilename, inputDir,
                                                                            outputDir, openOutputFiles,
                                                                            createExcelCharts,
                                                                            'OpenIE', 
                                                                            False,
                                                                            memory_var, document_length_var, limit_sentence_length_var,
-                                                                           extract_date_from_filename_var=False,
-                                                                           date_format_var='',
-                                                                           date_separator_var='',
-                                                                           date_position_var=0)
-        
+                                                                           extract_date_from_text_var=extract_date_from_text_var,
+                                                                           extract_date_from_filename_var=extract_date_from_filename_var,
+                                                                           date_format=date_format_var,
+                                                                           date_separator_var=date_separator_var,
+                                                                           date_position_var=date_position_var,
+                                                                           google_earth_var = google_earth_var,
+                                                                           location_filename = location_filename)
+
         if len(tempOutputFiles)>0:
             if subjects_dict_var or verbs_dict_var or objects_dict_var or lemmatize_subjects or lemmatize_verbs or lemmatize_objects:
                 output = SVO_util.filter_svo(window,tempOutputFiles[0], subjects_dict_var, verbs_dict_var, objects_dict_var,
@@ -423,8 +439,13 @@ def run(inputFilename, inputDir, outputDir, openOutputFiles, createExcelCharts,
                     filesToOpen.extend(output)
 
             filesToOpen.extend(tempOutputFiles)
+            pronoun_files = Stanford_CoreNLP_annotator_util.check_pronouns(window, config_filename, tempOutputFiles[0],
+                                                                           outputDir, createExcelCharts, "SVO")
+            filesToOpen.extend(pronoun_files)
             svo_result_list.append(tempOutputFiles[0])
 
+    reminders_util.checkReminder(config_filename, reminders_util.title_options_SVO_someone,
+                                 reminders_util.message_SVO_someone, True)
     # the SVO script can take in input a csv SVO file previously computed: inputFilename
     # results currently produced are in svo_result_list
     if ('SVO_' in inputFilename) or (len(svo_result_list) > 0):
@@ -434,17 +455,20 @@ def run(inputFilename, inputDir, outputDir, openOutputFiles, createExcelCharts,
             # previous svo csv files can be entered in input to display networks, wordclouds or GIS maps
             if inputFilename[-4:] == ".csv":
                 if IO_csv_util.GetNumberOfRecordInCSVFile(inputFilename) > 1:  # including headers; file is empty
-                    gexf_file = Gephi_util.create_gexf(window,inputFileBase, outputDir, inputFilename)
+                    gexf_file = Gephi_util.create_gexf(window,inputFileBase, outputDir, inputFilename, "S", "V", "O",
+                                                       "Sentence ID")
                     filesToOpen.append(gexf_file)
                 else:
                     if IO_csv_util.GetNumberOfRecordInCSVFile(
                             svo_result_list[0]) > 1:  # including headers; file is empty
-                        gexf_file = Gephi_util.create_gexf(window,inputFileBase, outputDir, svo_result_list[0])
+                        gexf_file = Gephi_util.create_gexf(window,inputFileBase, outputDir, svo_result_list[0],
+                                                           "S", "V", "O", "Sentence ID")
                         filesToOpen.append(gexf_file)
             else:  # txt input file
                 for f in svo_result_list:
                     if IO_csv_util.GetNumberOfRecordInCSVFile(f) > 1:  # including headers; file is empty
-                        gexf_file = Gephi_util.create_gexf(window,os.path.basename(f)[:-4], outputDir, f)
+                        gexf_file = Gephi_util.create_gexf(window,os.path.basename(f)[:-4], outputDir, f, "S", "V", "O",
+                                                           "Sentence ID")
                         if "CoreNLP" in f or "SENNA_SVO" in f:
                             filesToOpen.append(gexf_file)
                         if not save_intermediate_file:
@@ -484,29 +508,26 @@ def run(inputFilename, inputDir, outputDir, openOutputFiles, createExcelCharts,
 
         # SENNA locations are not really geocodable locations
         if google_earth_var:
-            out_file = ''
-            kmloutputFilename = ''
+            # for f in svo_result_list:
+                # SENNA does not have a location field
+            if (CoreNLP_SVO_extractor_var or CoreNLP_OpenIE_var) and os.path.isfile(location_filename):
 
-            # out_file is a list []
-            #   containing several csv files of geocoded locations and non geocoded locations
-            # kmloutputFilename is a string; empty when the kml file fails to be created
-
-            for f in svo_result_list:
-                # SENNA and OpenIE do not have a location field
-                if (not 'SENNA' in f) and (not 'OpenIE' in f) and IO_csv_util.GetNumberOfRecordInCSVFile(
-                        f) > 1:  # including headers; file is empty
-
-                    reminders_util.checkReminder(config_filename, reminders_util.title_options_geocoder,
-                                                 reminders_util.message_geocoder, True)
-                    # locationColumnNumber where locations are stored in the csv file; any changes to the columns will result in error
-                    date_present = False
-                    country_bias = ''
+                reminders_util.checkReminder(config_filename, reminders_util.title_options_geocoder,
+                                             reminders_util.message_geocoder, True)
+                # locationColumnNumber where locations are stored in the csv file; any changes to the columns will result in error
+                date_present = (extract_date_from_text_var == True) or (extract_date_from_filename_var == True)
+                country_bias = ''
+                area_var = ''
+                restrict = False
+                for location_filename in outputLocations:
                     out_file, kmloutputFilename = GIS_pipeline_util.GIS_pipeline(GUI_util.window,
-                                 config_filename, f,
+                                 config_filename, location_filename,
                                  outputDir,
                                  'Nominatim', 'Google Earth Pro & Google Maps',
                                  date_present,
                                  country_bias,
+                                 area_var,
+                                 restrict,
                                  'Location',
                                  'utf-8',
                                  0, 1, [''], [''], # group_var, group_number_var, group_values_entry_var_list, group_label_entry_var_list,
@@ -577,40 +598,33 @@ GUI_util.run_button.configure(command=run_script_command)
 # the GUIs are all setup to run with a brief I/O display or full display (with filename, inputDir, outputDir)
 #   just change the next statement to True or False IO_setup_display_brief=True
 IO_setup_display_brief=True
-GUI_width=GUI_IO_util.get_GUI_width(3)
-GUI_height=750 # height of GUI with full I/O display
+GUI_size, y_multiplier_integer, increment = GUI_IO_util.GUI_settings(IO_setup_display_brief,
+                             GUI_width=GUI_IO_util.get_GUI_width(3),
+                             GUI_height_brief=670, # height at brief display
+                             GUI_height_full=710, # height at full display
+                             y_multiplier_integer=GUI_util.y_multiplier_integer,
+                             y_multiplier_integer_add=2, # to be added for full display
+                             increment=2)  # to be added for full display
 
-if IO_setup_display_brief:
-    GUI_height = GUI_height - 80
-    y_multiplier_integer = GUI_util.y_multiplier_integer  # IO BRIEF display
-    increment=0 # used in the display of HELP messages
-else: # full display
-    # GUI CHANGES add following lines to every special GUI
-    # +3 is the number of lines starting at 1 of IO widgets
-    # y_multiplier_integer=GUI_util.y_multiplier_integer+2
-    y_multiplier_integer = GUI_util.y_multiplier_integer + 2  # IO FULL display
-    increment=2
-
-GUI_size = str(GUI_width) + 'x' + str(GUI_height)
 
 GUI_label = 'Graphical User Interface (GUI) for Subject-Verb-Object (SVO) Extraction & Visualization Pipeline - Extracting 4 of the 5 Ws of Narrative: Who, What, When, Where'
-config_filename = 'SVO-config.txt'
-# The 6 values of config_option refer to:
-#   software directory
-#   input file
-# 1 for CoNLL file
-# 2 for TXT file
-# 3 for csv file
-# 4 for any type of file
-# 5 for txt or html
-# 6 for txt or csv
-#   input dir 0 no dir 1 dir
-#   input secondary dir 0 no dir 1 dir
-#   output file 0 no file 1 file
-#   output dir 0 no dir 1 dir
-config_option = [0, 6, 1, 0, 0, 1]
+head, scriptName = os.path.split(os.path.basename(__file__))
+config_filename = scriptName.replace('main.py', 'config.csv')
 
-GUI_util.set_window(GUI_size, GUI_label, config_filename, config_option)
+# The 4 values of config_option refer to:
+#   input file
+        # 1 for CoNLL file
+        # 2 for TXT file
+        # 3 for csv file
+        # 4 for any type of file
+        # 5 for txt or html
+        # 6 for txt or csv
+#   input dir
+#   input secondary dir
+#   output dir
+config_input_output_numeric_options=[6,1,0,1]
+
+GUI_util.set_window(GUI_size, GUI_label, config_filename, config_input_output_numeric_options)
 
 # location of this src python file
 scriptPath = GUI_IO_util.scriptPath
@@ -620,12 +634,12 @@ NLPPath = GUI_IO_util.NLPPath
 # libPath = GUI_IO_util.libPath +os.sep+'wordLists'
 
 window = GUI_util.window
-config_input_output_options = GUI_util.config_input_output_options
-config_filename = GUI_util.config_filename
+# config_input_output_numeric_options = GUI_util.config_input_output_numeric_options
+# config_filename = GUI_util.config_filename
 inputFilename = GUI_util.inputFilename
 input_main_dir_path = GUI_util.input_main_dir_path
 
-GUI_util.GUI_top(config_input_output_options, config_filename,IO_setup_display_brief)
+GUI_util.GUI_top(config_input_output_numeric_options, config_filename,IO_setup_display_brief)
 
 
 def clear(e):
@@ -715,21 +729,21 @@ extract_date_from_text_checkbox = tk.Checkbutton(window, variable=extract_date_f
 extract_date_from_text_checkbox.config(text="From document content")
 y_multiplier_integer = GUI_IO_util.placeWidget(GUI_IO_util.get_entry_box_x_coordinate(),
                                                y_multiplier_integer, extract_date_from_text_checkbox, True)
-extract_date_from_text_checkbox.configure(state='disabled')
+# extract_date_from_text_checkbox.configure(state='disabled')
 
 extract_date_from_filename_var.set(0)
 extract_date_from_filename_checkbox = tk.Checkbutton(window, variable=extract_date_from_filename_var, onvalue=1, offvalue=0)
 extract_date_from_filename_checkbox.config(text="From filename")
 y_multiplier_integer = GUI_IO_util.placeWidget(GUI_IO_util.get_entry_box_x_coordinate() + 190,
                                                y_multiplier_integer, extract_date_from_filename_checkbox, True)
-extract_date_from_filename_checkbox.config(state='disabled')
+# extract_date_from_filename_checkbox.config(state='disabled')
 
 date_format_lb = tk.Label(window,text='Format ')
 y_multiplier_integer = GUI_IO_util.placeWidget(GUI_IO_util.get_entry_box_x_coordinate() + 320,
                                                y_multiplier_integer, date_format_lb, True)
 date_format_var.set('mm-dd-yyyy')
 date_format_menu = tk.OptionMenu(window, date_format_var, 'mm-dd-yyyy', 'dd-mm-yyyy','yyyy-mm-dd','yyyy-dd-mm','yyyy-mm','yyyy')
-date_format_menu.configure(width=10,state="disabled")
+# date_format_menu.configure(width=10,state="disabled")
 y_multiplier_integer = GUI_IO_util.placeWidget(GUI_IO_util.get_entry_box_x_coordinate() + 380,
                                                y_multiplier_integer, date_format_menu, True)
 date_separator_var.set('_')
@@ -737,7 +751,7 @@ date_separator_lb = tk.Label(window, text='Character separator ')
 y_multiplier_integer = GUI_IO_util.placeWidget(GUI_IO_util.get_entry_box_x_coordinate() + 510,
                                                y_multiplier_integer, date_separator_lb, True)
 date_separator = tk.Entry(window, textvariable=date_separator_var)
-date_separator.configure(width=2,state="disabled")
+# date_separator.configure(width=2,state="disabled")
 y_multiplier_integer = GUI_IO_util.placeWidget(GUI_IO_util.get_entry_box_x_coordinate() + 640,
                                                y_multiplier_integer, date_separator, True)
 date_position_var.set(2)
@@ -745,7 +759,7 @@ date_position_menu_lb = tk.Label(window, text='Position ')
 y_multiplier_integer = GUI_IO_util.placeWidget(GUI_IO_util.get_entry_box_x_coordinate() + 670,
                                                y_multiplier_integer, date_position_menu_lb, True)
 date_position_menu = tk.OptionMenu(window,date_position_var,1,2,3,4,5)
-date_position_menu.configure(width=1,state="disabled")
+# date_position_menu.configure(width=1,state="disabled")
 y_multiplier_integer = GUI_IO_util.placeWidget(GUI_IO_util.get_entry_box_x_coordinate() + 740,
                                                y_multiplier_integer, date_position_menu)
 
@@ -803,10 +817,11 @@ CoRef_var.trace('w', activateCoRefOptions)
 
 activateCoRefOptions()
 
-date_extractor_checkbox = tk.Checkbutton(window, text='Extract normalized NER dates (via Stanford CoreNLP)',
-                                         variable=normalized_NER_date_extractor_var, onvalue=1, offvalue=0)
-y_multiplier_integer = GUI_IO_util.placeWidget(GUI_IO_util.get_labels_x_coordinate(), y_multiplier_integer,
-                                               date_extractor_checkbox)
+# extracted in SVO
+# date_extractor_checkbox = tk.Checkbutton(window, text='Extract normalized NER dates (via Stanford CoreNLP)',
+#                                          variable=normalized_NER_date_extractor_var, onvalue=1, offvalue=0)
+# y_multiplier_integer = GUI_IO_util.placeWidget(GUI_IO_util.get_labels_x_coordinate(), y_multiplier_integer,
+#                                                date_extractor_checkbox)
 
 SRL_var.set(0)
 SRL_checkbox = tk.Checkbutton(window, text='SRL (Semantic Role Labeling)',
@@ -874,7 +889,7 @@ def activateFilters(*args):
         gephi_checkbox.configure(state='disabled')
         wordcloud_checkbox.configure(state='disabled')
         google_earth_checkbox.configure(state='disabled')
-    if CoreNLP_SVO_extractor_var.get()==False and (SENNA_SVO_extractor_var.get()==True or CoreNLP_OpenIE_var.get()==True):
+    if CoreNLP_SVO_extractor_var.get()==False and CoreNLP_OpenIE_var.get()==False and SENNA_SVO_extractor_var.get()==True:
         google_earth_checkbox.configure(state='disabled')
         google_earth_var.set(0)
 
@@ -992,10 +1007,12 @@ TIPS_lookup = {'SVO extraction and visualization': 'TIPS_NLP_SVO extraction and 
                'Stanford CoreNLP enhanced dependencies parser (SVO)':'TIPS_NLP_Stanford CoreNLP enhanced dependencies parser (SVO).pdf',
                'CoNLL table': "TIPS_NLP_Stanford CoreNLP CoNLL table.pdf",
                'Stanford CoreNLP coreference resolution': "TIPS_NLP_Stanford CoreNLP coreference resolution.pdf",
-               "Google Earth Pro": "TIPS_NLP_Google Earth Pro.pdf", "Geocoding": "TIPS_NLP_Geocoding.pdf",
+               "Google Earth Pro": "TIPS_NLP_Google Earth Pro.pdf",
+               "Geocoding": "TIPS_NLP_Geocoding.pdf",
+               "Geocoding: How to Improve Nominatim":"TIPS_NLP_Geocoding Nominatim.pdf",
                "Gephi network graphs": "TIPS_NLP_Gephi network graphs.pdf",
                'Java download install run': 'TIPS_NLP_Java download install run.pdf'}
-TIPS_options = 'SVO extraction and visualization', 'utf-8 encoding', 'Stanford CoreNLP memory issues', 'Stanford CoreNLP date extractor', 'Stanford CoreNLP OpenIE', 'Stanford CoreNLP parser', 'Stanford CoreNLP enhanced dependencies parser (SVO)', 'CoNLL table', 'Stanford CoreNLP coreference resolution', 'Google Earth Pro', 'Geocoding', 'Gephi network graphs', 'Java download install run'
+TIPS_options = 'SVO extraction and visualization', 'utf-8 encoding', 'Stanford CoreNLP memory issues', 'Stanford CoreNLP date extractor', 'Stanford CoreNLP OpenIE', 'Stanford CoreNLP parser', 'Stanford CoreNLP enhanced dependencies parser (SVO)', 'CoNLL table', 'Stanford CoreNLP coreference resolution', 'Google Earth Pro', 'Geocoding', 'Geocoding: How to Improve Nominatim', 'Gephi network graphs', 'Java download install run'
 
 
 # add all the lines lines to the end to every special GUI
@@ -1017,24 +1034,24 @@ def help_buttons(window, help_button_x_coordinate, basic_y_coordinate, y_step):
                                   "Please, click on the 'Pre-processing tools' button to open the GUI where you will be able to perform a variety of\n   file checking options (e.g., utf-8 encoding compliance of your corpus or sentence length);\n   file cleaning options (e.g., convert non-ASCII apostrophes & quotes and % to percent).\n\nNon utf-8 compliant texts are likely to lead to code breakdown in various algorithms.\n\nASCII apostrophes & quotes (the slanted punctuation symbols of Microsoft Word), will not break any code but they will display in a csv document as weird characters.\n\n% signs will lead to code breakdon of Stanford CoreNLP.\n\nSentences without an end-of-sentence marker (. ! ?) in Stanford CoreNLP will be processed together with the next sentence, potentially leading to very long sentences.\n\nSentences longer than 70 or 100 words may pose problems to Stanford CoreNLP (the average sentence length of modern English is 20 words). Please, read carefully the TIPS_NLP_Stanford CoreNLP memory issues.pdf."+GUI_IO_util.msg_Esc)
     GUI_IO_util.place_help_button(window, help_button_x_coordinate, basic_y_coordinate + y_step * (increment+2), "Help",
                                   "The Stanford CoreNLP performance is affected by various issues: memory size of your computer, document size, sentence length\n\nPlease, select the memory size Stanford CoreNLP will use. Default = 4. Lower this value if CoreNLP runs out of resources.\n   For CoreNLP co-reference resolution you may wish to increase the value when processing larger files (compatibly with the memory size of your machine).\n\nLonger documents affect performace. Stanford CoreNLP has a limit of 100,000 characters processed (the NLP Suite limits this to 90,000 as default). If you run into performance issues you may wish to further reduce the document size.\n\nSentence length also affect performance. The Stanford CoreNLP recommendation is to limit sentence length to 70 or 100 words.\n   You may wish to compute the sentence length of your document(s) so that perhaps you can edit the longer sentences.\n\nOn these issues, please, read carefully the TIPS_NLP_Stanford CoreNLP memory issues.pdf."+GUI_IO_util.msg_Esc)
-    GUI_IO_util.place_help_button(window,help_button_x_coordinate,basic_y_coordinate+y_step* (increment+3),"Help","The GIS algorithms allow you to extract a date to be used to build dynamic GIS maps. You can extract dates from the document content or from the filename if this embeds a date.\n\nPlease, the tick the checkbox 'From document content' if you wish to extract normalized NER dates from the text itself.\n\nPlease, tick the checkbox 'From filename' if filenames embed a date (e.g., The New York Times_12-05-1885).\n\nDATE WIDGETS ARE NOT VISIBLE WHEN SELECTING A CSV INPUT FILE."+GUI_IO_util.msg_Esc)
+    GUI_IO_util.place_help_button(window,help_button_x_coordinate,basic_y_coordinate+y_step* (increment+3),"Help","The GIS algorithms allow you to extract a date to be used to build dynamic GIS maps. You can extract dates from the document content or from the filename if this embeds a date.\n\nPlease, the tick the checkbox 'From document content' if you wish to extract normalized NER dates from the text itself.\n\nPlease, tick the checkbox 'From filename' if filenames embed a date (e.g., The New York Times_12-05-1885).\n\nDATE WIDGETS ARE NOT VISIBLE WHEN SELECTING A CSV INPUT FILE. \n\nOnce you have ticked the 'Filename embeds date' option, you will need to provide the follwing information:\n   1. the date format of the date embedded in the filename (default mm-dd-yyyy); please, select.\n   2. the character used to separate the date field embedded in the filenames from the other fields (e.g., _ in the filename The New York Times_12-23-1992) (default _); please, enter.\n   3. the position of the date field in the filename (e.g., 2 in the filename The New York Times_12-23-1992; 4 in the filename The New York Times_1_3_12-23-1992 where perhaps fields 2 and 3 refer respectively to the page and column numbers); please, select.\n\nIF THE FILENAME EMBEDS A DATE AND THE DATE IS THE ONLY FIELD AVAILABLE IN THE FILENAME (e.g., 2000.txt), enter . in the 'Date character separator' field and enter 1 in the 'Date position' field."+GUI_IO_util.msg_Esc)
     GUI_IO_util.place_help_button(window, help_button_x_coordinate, basic_y_coordinate + y_step * (increment+4), "Help",
                                   "Please, tick the checkbox to run the Stanford CoreNLP coreference resolution annotator using the Neural Network approach.\n\n\Please, BE PATIENT. Depending upon size and number of documents to be coreferenced the algorithm may take a long a time.\n\nIn INPUT the algorithm expects a single txt file or a directory of txt files.\n\nIn OUTPUT the algorithm will produce txt-format copies of the same input txt files but co-referenced."+GUI_IO_util.msg_Esc)
     GUI_IO_util.place_help_button(window, help_button_x_coordinate, basic_y_coordinate + y_step * (increment+5), "Help",
                                   "Please, tick the checkbox if you wish to resolve manually cases of unresolved or wrongly resolved coreferences.\n\nThe option is not available when processing a directory of files. You can always use the 'Stanford_CoreNLP_coreference_main' GUI to\n   1. open a merged coreferenced file;\n   2. split merged coreferenced files.\n\nMANUAL EDITING REQUIRES A LOT OF MEMORY SINCE BOTH ORIGINAL AND CO-REFERENCED FILE ARE BROUGHT IN MEMORY. DEPENDING UPON FILE SIZES, YOU MAY NOT HAVE ENOUGH MEMORY FOR THIS STEP."+GUI_IO_util.msg_Esc)
+    # GUI_IO_util.place_help_button(window, help_button_x_coordinate, basic_y_coordinate + y_step * (increment+6), "Help",
+    #                               "Please, tick the checkbox if you wish to run the Stanford CoreNLP normalized NER date annotator to extract standard dates from text in the yyyy-mm-dd format (e.g., 'the day before Christmas' extracted as 'xxxx-12-24').\n\nThis will display time plots of dates, visualizing the WHEN of the 5 Ws of narrative."+GUI_IO_util.msg_Esc)
     GUI_IO_util.place_help_button(window, help_button_x_coordinate, basic_y_coordinate + y_step * (increment+6), "Help",
-                                  "Please, tick the checkbox if you wish to run the Stanford CoreNLP normalized NER date annotator to extract standard dates from text in the yyyy-mm-dd format (e.g., 'the day before Christmas' extracted as 'xxxx-12-24').\n\nThis will display time plots of dates, visualizing the WHEN of the 5 Ws of narrative."+GUI_IO_util.msg_Esc)
-    GUI_IO_util.place_help_button(window, help_button_x_coordinate, basic_y_coordinate + y_step * (increment+7), "Help",
                                   "Please, tick the checkbox if you wish to run Jinho Choi's SRL (Semantic Role Labeling) algorithm (https://github.com/emorynlp/elit/blob/main/docs/semantic_role_labeling.md)."+GUI_IO_util.msg_Esc)
-    GUI_IO_util.place_help_button(window, help_button_x_coordinate, basic_y_coordinate + y_step * (increment+8), "Help",
+    GUI_IO_util.place_help_button(window, help_button_x_coordinate, basic_y_coordinate + y_step * (increment+7), "Help",
                                   "Please, tick the checkboxes if you wish to run the Stanford CoreNLP neural network Enhanced++ Dependencies parser and/or SENNA to extract SVO triplets and SV pairs. Tick the checkbox 'Extract relation triples (via OpenIE)' if you wish to run the Stanford CoreNLP OpenIE annotator to extract any relation triples (not just SVOs).\n\nSENNA can be downloaded at https://ronan.collobert.com/senna/download.html\n\nIn INPUT CoreNLP and/or SENNA can process a single txt file or a directory containing a set of txt files.\n\nIn OUTPUT CoreNLP and/or SENNA will produce a csv file of SVO results and, if the appropriate visualization options are selected, a Gephi gexf network file, png word cloud file, and Google Earth Pro kml file (GIS maps are not produced when running SVO with SENNA; SENNA, by and large, does not produce geocodable locations.\n\nWHEN PROCESSING A DIRECTORY, ALL OUTPUT FILES WILL BE SAVED IN A SUBDIRECTORY OF THE SELECTED OUTPUT DIRECTORY WITH THE NAME OF THE INPUT DIRECTORY."+GUI_IO_util.msg_Esc)
-    GUI_IO_util.place_help_button(window, help_button_x_coordinate, basic_y_coordinate + y_step * (increment+9), "Help",
+    GUI_IO_util.place_help_button(window, help_button_x_coordinate, basic_y_coordinate + y_step * (increment+8), "Help",
                                   "Please, tick the checkbox to filter all SVO extracted triplets for Subjects, Verbs, and Objects via dictionary filter files.\n\nFor instance, you can filter SVO by social actors and social action. In fact, the file \'social-actor-list.csv\', created via WordNet with keyword person and saved in the \'lib/wordLists\' subfolder, will be automatically loaded as the DEFAULT dictionary file (Press ESCape to clear selection); the file \'social-action-list.csv\' is similarly automatically loaded as the DEFAULT dictionary file for verbs.\n\nDictionary filter files can be created via WordNet and saved in the \'lib/wordLists\' subfolder. You can edit that list, adding and deleting entries at any time, using any text editor.\n\nWordNet produces thousands of entries for nouns and verbs. For more limited domains, you way want to pair down the number to a few hundred entries.\n\nThe Lemmatize options will produce lemmatized subjects, verbs, or objects. When verbs are lemmatized, the algorithm will aggregate the verbs into WordNet top synset verb categories."+GUI_IO_util.msg_Esc)
-    GUI_IO_util.place_help_button(window, help_button_x_coordinate, basic_y_coordinate + y_step * (increment+10), "Help",
+    GUI_IO_util.place_help_button(window, help_button_x_coordinate, basic_y_coordinate + y_step * (increment+9), "Help",
                                   "The three widgets display the currently selected dictionary filter files for Subjects, Verbs, and Objects (Objects share the same file as Subjects and you may wish to change that).\n\nThe filter file social-actor-list, created via WordNet with person as keyword and saved in the \'lib/wordLists\' subfolder, will be automatically set as the DEFAULT filter for subjects (Press ESCape to clear selection); the file \'social-action-list.csv\' is similarly set as the DEFAULT dictionary file for verbs.\n\nThe widgets are disabled because you are not allowed to tamper with these values. If you wish to change a selected file, please tick the appropriate checkbox in the line above (e.g., Filter Subject) and you will be prompted to select a new file."+GUI_IO_util.msg_Esc)
+    GUI_IO_util.place_help_button(window, help_button_x_coordinate, basic_y_coordinate + y_step * (increment+10), "Help",
+                                  "Please, tick the checkboxes:\n\n  1. to visualize SVO relations in network graphs via Gephi;\n\n  2. to visualize SVO relations in a wordcloud (Subjects in red; Verbs in blue; Objects in green);\n\n  3. to use the NER location values to extract the WHERE part of the 5 Ws of narrative (Who, What, When, Where, Why); locations will be automatically geocoded (i.e., assigned latitude and longitude values) and visualized as maps via Google Earth Pro (as point map) and Google Maps (as heat map). ONLY THE LOCATIONS FOUND IN THE EXTRACTED SVO WILL BE DISPLAYED, NOT ALL THE LOCATIONS PRESENT IN THE TEXT.\n\nThe GIS algorithm uses Nominatim, rather than Google, as the default geocoder tool. If you wish to use Google for geocoding, please, use the GIS_main script.\n\nThe GIS mapping option is not available for SENNA or CoreNLP OpenIE."+GUI_IO_util.msg_Esc)
     GUI_IO_util.place_help_button(window, help_button_x_coordinate, basic_y_coordinate + y_step * (increment+11), "Help",
-                                  "Please, tick the checkboxes:\n\n  1. to visualize SVO relations in network graphs via Gephi;;\n\n  2. to visualize SVO relations in a wordcloud;\n\n  3. to use the NER location values to extract the WHERE part of the 5 Ws of narrative (Who, What, When, Where, Why); locations will be automatically geocoded (i.e., assigned latitude and longitude values) and visualized as maps via Google Earth Pro (as point map) and Google Maps (as heat map). ONLY THE LOCATIONS FOUND IN THE EXTRACTED SVO WILL BE DISPLAYED, NOT ALL THE LOCATIONS PRESENT IN THE TEXT.\n\nThe GIS algorithm uses Nominatim, rather than Google, as the default geocoder tool. If you wish to use Google for geocoding, please, use the GIS_main script.\n\nThe GIS mapping option is not available for SENNA or CoreNLP OpenIE."+GUI_IO_util.msg_Esc)
-    GUI_IO_util.place_help_button(window, help_button_x_coordinate, basic_y_coordinate + y_step * (increment+12), "Help",
                                   GUI_IO_util.msg_openOutputFiles)
 
 help_buttons(window, GUI_IO_util.get_help_button_x_coordinate(), GUI_IO_util.get_basic_y_coordinate(),
@@ -1044,8 +1061,7 @@ help_buttons(window, GUI_IO_util.get_help_button_x_coordinate(), GUI_IO_util.get
 readMe_message = "This set of Python 3 scripts extract automatically most of the elements of a story grammar and visualize the results in network graphs and GIS maps. A story grammar – basically, the 5Ws + H of modern journalism: Who, What, When, Where, Why, and How – provides the basic building blocks of narrative.\n\nThe set of scripts assembled here for this purpose ranges from testing for utf-8 compliance of the input text, to resolution for pronominal coreference, extraction of normalized NER dates (WHEN), visualized in various Excel charts, extraction, geocoding, and mapping in Google Earth Pro of NER locations.\n\nAt the heart of the SVO approach are two scripts, one based on the Stanford CoreNLP enhanced dependencies parser and another script based on SENNA. For passive sentences, the pipeline swaps S and O to transform the triplet into active voice. Thus, the WHO, WHAT (WHOM) are extracted from a text. Each component of the SVO triplet can be filtered via specific dictionaries (e.g., filtering for social actors and social actions, only). The set of SVO triplets are then visualized in dynamic network graphs (via Gephi).\n\nThe WHY and HOW of narrative are still beyond the reach of the current set of SVO scripts.\n\nIn INPUT the scripts expect a txt file to run utf-8 check, coreference resolution, date extraction, and CoreNLP. You can also enter a csv file, the output of a previous run with CoreNLP/SENNA (_svo.csv/_SVO_Result) marked file) if all you want to do is to visualize results.\n\nIn OUTPUT, the scripts will produce several csv files, a png image file, and a KML file depending upon the options selected."
 readMe_command = lambda: GUI_IO_util.readme_button(window, GUI_IO_util.get_help_button_x_coordinate(),
                                                    GUI_IO_util.get_basic_y_coordinate(), "Help", readMe_message)
-GUI_util.GUI_bottom(config_filename, config_input_output_options, y_multiplier_integer, readMe_command, videos_lookup, videos_options, TIPS_lookup, TIPS_options, IO_setup_display_brief)
-
+GUI_util.GUI_bottom(config_filename, config_input_output_numeric_options, y_multiplier_integer, readMe_command, videos_lookup, videos_options, TIPS_lookup, TIPS_options, IO_setup_display_brief, scriptName)
 
 def warnUser(*args):
     if GUI_util.input_main_dir_path.get() != '':

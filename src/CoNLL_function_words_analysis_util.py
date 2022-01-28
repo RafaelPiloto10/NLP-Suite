@@ -5,7 +5,7 @@
 #The Python 3 routine was written by Jian Chen, 12.12.2018
 # modified by Jian Chen (January 2019)
 # modified by Jack Hester (February 2019)
-# modified by Roberto Franzosi (February 2019)
+# modified by Roberto Franzosi (February 2019), November 2021
 #Function words (or junk words) are: pronouns prepositions articles conjunctions auxiliaries
 
 # Command promp commands
@@ -24,7 +24,7 @@ import os
 from collections import Counter
 import tkinter.messagebox as mb
 
-import IO_CoNLL_util
+import CoNLL_util
 import Excel_util
 import IO_files_util
 import IO_csv_util
@@ -33,10 +33,8 @@ import Stanford_CoreNLP_tags_util
 
 dict_POSTAG, dict_DEPREL = Stanford_CoreNLP_tags_util.dict_POSTAG, Stanford_CoreNLP_tags_util.dict_DEPREL
 
-global recordID_position, documentId_position  # , data, data_divided_sents
-recordID_position = 8
-documentId_position = 10
-
+sentenceID_position = 10 # NEW CoNLL_U
+documentID_position = 11 # NEW CoNLL_U
 
 def compute_stats(data):
     global postag_list, postag_counter, deprel_list, deprel_counter
@@ -58,7 +56,7 @@ def pronoun_stats(inputFilename,outputDir, data, data_divided_sents, openOutputF
     
     #obtain data
     #data  = get_data(inputFilename)
-    #data_divided_sents = IO_CoNLL_util.sentence_division(data)
+    #data_divided_sents = CoNLL_util.sentence_division(data)
     
     if 0:
         stats_pronouns(data)
@@ -68,7 +66,7 @@ def pronoun_stats(inputFilename,outputDir, data, data_divided_sents, openOutputF
             return filesToOpen
         
         pronouns_list,pronouns_stats= stats_pronouns_output(data,data_divided_sents)
-        errorFound=IO_csv_util.list_to_csv(GUI_util.window,IO_CoNLL_util.sort_output_list('PRONOUNS',pronouns_list,documentId_position), function_words_list_file_name)
+        errorFound=IO_csv_util.list_to_csv(GUI_util.window,CoNLL_util.sort_output_list('PRONOUNS',pronouns_list), function_words_list_file_name)
         if errorFound==True:
             return filesToOpen
         filesToOpen.append(function_words_list_file_name)
@@ -116,7 +114,7 @@ def preposition_stats(inputFilename,outputDir,data, data_divided_sents, openOutp
     # filesToOpen.append(function_words_stats_file_name)
     
     #data  = get_data(inputFilename)
-    #data_divided_sents = IO_CoNLL_util.sentence_division(data)
+    #data_divided_sents = CoNLL_util.sentence_division(data)
     
     
     if 0:
@@ -127,7 +125,7 @@ def preposition_stats(inputFilename,outputDir,data, data_divided_sents, openOutp
             return filesToOpen
        
         prepositions_list,prepositions_stats= stats_prepositions_output(data,data_divided_sents)
-        errorFound=IO_csv_util.list_to_csv(GUI_util.window,IO_CoNLL_util.sort_output_list('PREPOSITIONS',prepositions_list,documentId_position), function_words_list_file_name)
+        errorFound=IO_csv_util.list_to_csv(GUI_util.window,CoNLL_util.sort_output_list('PREPOSITIONS',prepositions_list), function_words_list_file_name)
         if errorFound==True:
             return filesToOpen
         filesToOpen.append(function_words_list_file_name)
@@ -174,7 +172,7 @@ def article_stats(inputFilename,outputDir,data, data_divided_sents, openOutputFi
     # filesToOpen.append(function_words_stats_file_name)
 
     #data  = get_data(inputFilename)
-    #data_divided_sents = IO_CoNLL_util.sentence_division(data)
+    #data_divided_sents = CoNLL_util.sentence_division(data)
     
     
     if 0:
@@ -188,7 +186,7 @@ def article_stats(inputFilename,outputDir,data, data_divided_sents, openOutputFi
         # output files
         article_list,article_stats =  stats_articles_output(data,data_divided_sents)
 
-        errorFound=IO_csv_util.list_to_csv(GUI_util.window,IO_CoNLL_util.sort_output_list('ARTICLES',article_list,documentId_position), function_words_list_file_name)
+        errorFound=IO_csv_util.list_to_csv(GUI_util.window,CoNLL_util.sort_output_list('ARTICLES',article_list), function_words_list_file_name)
         if errorFound==True:
             return filesToOpen
         filesToOpen.append(function_words_list_file_name)
@@ -237,7 +235,7 @@ def conjunction_stats(inputFilename,outputDir, data, data_divided_sents,openOutp
     # filesToOpen.append(function_words_stats_file_name)
 
     #data  = get_data(inputFilename)
-    #data_divided_sents = IO_CoNLL_util.sentence_division(data)
+    #data_divided_sents = CoNLL_util.sentence_division(data)
     
     if 0:
         stats_conjunctions(data)
@@ -248,7 +246,7 @@ def conjunction_stats(inputFilename,outputDir, data, data_divided_sents,openOutp
             return filesToOpen
 
         conjunction_list,conjunction_stats =  stats_conjunctions_output(data,data_divided_sents)
-        errorFound=IO_csv_util.list_to_csv(GUI_util.window,IO_CoNLL_util.sort_output_list('CONJUNCTIONS',conjunction_list,documentId_position), function_words_list_file_name)
+        errorFound=IO_csv_util.list_to_csv(GUI_util.window,CoNLL_util.sort_output_list('CONJUNCTIONS',conjunction_list), function_words_list_file_name)
         if errorFound==True:
             return filesToOpen
         filesToOpen.append(function_words_list_file_name)
@@ -299,7 +297,7 @@ def auxiliary_stats(inputFilename,outputDir,data, data_divided_sents, openOutput
     # filesToOpen.append(function_words_stats_file_name)
 
     #data  = get_data(inputFilename)
-    #data_divided_sents = IO_CoNLL_util.sentence_division(data)
+    #data_divided_sents = CoNLL_util.sentence_division(data)
     
     if 0:
         stats_auxiliaries(data)
@@ -309,7 +307,7 @@ def auxiliary_stats(inputFilename,outputDir,data, data_divided_sents, openOutput
             mb.showwarning(title='output file path error', message='Please check OUTPUT DIRECTORY PATH and try again')
             return filesToOpen
         auxiliary_list,auxiliary_stats =  stats_auxiliaries_output(data,data_divided_sents)
-        errorFound=IO_csv_util.list_to_csv(GUI_util.window,IO_CoNLL_util.sort_output_list('AUXILIARIES',auxiliary_list,documentId_position), function_words_list_file_name)
+        errorFound=IO_csv_util.list_to_csv(GUI_util.window,CoNLL_util.sort_output_list('AUXILIARIES',auxiliary_list), function_words_list_file_name)
         if errorFound==True:
             return filesToOpen
         filesToOpen.append(function_words_list_file_name)
@@ -331,6 +329,8 @@ def auxiliary_stats(inputFilename,outputDir,data, data_divided_sents, openOutput
             if Excel_outputFilename != "":
                 filesToOpen.append(Excel_outputFilename)
 
+            return filesToOpen  # to avoid code breaking in plot by sentence index
+
             # line plots by sentence index
 
             outputFiles=Excel_util.compute_csv_column_frequencies(GUI_util.window,
@@ -344,7 +344,7 @@ def auxiliary_stats(inputFilename,outputDir,data, data_divided_sents, openOutput
             if len(outputFiles) > 0:
                 filesToOpen.extend(outputFiles)
 
-   return filesToOpen
+            return filesToOpen
 
 #for verb auxiliaries analysis
 def verb_data_preparation_auxiliary(data):
@@ -362,25 +362,8 @@ def verb_data_preparation_auxiliary(data):
 def stats_pronouns_output(data,data_divided_sents):
     
     list_pronouns_postag = []
-    
-    for i in data:
-        if i[3] in ['PRP']:
-            list_pronouns_postag.append(i+['Personal pronoun',IO_CoNLL_util.Sentence_searcher(data_divided_sents,i[documentId_position],i[9])])
-        if i[3] in ['PRP$']:
-            list_pronouns_postag.append(i+['Possessive pronoun',IO_CoNLL_util.Sentence_searcher(data_divided_sents,i[documentId_position],i[9])])
-        elif i[3] in ['WP']:
-            list_pronouns_postag.append(i+['WH-pronoun',IO_CoNLL_util.Sentence_searcher(data_divided_sents,i[documentId_position],i[9])])
-        elif i[3] in ['WP$']:
-            list_pronouns_postag.append(i+['Possessive WH-pronoun',IO_CoNLL_util.Sentence_searcher(data_divided_sents,i[documentId_position],i[9])])
-        
-    #pronouns_postag_stats = [['PRONOUN ANALYSIS'],[],['PRONOUN ANALYSIS'],
-    # pronouns_postag_stats = [['PRONOUN ANALYSIS','FREQUENCY'],
-    #        ['PRP',postag_counter['PRP']],
-    #        ['PRP$',postag_counter['PRP$']],
-    #        ['WP',postag_counter['WP']],
-    #        ['WP$',postag_counter['WP$']]]
-
-    compute_stats(data)
+    postag_list, postag_counter, deprel_list, deprel_counter = compute_stats(data)
+    # must be sorted in descending order
     pronouns_postag_stats = [['PRONOUN ANALYSIS','FREQUENCY'],
            ['Personal pronoun (PRP)',postag_counter['PRP']],
            ['Possessive pronoun (PRP$)',postag_counter['PRP$']],
@@ -393,16 +376,8 @@ def stats_pronouns_output(data,data_divided_sents):
 def stats_prepositions_output(data,data_divided_sents):
         
     list_prepositions_postag = []
-    
-    for i in data:
-        if i[3] in ['IN']:
-            list_prepositions_postag.append(i+['Preposition/subordinating conjunction',IO_CoNLL_util.Sentence_searcher(data_divided_sents,i[documentId_position],i[9])])
-        
-    #prepositions_postag_stats = [['PREPOSITION ANALYSIS'],[],['PREPOSITION ANALYSIS'],
-    # prepositions_postag_stats = [['PREPOSITION ANALYSIS','FREQUENCY'],
-    #        ['IN',postag_counter['IN']]]
-
-    compute_stats(data)
+    postag_list, postag_counter, deprel_list, deprel_counter = compute_stats(data)
+    # must be sorted in descending order
     prepositions_postag_stats = [['PREPOSITION ANALYSIS','FREQUENCY'],
            ['Preposition/subordinating conjunction',postag_counter['IN']]]
 
@@ -411,19 +386,10 @@ def stats_prepositions_output(data,data_divided_sents):
 
 #ARTICLES with output
 def stats_articles_output(data,data_divided_sents):
-        
+
     list_articles_postag = []
-    
-    for i in data:
-        if i[3] in ['DT']:
-            list_articles_postag.append(i+['Articles/determinants',IO_CoNLL_util.Sentence_searcher(data_divided_sents,i[documentId_position],i[9])])
-        
-
-    #articles_postag_stats = [['ARTICLE ANALYSIS'],[],['ARTICLE ANALYSIS'],
-    # articles_postag_stats = [['ARTICLE ANALYSIS','FREQUENCY'],
-    #        ['DT',postag_counter['DT']]]
-
-    compute_stats(data)
+    postag_list, postag_counter, deprel_list, deprel_counter = compute_stats(data)
+    # must be sorted in descending order
     articles_postag_stats = [['ARTICLE ANALYSIS','FREQUENCY'],
            ['Determiner/article (DT)',postag_counter['DT']]]
 
@@ -434,17 +400,8 @@ def stats_articles_output(data,data_divided_sents):
 def stats_conjunctions_output(data,data_divided_sents):
         
     list_conjunctions_postag = []
-    
-    for i in data:
-        if i[3] in ['CC','IN']:
-            list_conjunctions_postag.append(i+['Conjunctions',IO_CoNLL_util.Sentence_searcher(data_divided_sents,i[documentId_position],i[9])])
-
-    #conjunctions_postag_stats = [['CONJUNCTION ANALYSIS'],[],['CONJUNCTION ANALYSIS'],
-    # conjunctions_postag_stats = [['CONJUNCTION ANALYSIS','FREQUENCY'],
-    #        ['CC',postag_counter['CC']],
-    #        ['IN',postag_counter['IN']]]
-
-    compute_stats(data)
+    postag_list, postag_counter, deprel_list, deprel_counter = compute_stats(data)
+    # must be sorted in descending order
     conjunctions_postag_stats = [['CONJUNCTION ANALYSIS','FREQUENCY'],
            ['Coordinating conjunction (CC)',postag_counter['CC']],
            ['Preposition/subordinating conjunction (IN)',postag_counter['IN']]]
@@ -459,19 +416,8 @@ def stats_conjunctions_output(data,data_divided_sents):
 def stats_auxiliaries_output(data,data_divided_sents):
         
     list_auxiliaries_deprel = []
-    
-
-    for i in data:
-
-        if i[6] in ['aux','auxpass']:
-
-            list_auxiliaries_deprel.append(i+['Auxiliaries',IO_CoNLL_util.Sentence_searcher(data_divided_sents,i[documentId_position],i[9])])
-
-    # auxiliaries_deprel_stats = [['AUXILIARY ANALYSIS','FREQUENCY'],
-    #        ['AUX',deprel_counter['aux']],
-    #        ['AUXPASS',deprel_counter['auxpass']]]
-
-    compute_stats(data)
+    postag_list, postag_counter, deprel_list, deprel_counter = compute_stats(data)
+    # must be sorted in descending order
     auxiliaries_deprel_stats = [['AUXILIARY ANALYSIS','FREQUENCY'],
            ['Auxiliary (AUX)',deprel_counter['aux']],
            ['Passive auxiliary (AUXPASS)',deprel_counter['auxpass']]]
@@ -482,7 +428,9 @@ def function_words_stats(inputFilename,outputDir,data, data_divided_sents, openO
 
     filesToOpen = []  # Store all files that are to be opened once finished
 
-    startTime=IO_user_interface_util.timed_alert(GUI_util.window, 3000, 'Analysis start', 'Started running FUNCTION WORDS ANALYSES at', True)
+    startTime=IO_user_interface_util.timed_alert(GUI_util.window, 3000, 'Analysis start', 'Started running FUNCTION WORDS ANALYSES at',
+                                                 True, '', True, '', True)
+
 
     outputFiles = article_stats(inputFilename, outputDir, data, data_divided_sents,
                                                                    openOutputFiles, createExcelCharts)

@@ -24,10 +24,11 @@ import sentiment_analysis_hedonometer_util
 import sentiment_analysis_SentiWordNet_util
 import sentiment_analysis_VADER_util
 import sentiment_analysis_ANEW_util
+import config_util
 
 # RUN section ______________________________________________________________________________________________________________________________________________________
 
-def run(CoreNLPdir,inputFilename,inputDir,outputDir,
+def run(inputFilename,inputDir,outputDir,
         openOutputFiles,
         createExcelCharts,
         mean_var,
@@ -43,11 +44,6 @@ def run(CoreNLPdir,inputFilename,inputDir,outputDir,
     usedir = False
     flag="" #used by CoreNLP
     filesToOpen = []  # Store all files that are to be opened once finished
-
-    if shape_of_stories_var:
-        if IO_libraries_util.inputProgramFileCheck('shape_of_stories_main.py') == False:
-            return
-        call("python shape_of_stories_main.py", shell=True)
 
     if SA_algorithm_var=='':
         mb.showwarning('Warning',"No option has been selected.\n\nPlease, select a Sentiment analysis option and try again.")
@@ -95,7 +91,7 @@ def run(CoreNLPdir,inputFilename,inputDir,outputDir,
         vader_var=1
 
     #CORENLP  _______________________________________________________
-    if CoreNLP_var==1:
+    if CoreNLP_var==1 and (mean_var or median_var):
         #check internet connection
         import IO_internet_util
         if not IO_internet_util.check_internet_availability_warning('Stanford CoreNLP Sentiment Analysis'):
@@ -155,6 +151,20 @@ def run(CoreNLPdir,inputFilename,inputDir,outputDir,
                 if Excel_outputFilename != "":
                     filesToOpen.append(Excel_outputFilename)
 
+                if shape_of_stories_var:
+                    if IO_libraries_util.inputProgramFileCheck('shape_of_stories_main.py') == False:
+                        return
+
+                    # open the shape of stories GUI  having saved the new SA output in config so that it opens the right input file
+                    config_input_output_alphabetic_options = ['EMPTY LINE', outputFilename, 'EMPTY LINE', 'EMPTY LINE', 'EMPTY LINE', outputDir]
+                    config_util.write_config_file(GUI_util.window, 'shape-of-stories_config.csv', config_input_output_alphabetic_options, True)
+
+                    reminders_util.checkReminder(config_filename,
+                                                 reminders_util.title_options_shape_of_stories,
+                                                 reminders_util.message_shape_of_stories,
+                                                 True)
+                    call("python shape_of_stories_main.py", shell=True)
+
                 # outputFilenameXlsm1 = Excel_util.run_all(columns_to_be_plotted,inputFilename,outputDir, outputQuotefilePath, chart_type_list = ["bar"], chart_title=
                 # "Stanford CoreNLP (Sentiment Value)", column_xAxis_label_var = 'Sentiment value',
                 # column_yAxis_label_var = 'Frequency of sentiment value',outputExtension = '.xlsm',
@@ -170,12 +180,14 @@ def run(CoreNLPdir,inputFilename,inputDir,outputDir,
         # IO_user_interface_util.timed_alert(GUI_util.window, 3000, 'Analysis end', 'Finished running CoreNLP Sentiment Analysis at', True)
 
     #HEDONOMETER _______________________________________________________
-    if hedonometer_var==1:
+    if hedonometer_var==1 and (mean_var or median_var):
         if lib_util.checklibFile(GUI_IO_util.sentiment_libPath + os.sep + 'hedonometer.json', 'sentiment_analysis_hedonometer_util.py')==False:
             return
         if IO_libraries_util.inputProgramFileCheck('sentiment_analysis_hedonometer_util.py')==False:
             return
-        startTime=IO_user_interface_util.timed_alert(GUI_util.window, 3000, 'Analysis start', 'Started running HEDONOMETER Sentiment Analysis at', True)
+        startTime=IO_user_interface_util.timed_alert(GUI_util.window, 3000, 'Analysis start', 'Started running HEDONOMETER Sentiment Analysis at',
+                                                     True, '', True, '', True)
+
         if len(inputFilename)>0:
             fileNamesToPass = []  # LINE ADDED
             outputFilename = IO_files_util.generate_output_file_name(inputFilename, inputDir, outputDir, '.csv', 'SC', 'Hedonometer', '', '', '', False, True)
@@ -226,10 +238,11 @@ def run(CoreNLPdir,inputFilename,inputDir,outputDir,
         IO_user_interface_util.timed_alert(GUI_util.window, 3000, 'Analysis end', 'Finished running HEDONOMETER Sentiment Analysis at', True, '', True, startTime)
 
     #SentiWordNet _______________________________________________________
-    if SentiWordNet_var==1:
+    if SentiWordNet_var==1 and (mean_var or median_var):
         if IO_libraries_util.inputProgramFileCheck('sentiment_analysis_SentiWordNet_util.py')==False:
             return
-        startTime=IO_user_interface_util.timed_alert(GUI_util.window, 3000, 'Analysis start', 'Started running SentiWordNet Sentiment Analysis at', True)
+        startTime=IO_user_interface_util.timed_alert(GUI_util.window, 3000, 'Analysis start', 'Started running SentiWordNet Sentiment Analysis at',
+                                                     True, '', True, '', True)
 
         if len(inputFilename)>0:
             outputFilename = IO_files_util.generate_output_file_name(inputFilename, inputDir, outputDir, '.csv', 'SC', 'SentiWordNet', '', '', '', False, True)
@@ -273,12 +286,14 @@ def run(CoreNLPdir,inputFilename,inputDir,outputDir,
         IO_user_interface_util.timed_alert(GUI_util.window, 3000, 'Analysis end', 'Finished running SentiWordNet Sentiment Analysis at', True, '', True, startTime)
 
     #VADER _______________________________________________________
-    if vader_var==1:
+    if vader_var==1 and (mean_var or median_var):
         if lib_util.checklibFile(GUI_IO_util.sentiment_libPath + os.sep + 'vader_lexicon.txt', 'sentiment_analysis_VADER_util.py')==False:
             return
         if IO_libraries_util.inputProgramFileCheck('sentiment_analysis_VADER_util.py')==False:
             return
-        startTime=IO_user_interface_util.timed_alert(GUI_util.window, 3000, 'Analysis start', 'Started running VADER Sentiment Analysis at', True)
+        startTime=IO_user_interface_util.timed_alert(GUI_util.window, 3000, 'Analysis start', 'Started running VADER Sentiment Analysis at',
+                                                     True, '', True, '', True)
+
         if len(inputFilename)>0:
             outputFilename = IO_files_util.generate_output_file_name(inputFilename, inputDir,  outputDir, '.csv', 'SC', 'VADER', '', '', '', False, True)
         else:
@@ -321,12 +336,14 @@ def run(CoreNLPdir,inputFilename,inputDir,outputDir,
         IO_user_interface_util.timed_alert(GUI_util.window, 3000, 'Analysis end', 'Finished running VADER Sentiment Analysis at', True, '', True, startTime)
 
     #ANEW _______________________________________________________
-    if anew_var==1:
+    if anew_var==1 and (mean_var or median_var):
         if lib_util.checklibFile(GUI_IO_util.sentiment_libPath + os.sep + 'EnglishShortenedANEW.csv', 'sentiment_analysis_ANEW')==False:
             return
         if IO_libraries_util.inputProgramFileCheck('sentiment_analysis_ANEW_util.py')==False:
             return
-        startTime=IO_user_interface_util.timed_alert(GUI_util.window, 3000, 'Analysis start', 'Started running ANEW Sentiment Analysis at', True)
+        startTime=IO_user_interface_util.timed_alert(GUI_util.window, 3000, 'Analysis start', 'Started running ANEW Sentiment Analysis at',
+                                                     True, '', True, '', True)
+
         outputFilename = IO_files_util.generate_output_file_name(inputFilename, inputDir, outputDir, '.csv', 'SC', 'ANEW', '', '', '', False, True)
 
         sentiment_analysis_ANEW_util.main(inputFilename, inputDir, outputDir, outputFilename, mode)
@@ -415,8 +432,7 @@ def run(CoreNLPdir,inputFilename,inputDir,outputDir,
         IO_files_util.OpenOutputFiles(GUI_util.window, openOutputFiles, filesToOpen)
 
 #the values of the GUI widgets MUST be entered in the command otherwise they will not be updated
-run_script_command=lambda: run(GUI_util.softwareDir.get(),
-                               GUI_util.inputFilename.get(),
+run_script_command=lambda: run(GUI_util.inputFilename.get(),
                                GUI_util.input_main_dir_path.get(),
                                GUI_util.output_dir_path.get(),
                                GUI_util.open_csv_output_checkbox.get(),
@@ -435,26 +451,19 @@ GUI_util.run_button.configure(command=run_script_command)
 # the GUIs are all setup to run with a brief I/O display or full display (with filename, inputDir, outputDir)
 #   just change the next statement to True or False IO_setup_display_brief=True
 IO_setup_display_brief=True
-GUI_width=GUI_IO_util.get_GUI_width(3)
-GUI_height=480 # height of GUI with full I/O display
-
-if IO_setup_display_brief:
-    GUI_height = GUI_height - 80
-    y_multiplier_integer = GUI_util.y_multiplier_integer  # IO BRIEF display
-    increment=0 # used in the display of HELP messages
-else: # full display
-    # GUI CHANGES add following lines to every special GUI
-    # +3 is the number of lines starting at 1 of IO widgets
-    # y_multiplier_integer=GUI_util.y_multiplier_integer+2
-    y_multiplier_integer = GUI_util.y_multiplier_integer + 2  # IO FULL display
-    increment=2
-
-GUI_size = str(GUI_width) + 'x' + str(GUI_height)
+GUI_size, y_multiplier_integer, increment = GUI_IO_util.GUI_settings(IO_setup_display_brief,
+                             GUI_width=GUI_IO_util.get_GUI_width(3),
+                             GUI_height_brief=400, # height at brief display
+                             GUI_height_full=480, # height at full display
+                             y_multiplier_integer=GUI_util.y_multiplier_integer,
+                             y_multiplier_integer_add=2, # to be added for full display
+                             increment=2)  # to be added for full display
 
 GUI_label='Graphical User Interface (GUI) for Sentiment Analysis'
-config_filename='sentiment-analysis-config.txt'
-# The 6 values of config_option refer to:
-#   software directory
+head, scriptName = os.path.split(os.path.basename(__file__))
+config_filename = scriptName.replace('main.py', 'config.csv')
+
+# The 4 values of config_option refer to:
 #   input file
         # 1 for CoNLL file
         # 2 for TXT file
@@ -464,22 +473,19 @@ config_filename='sentiment-analysis-config.txt'
         # 6 for txt or csv
 #   input dir
 #   input secondary dir
-#   output file
 #   output dir
-config_option=[0,2,1,0,0,1]
+config_input_output_numeric_options=[2,1,0,1]
 
-GUI_util.set_window(GUI_size, GUI_label, config_filename, config_option)
+GUI_util.set_window(GUI_size, GUI_label, config_filename, config_input_output_numeric_options)
+# GUI_util.set_window(GUI_size, GUI_label)
 
 window=GUI_util.window
-config_input_output_options=GUI_util.config_input_output_options
+config_input_output_numeric_options=GUI_util.config_input_output_numeric_options
 config_filename=GUI_util.config_filename
 inputFilename=GUI_util.inputFilename
 input_main_dir_path=GUI_util.input_main_dir_path
 
-GUI_util.GUI_top(config_input_output_options,config_filename,IO_setup_display_brief)
-
-# if GUI_util.softwareDir.get()=='':
-#     GUI_util.select_softwareDir_button.config(state='disabled')
+GUI_util.GUI_top(config_input_output_numeric_options,config_filename,IO_setup_display_brief)
 
 mean_var = tk.IntVar()
 median_var = tk.IntVar()
@@ -496,9 +502,13 @@ mean_var.set(1)
 median_var.set(1)
 
 def clear(e):
-    SA_algorithm_var.set('')
+    SA_algorithm_var.set('*')
     memory_var_lb.place_forget()  # invisible
-    memory_var.place_forget()  # invisible
+    try:
+        memory_var.place_forget()  # invisible
+    except:
+        print()
+    activate_SOS()
     GUI_util.clear("Escape")
 window.bind("<Escape>", clear)
 
@@ -564,11 +574,24 @@ SA_algorithm_var.trace('w',activate_memory_var)
 
 sentence_index_var.set(0)
 sentence_index_checkbox = tk.Checkbutton(window, state='disabled', text='Do sentiments fluctuate across a document (Sentiment scores by sentence index)', variable=sentence_index_var, onvalue=1, offvalue=0)
-y_multiplier_integer=GUI_IO_util.placeWidget(GUI_IO_util.get_labels_x_coordinate(),y_multiplier_integer,sentence_index_checkbox)
+y_multiplier_integer=GUI_IO_util.placeWidget(GUI_IO_util.get_labels_x_indented_coordinate(),y_multiplier_integer,sentence_index_checkbox)
 
 shape_of_stories_var.set(0)
 shape_of_stories_checkbox = tk.Checkbutton(window, text='Do sentiments fluctuate across documents (Open \'Shape of stories\' GUI)', variable=shape_of_stories_var, onvalue=1, offvalue=0)
-y_multiplier_integer=GUI_IO_util.placeWidget(GUI_IO_util.get_labels_x_coordinate(),y_multiplier_integer,shape_of_stories_checkbox)
+y_multiplier_integer=GUI_IO_util.placeWidget(GUI_IO_util.get_labels_x_indented_coordinate(),y_multiplier_integer,shape_of_stories_checkbox)
+
+def activate_SOS(*args):
+    # the Shape of Stories is only available when processing a directory and using oreNLP
+    if input_main_dir_path.get()=='' or (SA_algorithm_var.get()!='Stanford CoreNLP' and SA_algorithm_var.get()!='*'):
+        shape_of_stories_checkbox.config(state='disabled')
+    else:
+        shape_of_stories_checkbox.config(state='normal')
+shape_of_stories_var.trace('w',activate_SOS)
+inputFilename.trace('w',activate_SOS)
+input_main_dir_path.trace('w',activate_SOS)
+SA_algorithm_var.trace('w',activate_SOS)
+
+activate_SOS()
 
 # doNotCreateIntermediateFiles_var.set(1)
 # doNotCreateIntermediateFiles_checkbox = tk.Checkbutton(window, variable=doNotCreateIntermediateFiles_var, onvalue=1, offvalue=0)
@@ -609,15 +632,14 @@ def help_buttons(window,help_button_x_coordinate,basic_y_coordinate,y_step):
 
     GUI_IO_util.place_help_button(window,help_button_x_coordinate,basic_y_coordinate+y_step*(increment+1),"Help", "Please, tick the checkboxes for either Mean or Median in output csv files. BY DEFAULT, BOTH VALUES ARE COMPUTED.\n\nStanford CoreNLP Sentiment Analysis only computes mean values for each sentence.\n\nVADER only computes 'compound' values for each sentence.\n\nSentiWordNet as well does not provide sentence mean/median values.")
     GUI_IO_util.place_help_button(window,help_button_x_coordinate,basic_y_coordinate+y_step*(increment+2),"Help", "Please, using the dropdown menu, select the algorithm to be used for computing sentiment analysis.\n\nSelect * to run ALL algorithms.\n\nStanford CoreNLP neural network approach to Sentiment Analysis typically achieves better results than dictionary-based approaches.\n\nCoreNLP computes mean values only for each sentence on a scale 0-4 (minimum-maximum).\n\nANEW (Affective Norms for English Words) computes sentiment/arousal/dominance mean/median values for each sentence using the ANEW ratings for SENTIMENT (VALENCE), AROUSAL, and DOMINANCE (CONTROL) by Bradley, M.M. & Lang, P.J. (2017). Affective Norms for English Words (ANEW): Instruction manual and affective ratings. Technical Report C-3. Gainesville, FL:UF Center for the Study of Emotion and Attention.\n\nContrary to all other approaches, the ANEW script computes three different measures, for SENTIMENT, AROUSAL, and DOMINANCE:\nSENTIMENT or VALENCE measures how pleasant/unpleasant a word makes us feel;\nAROUSAL measures how calm/excited a word makes us feel;\nDOMINANCE or CONTROL measures how dominated/in control a word makes us feel.\n\nTHE SCRIPT EXPECTS TO FIND THE FILE EnglishShortenedANEW.csv IN A ""lib"" SUBFOLDER OF THE FOLDER WHERE THE Sentiment_Analysis_ANEW.py SCRIPT IS STORED.\n\nIn OUTPUT, the script creates a csv file containing the calculated mean/median sentiment values for each sentence, where each rating can have a total of maximum 9 points.\n\nValues for sentiment, arousal, and dominance are classified on a scale 0-9, grouped in 5 categories: <3, >=3 and < 5, 5 (neutral), >5 and <8, >=8 and <=9.\n\nThe hedonometer algorithm uses the hedonometer.org rated dictionary to compute sentiment mean/median values for each sentence.\n\nThe script has been shown to work best with social media texts (e.g., Twitter), New York Times editorials, movie reviews, and product reviews.\n\nTHE SCRIPT EXPECTS TO FIND THE FILE hedonometer.json IN A ""lib"" SUBFOLDER OF THE FOLDER WHERE THE Sentiment_Analysis_Hedonometer.py SCRIPT IS STORED.\n\nIn OUTPUT, the script creates a csv file containing the calculated mean/median sentiment values for each sentence.\n\nSentiment values are classified on a scale 0-10, grouped in 3 categories: negative (>=0 and <4), neutral (>=4 and <=6), and positive (>6 and <=10).\n\nThe NLTK VADER (VADER, Valence Aware Dictionary and sEntiment Reasoner) uses the NLTK rated dictionary to compute sentiment mean/median values for each sentence.\n\nThe script has been shown to work best with social media texts (e.g., Twitter).\n\nIn INPUT the script expects either a single text file or a set of text files stored in a directory. THE SCRIPT ALSO EXPECTS TO FIND THE VADER RATED DICTIONARY FILE vader_lexicon.txt IN A ""lib"" SUBFOLDER OF THE FOLDER WHERE THE Sentiment_Analysis_VADER.py SCRIPT IS STORED.\n\nIn OUTPUT, the script creates a csv file containing the calculated 'compound' sentiment values for each sentence.\n\nMean and Median calculations are not available for VADER; VADER computes 'compound' values for each sentence.\n\nSentiment values are classified on a scale -1 (most negative) to 1 as (most positive) grouped in 3 categories: negative (<-0.05), neutral (>=-0.05 and <=0.05), and positive (>0.05 and <=1).\n\nVADER heavily relies on a number of NLTK libraries. If VADER fails to run, make sure that in command line you run\n   python -m nltk.downloader all")
-    GUI_IO_util.place_help_button(window,help_button_x_coordinate,basic_y_coordinate+y_step*(increment+3),"Help", "Please, tick the checkboxes to display a line plot of sentiment scores by sentence index across a specific document.")
-    GUI_IO_util.place_help_button(window,help_button_x_coordinate,basic_y_coordinate+y_step*(increment+4),"Help", "Please, tick the checkboxes to open a specific GUI to compute the \'shape of stories\' of a set of sentiment scores across different documents.")
+    GUI_IO_util.place_help_button(window,help_button_x_coordinate,basic_y_coordinate+y_step*(increment+3),"Help", "Please, tick the checkbox to display a line plot of sentiment scores by sentence index across a specific document.")
+    GUI_IO_util.place_help_button(window,help_button_x_coordinate,basic_y_coordinate+y_step*(increment+4),"Help", "Please, tick the checkbox to open the 'Shape of stories' GUI. The 'Shape of stories' algorithms will compute and visualize the \'shape of stories\' of a set of sentiment scores across different documents using different data reduction methods: Hiererchical Clustering, Singular Value Decomposition, Non-Negative Matrix Factorization.\n\nThe 'Shape of stories' GUI is only available when computing sentiment scores via Stanford CoreNLP on a corpus of txt files in an input directory.")
     GUI_IO_util.place_help_button(window,help_button_x_coordinate,basic_y_coordinate+y_step*(increment+5),"Help",GUI_IO_util.msg_openOutputFiles)
 help_buttons(window,GUI_IO_util.get_help_button_x_coordinate(),GUI_IO_util.get_basic_y_coordinate(),GUI_IO_util.get_y_step())
 
 # change the value of the readMe_message
 readMe_message="The Python 3 Dictionary-based Analyses scripts calculate the mean/median values for various aspects of the language used in a text: sentiment, arousal, dominance.\n\nIn INPUT the scripts expect either a single text file or a set of text files stored in a directory. THE hedonometer, ANEW, AND VADER SCRIPTS ALSO EXPECT TO FIND DICTIONARY FILES IN A ""lib"" SUBFOLDER OF THE FOLDER WHERE THE PYTHON SCRIPTS ARE STORED.\n\nIn OUTPUT, the scripts create csv files containing the calculated mean/median values for each sentence."
 readMe_command=lambda: GUI_IO_util.readme_button(window,GUI_IO_util.get_help_button_x_coordinate(),GUI_IO_util.get_basic_y_coordinate(),"Help",readMe_message)
-GUI_util.GUI_bottom(config_filename, config_input_output_options, y_multiplier_integer, readMe_command, videos_lookup, videos_options, TIPS_lookup, TIPS_options, IO_setup_display_brief)
-
+GUI_util.GUI_bottom(config_filename, config_input_output_numeric_options, y_multiplier_integer, readMe_command, videos_lookup, videos_options, TIPS_lookup, TIPS_options, IO_setup_display_brief, scriptName)
 
 GUI_util.window.mainloop()

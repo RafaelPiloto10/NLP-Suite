@@ -10,7 +10,7 @@ import re
 import pandas as pd
 import csv
 
-import IO_CoNLL_util
+import CoNLL_util
 import IO_csv_util
 import IO_user_interface_util
 
@@ -90,7 +90,7 @@ def extract_NER_locations(window,conllFile,encodingValue,split_locations_prefix,
 		if row[4] in ['LOCATION','STATE_OR_PROVINCE','CITY','COUNTRY']: #col 4 is NER
 			# do NOT compute the same sentence for the same document
 			if (sentenceID==1 and documentID==1) or (row[9]!=sentenceID and row[10]==documentID):
-				currentRecord, sentence_str = IO_CoNLL_util.compute_sentence(conllFile,currentRecord,row[9],row[10])
+				currentRecord, sentence_str = CoNLL_util.compute_sentence(conllFile,currentRecord,row[9],row[10])
 			if row[filenamePositionInCoNLLTable] in currList:
 				# No need to display the filename in Description when only one file is processed 
 				# A blank value for the filename will be checked in Description to avoid displaying it 
@@ -159,7 +159,7 @@ def extract_NER_locations(window,conllFile,encodingValue,split_locations_prefix,
 
 # called from GIS_Google_util
 #locationColumnNumber where locations are stored in the csv file; any changes to the columns will result in error
-def extract_csvFile_locations(window,inputFilename,withHeader,locationColumnNumber,encodingValue):
+def extract_csvFile_locations(window,inputFilename,withHeader,locationColumnNumber,encodingValue, datePresent, dateColumnNumber):
 	startTime=IO_user_interface_util.timed_alert(window, 2000, 'csv file locations extraction', "Started extracting locations from csv file at",
 												 True,'', True, '', True)
 	locList = []
@@ -176,7 +176,10 @@ def extract_csvFile_locations(window,inputFilename,withHeader,locationColumnNumb
 		for index, row in dt.iterrows():
 			print("Processing record " + str(index)+"/"+str(count_row)+ " in csv file; location: " + str(row[locationColumnNumber]))
 			if str(row[locationColumnNumber])!='' and str(row[locationColumnNumber])!='nan':
-				locList.append(row[locationColumnNumber])
+				if datePresent == True:
+					locList.append([row[locationColumnNumber], row[dateColumnNumber]])
+				else:
+					locList.append([row[locationColumnNumber]])
 	if len(locList)==0:
 		mb.showwarning(title='Locations', message="There are no locations in your input file\n\n" + inputFilename + "\n\nThere is no geocoding to be done.\n\nNo map via Google Earth Pro can be done.")
 		return

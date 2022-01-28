@@ -16,7 +16,7 @@ import GUI_IO_util
 import IO_user_interface_util
 import IO_files_util
 import statistics_txt_util
-import WordNet_util
+import knowledge_graphs_WordNet_util
 import Stanford_CoreNLP_annotator_util
 import topic_modeling_gensim_util
 import topic_modeling_mallet_util
@@ -41,6 +41,7 @@ run_script_command=lambda: run(GUI_util.inputFilename.get(),
                             open_GUI_var.get(),
                             what_else_var.get(),
                             what_else_menu_var.get(),
+                            quote_var.get(),
                             memory_var.get())
 
 #the values of the GUI widgets MUST be entered in the command otherwise they will not be updated
@@ -57,6 +58,7 @@ def run(inputFilename,inputDir, outputDir,
         open_GUI_var,
         what_else_var,
         what_else_menu_var,
+        single_quote,
         memory_var):
 
     filesToOpen=[]
@@ -75,7 +77,9 @@ def run(inputFilename,inputDir, outputDir,
         file_checker_util.check_utf8_compliance(GUI_util.window, inputFilename, inputDir, outputDir,openOutputFiles)
 
     if ASCII_var==True:
-        file_cleaner_util.convert_quotes(GUI_util.window,inputFilename, inputDir)
+        result=file_cleaner_util.convert_quotes(GUI_util.window,inputFilename, inputDir)
+        if result==False:
+            return
 
     if corpus_statistics_var==True:
         if IO_libraries_util.inputProgramFileCheck('statistics_txt_util.py')==False:
@@ -107,8 +111,6 @@ def run(inputFilename,inputDir, outputDir,
         statistics_txt_util.compute_character_word_ngrams(GUI_util.window, inputFilename, inputDir,
                                                           outputDir, n_grams_size, normalize, excludePunctuation, 1, openOutputFiles, createExcelCharts,
                                                           bySentenceIndex_word_var)
-        IO_user_interface_util.timed_alert(GUI_util.window, 3000, 'N-Grams end',
-                            'Finished running word n-grams at', True, '', True, startTime, True)
 
         if 'lines' in corpus_options_menu_var:
             output = statistics_txt_util.read_line(window, '', inputDir, outputDir, False, createExcelCharts)
@@ -129,7 +131,7 @@ def run(inputFilename,inputDir, outputDir,
             if open_GUI_var == True:
                 call("python topic_modeling_gensim_main.py", shell=True)
             else:
-                # run with all default values; do not run Mallet
+                # run with all default values; do not run MALLET
                 output = topic_modeling_gensim_util.run_Gensim(GUI_util.window, inputDir, outputDir, num_topics=20,
                                                       remove_stopwords_var=1, lemmatize=1, nounsOnly=0, run_Mallet=False, openOutputFiles=openOutputFiles,createExcelCharts=createExcelCharts)
                 if output!=None:
@@ -199,7 +201,7 @@ def run(inputFilename,inputDir, outputDir,
                             noun_verb='VERB'
                         else:
                             return
-                        output = WordNet_util.aggregate_GoingUP(WordNetDir,inputFilename, outputDir, config_filename, noun_verb,
+                        output = knowledge_graphs_WordNet_util.aggregate_GoingUP(WordNetDir,inputFilename, outputDir, config_filename, noun_verb,
                                                                     openOutputFiles, createExcelCharts)
                         if output!=None:
                             filesToOpen.extend(output)
@@ -210,7 +212,7 @@ def run(inputFilename,inputDir, outputDir,
                             noun_verb='NOUN'
                         else:
                             return
-                        output = WordNet_util.aggregate_GoingUP(WordNetDir,inputFilename, outputDir, config_filename, noun_verb,
+                        output = knowledge_graphs_WordNet_util.aggregate_GoingUP(WordNetDir,inputFilename, outputDir, config_filename, noun_verb,
                                                                     openOutputFiles, createExcelCharts)
                         if output!=None:
                             filesToOpen.extend(output)
@@ -252,7 +254,7 @@ def run(inputFilename,inputDir, outputDir,
             annotator = 'quote'
             output = Stanford_CoreNLP_annotator_util.CoreNLP_annotate(config_filename, inputFilename, inputDir,
                                                                       outputDir, openOutputFiles, createExcelCharts,
-                                                                      annotator, False, memory_var)
+                                                                      annotator, False, memory_var, single_quote_var = single_quote)
             if output != None:
                 filesToOpen.extend(output)
 
@@ -285,26 +287,19 @@ GUI_util.run_button.configure(command=run_script_command)
 # the GUIs are all setup to run with a brief I/O display or full display (with filename, inputDir, outputDir)
 #   just change the next statement to True or False IO_setup_display_brief=True
 IO_setup_display_brief=True
-GUI_width=GUI_IO_util.get_GUI_width(3)
-GUI_height=430 # height of GUI with full I/O display
-
-if IO_setup_display_brief:
-    GUI_height = GUI_height - 40
-    y_multiplier_integer = GUI_util.y_multiplier_integer  # IO BRIEF display
-    increment=0 # used in the display of HELP messages
-else: # full display
-    # GUI CHANGES add following lines to every special GUI
-    # +3 is the number of lines starting at 1 of IO widgets
-    # y_multiplier_integer=GUI_util.y_multiplier_integer+2
-    y_multiplier_integer = GUI_util.y_multiplier_integer + 1  # IO FULL display
-    increment=1
-
-GUI_size = str(GUI_width) + 'x' + str(GUI_height)
+GUI_size, y_multiplier_integer, increment = GUI_IO_util.GUI_settings(IO_setup_display_brief,
+                             GUI_width=GUI_IO_util.get_GUI_width(3),
+                             GUI_height_brief=430, # height at brief display
+                             GUI_height_full=470, # height at full display
+                             y_multiplier_integer=GUI_util.y_multiplier_integer,
+                             y_multiplier_integer_add=1, # to be added for full display
+                             increment=1)  # to be added for full display
 
 GUI_label='Graphical User Interface (GUI) for a Sweeping View of Your Corpus - A Pipeline'
-config_filename='corpus-config.txt'
-# The 6 values of config_option refer to:
-#   software directory
+head, scriptName = os.path.split(os.path.basename(__file__))
+config_filename = scriptName.replace('main.py', 'config.csv')
+
+# The 4 values of config_option refer to:
 #   input file
         # 1 for CoNLL file
         # 2 for TXT file
@@ -314,20 +309,18 @@ config_filename='corpus-config.txt'
         # 6 for txt or csv
 #   input dir
 #   input secondary dir
-#   output file
 #   output dir
-# config_option=[0,4,1,0,0,1]
-config_option=[0,0,1,0,0,1]
+config_input_output_numeric_options=[0,1,0,1]
 
-GUI_util.set_window(GUI_size, GUI_label, config_filename, config_option)
+GUI_util.set_window(GUI_size, GUI_label, config_filename, config_input_output_numeric_options)
 
 window=GUI_util.window
-config_input_output_options=GUI_util.config_input_output_options
+config_input_output_numeric_options=GUI_util.config_input_output_numeric_options
 config_filename=GUI_util.config_filename
 inputFilename=GUI_util.inputFilename
 input_main_dir_path=GUI_util.input_main_dir_path
 
-GUI_util.GUI_top(config_input_output_options,config_filename,IO_setup_display_brief)
+GUI_util.GUI_top(config_input_output_numeric_options,config_filename,IO_setup_display_brief)
 
 utf8_var= tk.IntVar()
 ASCII_var= tk.IntVar()
@@ -350,22 +343,25 @@ times_var= tk.IntVar()
 dialogues_var= tk.IntVar()
 nature_var= tk.IntVar()
 
+quote_var = tk.IntVar()
+y_multiplier_integer_SV=0 # used to set the quote_var widget on the proper GUI line
 
 def clear(e):
     corpus_statistics_var.set(1)
     corpus_options_menu_var.set('*')
     what_else_var.set(1)
     what_else_menu_var.set('*')
+    quote_checkbox.place_forget()  # invisible
     GUI_util.clear("Escape")
 window.bind("<Escape>", clear)
 
 utf8_var.set(1)
 utf8_checkbox = tk.Checkbutton(window, text='Check input corpus for utf-8 encoding', variable=utf8_var, onvalue=1, offvalue=0)
-y_multiplier_integer=GUI_IO_util.placeWidget(GUI_IO_util.get_labels_x_coordinate(),y_multiplier_integer,utf8_checkbox,True)
+y_multiplier_integer=GUI_IO_util.placeWidget(GUI_IO_util.get_labels_x_coordinate(),y_multiplier_integer,utf8_checkbox)
 
 ASCII_var.set(1)
 ASCII_checkbox = tk.Checkbutton(window, text='Convert non-ASCII apostrophes & quotes and % to percent', variable=ASCII_var, onvalue=1, offvalue=0)
-y_multiplier_integer=GUI_IO_util.placeWidget(GUI_IO_util.get_labels_x_coordinate()+440,y_multiplier_integer,ASCII_checkbox)
+y_multiplier_integer=GUI_IO_util.placeWidget(GUI_IO_util.get_labels_x_coordinate(),y_multiplier_integer,ASCII_checkbox)
 
 corpus_statistics_var.set(1)
 corpus_statistics_checkbox = tk.Checkbutton(window,text="Compute corpus statistics (word frequency & word n-grams by document)", variable=corpus_statistics_var, onvalue=1, offvalue=0)
@@ -382,7 +378,7 @@ topics_checkbox = tk.Checkbutton(window,text="What are the topics? (Topic modeli
 y_multiplier_integer=GUI_IO_util.placeWidget(GUI_IO_util.get_labels_x_coordinate(),y_multiplier_integer,topics_checkbox,True)
 
 topics_Mallet_var.set(0)
-topics_Mallet_checkbox = tk.Checkbutton(window,text="via Mallet", variable=topics_Mallet_var, onvalue=1, offvalue=0)
+topics_Mallet_checkbox = tk.Checkbutton(window,text="via MALLET", variable=topics_Mallet_var, onvalue=1, offvalue=0)
 y_multiplier_integer=GUI_IO_util.placeWidget(GUI_IO_util.get_labels_x_coordinate()+440,y_multiplier_integer,topics_Mallet_checkbox,True)
 
 topics_Gensim_var.set(1)
@@ -390,40 +386,45 @@ topics_Gensim_checkbox = tk.Checkbutton(window,text="via Gensim", variable=topic
 y_multiplier_integer=GUI_IO_util.placeWidget(GUI_IO_util.get_labels_x_coordinate()+570,y_multiplier_integer,topics_Gensim_checkbox,True)
 
 open_GUI_var.set(0)
-open_GUI_checkbox = tk.Checkbutton(window,text="open Gensim/Mallet GUI", variable=open_GUI_var, onvalue=1, offvalue=0)
+open_GUI_checkbox = tk.Checkbutton(window,text="open Gensim/MALLET GUI", variable=open_GUI_var, onvalue=1, offvalue=0)
 y_multiplier_integer=GUI_IO_util.placeWidget(GUI_IO_util.get_labels_x_coordinate()+700,y_multiplier_integer,open_GUI_checkbox)
 
 def activate_topics(*args):
-    open_GUI_checkbox.configure(state='normal')
     if topics_var.get()==True:
         topics_Gensim_var.set(1)
         topics_Mallet_checkbox.configure(state='normal')
         topics_Gensim_checkbox.configure(state='normal')
+        open_GUI_checkbox.configure(state='normal')
     else:
         topics_Gensim_var.set(0)
         topics_Mallet_checkbox.configure(state='disabled')
         topics_Gensim_checkbox.configure(state='disabled')
-        # open_GUI_checkbox.configure(state='disabled')
+        open_GUI_checkbox.configure(state='disabled')
 topics_var.trace('w',activate_topics)
 
 def activate_Mallet(*args):
     if topics_var.get()==True and topics_Mallet_var.get()==True:
+        open_GUI_checkbox.configure(state='normal')
         topics_Gensim_var.set(0)
         topics_Gensim_checkbox.configure(state='disabled')
-        # open_GUI_checkbox.configure(state='disabled')
+        open_GUI_checkbox.configure(state='normal')
     else:
+        open_GUI_var.set(0)
         topics_Gensim_var.set(0)
         topics_Gensim_checkbox.configure(state='normal')
-        # open_GUI_checkbox.configure(state='normal')
+        open_GUI_checkbox.configure(state='disabled')
 topics_Mallet_var.trace('w',activate_Mallet)
 
 def activate_Gensim(*args):
     if topics_var.get()==True and topics_Gensim_var.get()==True:
+        topics_Mallet_var.set(0)
+        open_GUI_checkbox.configure(state='normal')
         topics_Mallet_checkbox.configure(state='disabled')
-        # open_GUI_checkbox.configure(state='disabled')
+        open_GUI_checkbox.configure(state='normal')
     else:
+        open_GUI_checkbox.configure(state='disabled')
         topics_Mallet_checkbox.configure(state='normal')
-        # open_GUI_checkbox.configure(state='normal')
+        open_GUI_checkbox.configure(state='disabled')
 topics_Gensim_var.trace('w',activate_Gensim)
 
 def activate_allOptions(*args):
@@ -456,12 +457,30 @@ what_else_menu.config(state='disabled')
 y_multiplier_integer = GUI_IO_util.placeWidget(GUI_IO_util.get_labels_x_coordinate() + 440, y_multiplier_integer,
                                                what_else_menu, True)
 
+quote_checkbox = tk.Checkbutton(window, text='Include single quotes',
+                                       variable=quote_var,
+                                       onvalue=1, offvalue=0)
+
 def activate_what_else_menu(*args):
+    global y_multiplier_integer, y_multiplier_integer_SV
     if what_else_var.get()==True:
         what_else_menu.config(state='normal')
+        if "*" in what_else_menu_var.get() or "Dialogues" in what_else_menu_var.get():
+            if y_multiplier_integer_SV!=0:
+                y_multiplier_integer = y_multiplier_integer_SV - 1
+            quote_var.set(0)
+            y_multiplier_integer = GUI_IO_util.placeWidget(GUI_IO_util.get_open_file_directory_coordinate() + 500,
+                                                           y_multiplier_integer,
+                                                           quote_checkbox, True)
+            quote_checkbox.configure(state='normal')
+        else:
+            quote_checkbox.place_forget()  # invisible
     else:
         what_else_menu.config(state='disabled')
+        quote_checkbox.place_forget()  # invisible
+
 what_else_var.trace('w',activate_what_else_menu)
+what_else_menu_var.trace('w',activate_what_else_menu)
 
 activate_what_else_menu()
 
@@ -495,19 +514,22 @@ def help_buttons(window,help_button_x_coordinate,basic_y_coordinate,y_step):
                                       GUI_IO_util.msg_IO_setup)
 
     GUI_IO_util.place_help_button(window, help_button_x_coordinate, basic_y_coordinate + y_step * (increment + 1), "Help",
-                                      "Please, tick the checkbox to check your input corpus for utf-8 encoding.\n   Non utf-8 compliant texts are likely to lead to code breakdown.\n\nTick the checkbox to convert non-ASCII apostrophes & quotes and % to percent.\n   ASCII apostrophes & quotes (the slanted punctuation symbols of Microsoft Word), will not break any code but they will display in a csv document as weird characters.\n   % signs may lead to code breakdon of Stanford CoreNLP.")
-    GUI_IO_util.place_help_button(window,help_button_x_coordinate,basic_y_coordinate+y_step*(increment + 2), "Help","Please, tick checkbox to compute corpus statistics: number of documents, number of sentences and words, word n-grams by document.\n\nFOR N-GRAMS, THERE IS A SEPARATE SCRIPT WITH MORE GENERAL OPTIONS: NGrams_CoOccurrences_Viewer_main.\n\nThe * option will lemmatize words and exclude stopwords and punctuation. IT WILL COMPUTE BASIC WORD N-GRAMS. IT WILL NOT COMPUTE LINE LENGTH. YOU WOULD NEED TO RUN THE LINE LENGTH OPTION SEPARATELY.\n\nLine length in a typical document mostly depends upon typesetting formats. Only for poetry or music lyrics does the line-length measure make sense; in fact, you could use the option the detect those documents in your corpus characterized by different typesetting formats (.g., a poem document among narrative documents).\n\nRUN THE LINE-LENGTH OPTION ONLY IF IT MAKES SENSE FOR YOUR CORPUS.")
-    GUI_IO_util.place_help_button(window, help_button_x_coordinate, basic_y_coordinate + y_step*(increment + 3), "Help","Please, tick the Mallet or Gensim checkboxes to run run LDA Topic Modeling to find out the main topics of your corpus.\n\nTick the \'open GUI\' checkbox to open the specialized Gensim topic modeling GUI that offers more options. Mallet can only be run via its GUI")
-    GUI_IO_util.place_help_button(window, help_button_x_coordinate, basic_y_coordinate + y_step*(increment + 4), "Help","Please, tick the checkbox to analyze your corpus for a variety of tools. Select the default \'*\' to run all options. Allternatively, select the specific option to run.\n\nThe NLP tools will allow you to answer questions such as:\n  1. Are there dialogues in your corpus?\n  .2 Do nouns and verbs cluster in specific aggregates (e.g., communication, movement)?\n  3. Does the corpus contain references to people (by gender) and organizations?\n  4.  References to dates and times?\n  5. References to geographical locations that could be placed on a map?\n  6. References to nature (e.g., weather, seasons, animals, plants)?")
-    GUI_IO_util.place_help_button(window,help_button_x_coordinate,basic_y_coordinate+y_step*(increment + 5),"Help", GUI_IO_util.msg_openOutputFiles)
+                                      "Please, tick the checkbox to check your input corpus for utf-8 encoding.\n   Non utf-8 compliant texts are likely to lead to code breakdown.")
+    GUI_IO_util.place_help_button(window, help_button_x_coordinate, basic_y_coordinate + y_step * (increment + 2), "Help",
+                                      "Please, tick the checkbox to convert non-ASCII apostrophes & quotes and % to percent.\n   ASCII apostrophes & quotes (the slanted punctuation symbols of Microsoft Word), will not break any code but they will display in a csv document as weird characters.\n   % signs may lead to code breakdon of Stanford CoreNLP.")
+    GUI_IO_util.place_help_button(window,help_button_x_coordinate,basic_y_coordinate+y_step*(increment + 3), "Help","Please, tick checkbox to compute corpus statistics: number of documents, number of sentences and words, word n-grams by document.\n\nFOR N-GRAMS, THERE IS A SEPARATE SCRIPT WITH MORE GENERAL OPTIONS: NGrams_CoOccurrences_Viewer_main.\n\nThe * option will lemmatize words and exclude stopwords and punctuation. IT WILL COMPUTE BASIC WORD N-GRAMS. IT WILL NOT COMPUTE LINE LENGTH. YOU WOULD NEED TO RUN THE LINE LENGTH OPTION SEPARATELY.\n\nLine length in a typical document mostly depends upon typesetting formats. Only for poetry or music lyrics does the line-length measure make sense; in fact, you could use the option the detect those documents in your corpus characterized by different typesetting formats (.g., a poem document among narrative documents).\n\nRUN THE LINE-LENGTH OPTION ONLY IF IT MAKES SENSE FOR YOUR CORPUS.")
+    GUI_IO_util.place_help_button(window, help_button_x_coordinate, basic_y_coordinate + y_step*(increment + 4), "Help","Please, tick the Mallet or Gensim checkboxes to run run LDA Topic Modeling to find out the main topics of your corpus.\n\nTick the \'open GUI\' checkbox to open the specialized Gensim topic modeling GUI that offers more options. Mallet can only be run via its GUI")
+    GUI_IO_util.place_help_button(window, help_button_x_coordinate, basic_y_coordinate + y_step*(increment + 5), "Help","Please, tick the checkbox to analyze your corpus for a variety of tools. Select the default \'*\' to run all options. Allternatively, select the specific option to run.\n\nThe NLP tools will allow you to answer questions such as:\n  1. Are there dialogues in your corpus? The CoreNLP QUOTE annotator extracts quotes from text and attributes the quote to the speaker. The default CoreNLP parameter is DOUBLE quotes. If you want to process both DOUBLE and SINGLE quotes, plase tick the checkbox 'Include single quotes.'\n  .2 Do nouns and verbs cluster in specific aggregates (e.g., communication, movement)?\n  3. Does the corpus contain references to people (by gender) and organizations?\n  4.  References to dates and times?\n  5. References to geographical locations that could be placed on a map?\n  6. References to nature (e.g., weather, seasons, animals, plants)?")
+    GUI_IO_util.place_help_button(window,help_button_x_coordinate,basic_y_coordinate+y_step*(increment + 6),"Help", GUI_IO_util.msg_openOutputFiles)
 
 help_buttons(window,GUI_IO_util.get_help_button_x_coordinate(),GUI_IO_util.get_basic_y_coordinate(),GUI_IO_util.get_y_step())
 
 # change the value of the readMe_message
 readMe_message="The GUI brings together various Python 3 scripts to buil a pipeline for the analysis of a corpus, automatically extracting all relevant data from texts and visualizing the results.\n\nEach tool performs all required computations then saves results as csv files and visualizes them in various ways (word clouds, Excel charts, and HTML files)."
 readMe_command=lambda: GUI_IO_util.readme_button(window,GUI_IO_util.get_help_button_x_coordinate(),GUI_IO_util.get_basic_y_coordinate(),"Help",readMe_message)
-GUI_util.GUI_bottom(config_filename, config_input_output_options, y_multiplier_integer, readMe_command, videos_lookup, videos_options, TIPS_lookup, TIPS_options, IO_setup_display_brief)
+GUI_util.GUI_bottom(config_filename, config_input_output_numeric_options, y_multiplier_integer, readMe_command, videos_lookup, videos_options, TIPS_lookup, TIPS_options, IO_setup_display_brief, scriptName)
 
-# GUI_util.softwareDir.set(IO_libraries_util.get_software_path_if_available('Stanford CoreNLP'))
+if y_multiplier_integer_SV == 0:
+    y_multiplier_integer_SV = y_multiplier_integer
 
 GUI_util.window.mainloop()
