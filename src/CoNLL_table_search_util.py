@@ -7,8 +7,8 @@ import sys
 import GUI_util
 import IO_libraries_util
 
-if IO_libraries_util.install_all_packages(GUI_util.window, "CoNLL table_search_util",
-                                          ['os', 'tkinter', 'enum', 'typing']) == False:
+if not IO_libraries_util.install_all_packages(GUI_util.window, "CoNLL table_search_util",
+                                              ['os', 'tkinter', 'enum', 'typing']):
     sys.exit(0)
 
 from enum import Enum
@@ -21,21 +21,27 @@ import CoNLL_util
 
 dict_POSTAG, dict_DEPREL = Stanford_CoreNLP_tags_util.dict_POSTAG, Stanford_CoreNLP_tags_util.dict_DEPREL
 
-noResults = "No results found matching your search criteria for your input CoNLL file. Please, try different search criteria.\n\nTypical reasons for this warning are:\n   1.  You are searching for a token/word not found in the FORM or LEMMA fields (e.g., 'child' in FORM when in fact FORM contains 'children', or 'children' in LEMMA when in fact LEMMA contains 'child'; the same would be true for the verbs 'running' in LEMMA instead of 'run');\n   2. you are searching for a token that is a noun (e.g., 'children'), but you select the POS value 'VB', i.e., verb, for the POSTAG of searched token."
+no_results = "No results found matching your search criteria for your input CoNLL file. " \
+             "Please, try different search criteria.\n\n" \
+             "Typical reasons for this warning are:\n" \
+             "   1.  You are searching for a token/word not found in the FORM or LEMMA fields " \
+             "(e.g., 'child' in FORM when in fact FORM contains 'children', or 'children' in LEMMA when in fact " \
+             "LEMMA contains 'child'; the same would be true for the verbs 'running' in LEMMA instead of 'run');\n" \
+             "   2. you are searching for a token that is a noun (e.g., 'children'), but you select the POS value " \
+             "'VB', i.e., verb, for the POSTAG of searched token."
 
-filesToOpen = []  # Store all files that are to be opened once finished
+files_to_open = []  # Store all files that are to be opened once finished
 
 
 # deep search
-def find_children(sentence_children, ind_keyword, searchedCoNLLField):
+def find_children(sentence_children, ind_keyword, searched_CoNLL_field):
     list_children = []
     list_children_index = []
     for ind, tok in enumerate(sentence_children):
         head_num = int(tok[5])
         if head_num == ind_keyword:
             token_index = int(tok[0])
-
-            if searchedCoNLLField == "FORM":
+            if searched_CoNLL_field == "FORM":
                 token_form = tok[1]
             else:
                 token_form = tok[2]
@@ -67,7 +73,7 @@ def deps_index(deps):
 
 
 # Chen
-def search_deps(token_id_in_sentence, sentence, searchedCoNLLField):
+def search_deps(token_id_in_sentence, sentence, searched_CoNLL_field):
     """
     search into enhanced dependency column
 
@@ -75,7 +81,7 @@ def search_deps(token_id_in_sentence, sentence, searchedCoNLLField):
     ----------
     token_id_in_sentence
     sentence
-    searchedCoNLLField
+    searched_CoNLL_field
 
     Returns
     -------
@@ -83,9 +89,12 @@ def search_deps(token_id_in_sentence, sentence, searchedCoNLLField):
     """
     try:
         token = sentence[int(token_id_in_sentence) - 1]
-    except:
+    except BaseException:
         mb.showwarning(title='CoNLL table error',
-                       message="The records in the CoNLL table appear to be out of sequence, leading to computing errors. Please, make sure that you haven't tinkered with the file sorting the data by any columns other than RecordID.\n\nSort the data by RecordID (col. 9) and try again.")
+                       message="The records in the CoNLL table appear to be out of sequence, leading to computing "
+                               "errors. Please, make sure that you haven't tinkered with the file sorting the data by "
+                               "any columns other than RecordID.\n\n"
+                               "Sort the data by RecordID (col. 9) and try again.")
         # sys.exit(0)
         return []
     if len(token[SearchField.DEPS.value]) == 0:
@@ -95,7 +104,7 @@ def search_deps(token_id_in_sentence, sentence, searchedCoNLLField):
     deps_list = deps_index(token[SearchField.DEPS.value])
     for index in deps_list:
         if index != token[SearchField.ID.value] and index != 0:
-            if searchedCoNLLField == "FORM":
+            if searched_CoNLL_field == "FORM":
                 head_form = sentence[index - 1][SearchField.FORM.value]  # form
             else:
                 head_form = sentence[index - 1][SearchField.LEMMA.value]  # lemma
@@ -111,14 +120,14 @@ def search_deps(token_id_in_sentence, sentence, searchedCoNLLField):
 
 
 # Chen
-def search_governors(sentence, searchedCoNLLField, target, target_index_list):
+def search_governors(sentence, searched_CoNLL_field, target, target_index_list):
     """
     find all words whose head is the target word
 
     Parameters
     ----------
     sentence
-    searchedCoNLLField
+    searched_CoNLL_field
     target
     target_index_list: a list of index, containing all target word
 
@@ -145,20 +154,21 @@ def search_governors(sentence, searchedCoNLLField, target, target_index_list):
 
 # Chen
 def deep_search(related_list):
-    #TODO: implement search for "conj".
-    #      prevent infinite loop by adding a list.
+    # TODO: implement search for "conj".
+    #       prevent infinite loop by adding a list.
     pass
 
-def search_parsetree_loop_all_related(token_id_in_sentence, sentence, searchedCoNLLField):
+
+def search_parsetree_loop_all_related(token_id_in_sentence, sentence, searched_CoNLL_field):
     visited = []
     list_governor = []
-    list_headnum = []
+    list_head_num = []
     token = sentence[int(token_id_in_sentence) - 1]
     head_num = int(token[5])
 
     while head_num != int(token[0]) and head_num != 0 and head_num not in visited:
         head_token = sentence[head_num - 1]
-        if searchedCoNLLField == "FORM":
+        if searched_CoNLL_field == "FORM":
             head_form = head_token[1]
         else:
             head_form = head_token[2]
@@ -166,14 +176,14 @@ def search_parsetree_loop_all_related(token_id_in_sentence, sentence, searchedCo
         head_deprel = head_token[6]
 
         list_governor.append((head_form, head_postag, head_deprel))
-        list_headnum.append(head_num)
+        list_head_num.append(head_num)
         visited.append(head_num)
 
         head_num = int(head_token[5])
 
     # find children -- loop to end
     no_new_token = 0
-    list_children, list_children_index = find_children(sentence, token_id_in_sentence, searchedCoNLLField)
+    list_children, list_children_index = find_children(sentence, token_id_in_sentence, searched_CoNLL_field)
     # print(list_children_index)
     while not no_new_token and len(list_children_index) != 0:
 
@@ -181,7 +191,7 @@ def search_parsetree_loop_all_related(token_id_in_sentence, sentence, searchedCo
         list_temp_children_index = []
 
         for index in list_children_index:
-            children, inds = find_children(sentence, index, searchedCoNLLField)
+            children, inds = find_children(sentence, index, searched_CoNLL_field)
             list_temp_children += children
             list_temp_children_index += inds
 
@@ -200,28 +210,22 @@ def search_parsetree_loop_all_related(token_id_in_sentence, sentence, searchedCo
         if len(visited) == curr_visited:
             no_new_token = 1
 
-    return list_governor + list_children, list_headnum + list_children_index
+    return list_governor + list_children, list_head_num + list_children_index
 
 
 # return all indices of the input word
 
-"""
+# 1. return the list of tokens related to the keyword
+#
+# 2. filter out all the co-occuring words with undesired postag, deprel
 
-1. return the list of tokens related to the keyword
 
-2. filter out all the co-occuring words with undesired postag, deprel
-
-"""
-
-"""
-The 11 indexed items are created in the function search_CoNLL_table:
-	item[0] form/lemma, item[1] postag, item[2] deprel, item[3] is_head, item[4] Document_ID, 
-	item[5] Sentence_ID, item[6] Document, item[7] whole_sent, 
-	item[8] keyword[1]/SEARCHED TOKEN, 
-	item[9] keyword[3]/SEARCHED TOKEN POSTAG, 
-	item[10] keyword[6]/'SEARCHED TOKEN DEPREL'))
-"""
-
+# The 11 indexed items are created in the function search_CoNLL_table:
+# 	 item[0] form/lemma, item[1] postag, item[2] deprel, item[3] is_head, item[4] Document_ID,
+#  	 item[5] Sentence_ID, item[6] Document, item[7] whole_sent,
+# 	 item[8] keyword[1]/SEARCHED TOKEN,
+# 	 item[9] keyword[3]/SEARCHED TOKEN POSTAG,
+# 	 item[10] keyword[6]/'SEARCHED TOKEN DEPREL'))
 
 # Chen
 def filter_list_by_pstage(keyword_list, kw_desired_postag='*'):
@@ -231,9 +235,11 @@ def filter_list_by_pstage(keyword_list, kw_desired_postag='*'):
         keyword_list = [keyword for keyword in keyword_list if
                         keyword[SearchField.POSTAG] in ['NN', 'NNS', 'NNP', 'NNPS']]
     elif kw_desired_postag == 'JJ*':
-        keyword_list = [keyword for keyword in keyword_list if keyword[SearchField.POSTAG.value] in ['JJ', 'JJR', 'JJS']]
+        keyword_list = [keyword for keyword in keyword_list if
+                        keyword[SearchField.POSTAG.value] in ['JJ', 'JJR', 'JJS']]
     elif kw_desired_postag == 'RB*':
-        keyword_list = [keyword for keyword in keyword_list if keyword[SearchField.POSTAG.value] in ['RB', 'RBR', 'RBS', ]]
+        keyword_list = [keyword for keyword in keyword_list if
+                        keyword[SearchField.POSTAG.value] in ['RB', 'RBR', 'RBS', ]]
     elif kw_desired_postag == 'VB*':
         keyword_list = [keyword for keyword in keyword_list if
                         keyword[SearchField.POSTAG.value] in ['VB', 'VBN', 'VBG', 'VBZ', 'VBP', 'VBD']]
@@ -313,9 +319,9 @@ def search_in_sentence(desired_form, sentence, __field__='FORM', kw_desired_post
     list_indices_related_word = []
     # compare term: form or lemma
     if __field__ == 'FORM':
-        compare_term = 1  # field poistion of FORM in CoNLL
+        compare_term = 1  # field position of FORM in CoNLL
     else:
-        compare_term = 2  # field poistion of LEMMA in CoNLL
+        compare_term = 2  # field position of LEMMA in CoNLL
 
     if desired_form == '*':
         keyword_list = sentence
@@ -506,17 +512,12 @@ def search_conll_table2(list_sentences, filters: List[CoNLLFilter]):
 
 # %%
 
-"""
 
-Print all the output.
-
-"""
-
-
+# Print all the output.
 def print_result(_list_queried_):
     if len(_list_queried_) == 0:
-        print(noResults)
-        tk.messagebox.showinfo("NO RESULTS", noResults)
+        print(no_results)
+        tk.messagebox.showinfo("NO RESULTS", no_results)
 
 
 # %%
@@ -530,60 +531,64 @@ put all the output in a csv file.
 """
 The 11 indexed items are created in the function search_CoNLL_table:
 
-			#item[8] keyword[1]/SEARCHED TOKEN 
-			#item[9] keyword[3]/SEARCHED TOKEN POSTAG, 
-			#item[10] keyword[6]/'SEARCHED TOKEN DEPREL')
-			list_queried.append((tok_form,tok_postag,tok_deprel,is_head,str(tok_Document_ID)[:-2],
-				tok_Sentence_ID,tok_Document,
-				whole_sent,keyword[1],keyword[3],keyword[6]))
+            #item[8] keyword[1]/SEARCHED TOKEN 
+            #item[9] keyword[3]/SEARCHED TOKEN POSTAG, 
+            #item[10] keyword[6]/'SEARCHED TOKEN DEPREL')
+            list_queried.append((tok_form,tok_postag,tok_deprel,is_head,str(tok_Document_ID)[:-2],
+                tok_Sentence_ID,tok_Document,
+                whole_sent,keyword[1],keyword[3],keyword[6]))
 
-	item[0] form/lemma
-	item[1] postag
-	item[2] deprel
-	item[3] is_head
-	item[4] Document_ID 
-	item[5] Sentence_ID
-	item[6] Document
-	item[7] whole_sent 
-	item[8] keyword[1]/SEARCHED TOKEN 
-	item[9] keyword[3]/SEARCHED TOKEN POSTAG 
-	item[10] keyword[6]/'SEARCHED TOKEN DEPREL'
+    item[0] form/lemma
+    item[1] postag
+    item[2] deprel
+    item[3] is_head
+    item[4] Document_ID 
+    item[5] Sentence_ID
+    item[6] Document
+    item[7] whole_sent 
+    item[8] keyword[1]/SEARCHED TOKEN 
+    item[9] keyword[3]/SEARCHED TOKEN POSTAG 
+    item[10] keyword[6]/'SEARCHED TOKEN DEPREL'
 """
 
 
-def output_list(list_queried, searchedCoNLLField, documentId_position):
+def output_list(list_queried, searched_CoNLL_field, document_id_position):
     if len(list_queried) != 0:
         # to the 11 fields 4 postag and deprel descriptions are headed
-        output_list = [['SEARCHED TOKEN (' + searchedCoNLLField + ')', 'SEARCHED TOKEN POSTAG',
-                        'SEARCHED TOKEN POSTAG-DESCRIPTION', 'SEARCHED TOKEN DEPREL',
-                        'SEARCHED TOKEN DEPREL-DESCRIPTION', 'Co-occurring token (' + searchedCoNLLField + ')',
-                        'Co-occurring token POSTAG', 'Co-occurring token POSTAG-DESCRIPTION',
-                        'Co-occurring token DEPREL', 'Co-occurring token DEPREL-DESCRIPTION', 'is_HEAD',
-                        'Sentence ID', 'Document ID', 'Document', 'Sentence']]
+        output = [['SEARCHED TOKEN (' + searched_CoNLL_field + ')', 'SEARCHED TOKEN POSTAG',
+                   'SEARCHED TOKEN POSTAG-DESCRIPTION', 'SEARCHED TOKEN DEPREL',
+                   'SEARCHED TOKEN DEPREL-DESCRIPTION', 'Co-occurring token (' + searched_CoNLL_field + ')',
+                   'Co-occurring token POSTAG', 'Co-occurring token POSTAG-DESCRIPTION',
+                   'Co-occurring token DEPREL', 'Co-occurring token DEPREL-DESCRIPTION', 'is_HEAD',
+                   'Sentence ID', 'Document ID', 'Document', 'Sentence']]
         for item in list_queried:
-            output_list.append([item[8], item[9], CoNLL_util.find_full_postag(item[8], item[9]), item[10],
-                                CoNLL_util.find_full_deprel(item[8],
-                                                               item[10]), item[0], item[1],
-                                CoNLL_util.find_full_postag(item[0], item[1]), item[2],
-                                CoNLL_util.find_full_deprel(item[0], item[2]),
-                                item[3], item[5], item[4], item[6], item[7]])
-    return output_list
+            output.append([item[8], item[9], CoNLL_util.find_full_postag(item[8], item[9]), item[10],
+                           CoNLL_util.find_full_deprel(item[8], item[10]), item[0], item[1],
+                           CoNLL_util.find_full_postag(item[0], item[1]), item[2],
+                           CoNLL_util.find_full_deprel(item[0], item[2]),
+                           item[3], item[5], item[4], item[6], item[7]])
+    return output
+
+# %%
 
 
-# %%	
+# def check_searchField(*args):
+#     select_output_file_button.configure(state='active')
+#     if searchField_kw.get() != '':
+#         outputfile = IO_util.generate_output_file_name(inputFilename.get(), '.csv', "QC",
+#                                                        searchField_kw.get() + "_" + searchedCoNLLField.get())
+#         outputFilename.set(outputfile)
+#         setup_IO_configArray(window, input_output_options)
+#
+#
+# searchField_kw.trace("w", check_searchField)
 
-"""
-def check_searchField(*args):
-	select_output_file_button.configure(state='active')
-	if searchField_kw.get()!='':
-		outputfile=IO_util.generate_output_file_name(inputFilename.get(),'.csv',"QC",searchField_kw.get() + "_" + searchedCoNLLField.get())
-		outputFilename.set(outputfile)
-		setup_IO_configArray(window,input_output_options)
-searchField_kw.trace("w", check_searchField)
 
-def check_searchedCoNLLField(*args):
-	outputfile=IO_util.generate_output_file_name(inputFilename.get(),'.csv',"QC",searchField_kw.get() + "_" + searchedCoNLLField.get())
-	outputFilename.set(outputfile)
-	setup_IO_configArray(window,input_output_options)
-searchedCoNLLField.trace("w",check_searchedCoNLLField)
-"""
+# def check_searchedCoNLLField(*args):
+#     outputfile = IO_util.generate_output_file_name(inputFilename.get(), '.csv', "QC",
+#                                                    searchField_kw.get() + "_" + searchedCoNLLField.get())
+#     outputFilename.set(outputfile)
+#     setup_IO_configArray(window, input_output_options)
+#
+#
+# searchedCoNLLField.trace("w", check_searchedCoNLLField)

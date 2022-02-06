@@ -17,7 +17,7 @@ Scroll to bottom to see notes.
 | `              CoNLL_noun_analysis_util.py` |    No    |   N/A    |
 | `             CoNLL_table_analyzer_main.py` |    No    |   N/A    |
 | `       CoNLL_table_search_main_WEI_DAI.py` |    No    |   N/A    |
-| `               CoNLL_table_search_util.py` |    No    |   N/A    |
+| `               CoNLL_table_search_util.py` |   Yes    | 2/6/2022 |
 | `                            CoNLL_util.py` |    No    |   N/A    |
 | `              CoNLL_verb_analysis_util.py` |    No    |   N/A    |
 | `                        constants_util.py` |    No    |   N/A    |
@@ -36,7 +36,7 @@ Scroll to bottom to see notes.
 | `              file_classifier_NER_util.py` |    No    |   N/A    |
 | `                     file_cleaner_util.py` |    No    |   N/A    |
 | `                    file_filename_util.py` |    No    |   N/A    |
-| `  file_find_non_related_documents_util.py` |    No    |   N/A    |
+| `  file_find_non_related_documents_util.py` |   Yes    | 2/6/2022 |
 | `                     file_manager_main.py` |    No    |   N/A    |
 | `                     file_matcher_main.py` |    No    |   N/A    |
 | `                     file_matcher_util.py` |    No    |   N/A    |
@@ -97,7 +97,7 @@ Scroll to bottom to see notes.
 | `                             KWIC_main.py` |    No    |   N/A    |
 | `                              lib_util.py` |    No    |   N/A    |
 | `                           license_GUI.py` |    No    |   N/A    |
-| `                               Lucene.jar` |    No    |   N/A    |
+| `                               Lucene.jar` |    -     |    -     |
 | `               narrative_analysis_main.py` |    No    |   N/A    |
 | `      NGrams_CoOccurrences_Viewer_main.py` |    No    |   N/A    |
 | `      NGrams_CoOccurrences_Viewer_util.py` |    No    |   N/A    |
@@ -151,15 +151,15 @@ Scroll to bottom to see notes.
 | `                         word2vec_main.py` |    No    |   N/A    |
 | `                         word2vec_util.py` |    No    |   N/A    |
 | `                       wordclouds_main.py` |    No    |   N/A    |
-| `                       wordclouds_util.py` |    No    |   N/A    |
-| `                  WordNet_Search_DOWN.jar` |    No    |   N/A    |
-| `                    WordNet_Search_UP.jar` |    No    |   N/A    |
+| `                       wordclouds_util.py` |   Yes    | 2/6/2022 |
+| `                  WordNet_Search_DOWN.jar` |    -     |    -     |
+| `                    WordNet_Search_UP.jar` |    -     |    -     |
 
 Notes
 ----
 ### 2/6/2022
 * Fixed critical error on `topic_modeling_mallet_main.py` with lambda functions from refactoring
-* Committed 
+* Committed 3 files to refactor
 
 ### 2/5/2022
 * Began refactoring efforts

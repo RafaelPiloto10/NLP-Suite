@@ -25,7 +25,7 @@ from nltk.stem.wordnet import WordNetLemmatizer
 import tkinter.messagebox as mb
 
 lemmatizer = WordNetLemmatizer()
-filesToOpen = []
+files_to_open = []
 terminal_out = sys.stdout
 
 #This fuction reads the social actor list from the same directory

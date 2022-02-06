@@ -20,7 +20,7 @@ import IO_internet_util
 import IO_csv_util
 import GIS_pipeline_util
 
-filesToOpen = []
+files_to_open = []
 
 # TODO
 # geocode(query, exactly_one=True, timeout=DEFAULT_SENTINEL, limit=None, addressdetails=False, language=False, geometry=None, extratags=False, country_codes=None, viewbox=None, bounded=None)

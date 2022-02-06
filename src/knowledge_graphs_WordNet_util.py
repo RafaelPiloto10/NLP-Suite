@@ -1,6 +1,6 @@
-#Written by Roberto Franzosi
-#Modified by Cynthia Dong (Fall 2019-Spring 2020)
-#Wordnet_bySentenceID and get_case_initial_row written by Yi Wang (April 2020)
+# Written by Roberto Franzosi
+# Modified by Cynthia Dong (Fall 2019-Spring 2020)
+# Wordnet_bySentenceID and get_case_initial_row written by Yi Wang (April 2020)
 
 import sys
 import GUI_util
@@ -22,7 +22,7 @@ import IO_files_util
 import IO_user_interface_util
 import data_manager_util
 
-filesToOpen=[]
+files_to_open=[]
 
 # written by Yi Wang April 2020
 # ConnlTable is the inputFilename
@@ -86,7 +86,7 @@ def Wordnet_bySentenceID(ConnlTable, wordnetDict,outputFilename,outputDir,noun_v
                                     ['WordNet Category'],['word'], ['Document ID','Sentence ID','Document'],
                                     'WordNet', 'line')
         if len(outputFiles) > 0:
-            filesToOpen.extend(outputFiles)
+            files_to_open.extend(outputFiles)
 
     IO_user_interface_util.timed_alert(GUI_util.window, 3000, 'Analysis end', 'Finished running WordNet charts by sentence index at', True, '', True, startTime)
 
@@ -265,7 +265,7 @@ def get_case_initial_row(inputFilename,outputDir,check_column, firstLetterCapita
     else:
         str='Lower'
     outputFilename=IO_files_util.generate_output_file_name(inputFilename, '', outputDir, '.csv', 'filter_' + str)
-    filesToOpen.append(outputFilename)
+    files_to_open.append(outputFilename)
     data = pd.read_csv(inputFilename)
     if firstLetterCapitalized:
         regex = '^[A-Z].*'
@@ -273,4 +273,4 @@ def get_case_initial_row(inputFilename,outputDir,check_column, firstLetterCapita
         regex = '^[a-z].*'
     data = data[data[check_column].str.contains(regex, regex= True, na=False)] # select by regular expression
     data.to_csv(outputFilename,index=False)
-    return filesToOpen
+    return files_to_open

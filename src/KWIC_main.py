@@ -68,7 +68,7 @@ configPath = os.path.join(scriptPath,'config')
 
 global inputCoNLLtable
 
-filesToOpen = [] # Store all files that are to be opened once finished
+files_to_open = [] # Store all files that are to be opened once finished
 
 
 """
@@ -189,7 +189,7 @@ def generate_kwic(inputCoNLL, outputName, ranWithCLAs=False):
                 tmp.append(data_kwic[i][j])
             writer.writerow(tmp)
             tmp.clear()
-        filesToOpen.append(outputName)
+        files_to_open.append(outputName)
     if ranWithCLAs == False:
         IO_user_interface_util.timed_alert(window, 3000, 'KWIC Table Generated', 'Finished running KWIC at', True)
 
@@ -285,7 +285,7 @@ def search(searchWord, searchSize, position, inputKWICfile, within, outFile, ran
     #TODO
     #searchWord should be displayed in quotes in the chart
     #should exclude stopwords (putting a widget on GUI)
-    filesToOpen.append(KWIC_search_output_filename)
+    files_to_open.append(KWIC_search_output_filename)
 
     """
     #display chart for searchWord within sentence
@@ -307,7 +307,7 @@ def search(searchWord, searchSize, position, inputKWICfile, within, outFile, ran
             leftKWIC=stats_visuals_util.sort_data(leftKWIC,1,True)
             leftKWIC.insert(0,["KWIC (left-hand tokens)","Counts"])
             Excel_util.create_excel_chart(window,"bar","Left-hand tokens for " + searchWord,[leftKWIC],KWIC_search_output_filename_stats,20)
-            filesToOpen.append(KWIC_search_output_filename_stats)
+            files_to_open.append(KWIC_search_output_filename_stats)
         else:
             IO_user_interface_util.timed_alert(window, 3000, 'Searching KWIC Table', 'There are no left-hand words for the searched keyword: ' + searchWord)
     if position == "right" or position == "both":    
@@ -318,7 +318,7 @@ def search(searchWord, searchSize, position, inputKWICfile, within, outFile, ran
             rightKWIC=stats_visuals_util.sort_data(rightKWIC,1,True)
             rightKWIC.insert(0,["KWIC (right-hand tokens)","Counts"])
             Excel_util.create_excel_chart(window,"bar","Right-hand tokens for " + searchWord,[rightKWIC],KWIC_search_output_filename_stats,20)
-            filesToOpen.append(KWIC_search_output_filename_stats)
+            files_to_open.append(KWIC_search_output_filename_stats)
         else:
             IO_user_interface_util.timed_alert(window, 3000, 'Searching KWIC Table', 'There are no right-hand words for the searched keyword: ' + searchWord)
 
@@ -687,7 +687,7 @@ def checkOpen(output_file_name):
         if str(output_file_name)=='':
             print('No output file was provided yet')
             return
-        IO_files_util.OpenOutputFiles(window, ask_open_table.get(), filesToOpen)
+        IO_files_util.OpenOutputFiles(window, ask_open_table.get(), files_to_open)
 
 """
     Running main method to gather CLAs or run GUI
