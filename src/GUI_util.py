@@ -23,6 +23,7 @@ import tkinter.messagebox as mb
 import inspect
 from subprocess import call
 import webbrowser
+import atexit
 
 import config_util
 import reminders_util
@@ -31,7 +32,6 @@ import TIPS_util
 import GUI_IO_util
 import IO_files_util
 import IO_internet_util
-
 
 y_multiplier_integer = 1
 noLicenceError=False
@@ -241,7 +241,7 @@ def display_release():
 
     # get the release version available on GitHub
     check_GitHub_release(version_str)
-    release_display= str(release_version_var.get()) + "/" + str(GitHub_release_version_var.get())
+    release_display = str(release_version_var.get()) + "/" + str(GitHub_release_version_var.get())
     release_lb = tk.Label(window, text='Release ' + release_display,foreground="red")
     y_multiplier_integer = GUI_IO_util.placeWidget(GUI_IO_util.get_help_button_x_coordinate(),
                                                    y_multiplier_integer, release_lb, True)
@@ -780,6 +780,15 @@ def GUI_bottom(config_filename, config_input_output_numeric_options, y_multiplie
         config_input_output_alphabetic_options.append(input_main_dir_path.get())
         config_input_output_alphabetic_options.append(input_secondary_dir_path.get())
         config_input_output_alphabetic_options.append(output_dir_path.get())
+
+        def exit_handler():
+            from update_util import update_self
+            # release_version_var is the release on the current machine
+            # GitHub_release_version_var is the release available on GitHub
+            if GitHub_release_version_var.get() != release_version_var.get():
+                update_self(window, GitHub_release_version_var.get())
+
+        atexit.register(exit_handler)
 
         GUI_IO_util.exit_window(window, temp_config_filename, scriptName, config_input_output_numeric_options,config_input_output_alphabetic_options)
 
