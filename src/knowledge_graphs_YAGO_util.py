@@ -369,14 +369,11 @@ def form_query_string(phrase, ont_ls):
         query_s = 'PREFIX owl: <http://www.w3.org/2002/07/owl#>' + '\n' \
                   + 'PREFIX schema: <http://schema.org/>' + '\n' \
                   + 'PREFIX bioschemas: <http://bioschemas.org/>'+ '\n' \
-                  + 'PREFIX yago: <http://yago-knowledge.org/resource/>' + '\n' \
+                  + 'PREFIX dbr: <http://dbpedia.org/resource/>' + '\n' \
                   + 'PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>' + '\n' \
                   + 'PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>' + '\n' \
                   + 'SELECT DISTINCT'
-        #repeat = len(phrase.split())
-        #reg = "[A-Za-z0-9-]+(_)" * repeat
-        #reg = reg[:-3]  # remove the last (_)
-        #reg = reg + "(($)|(_Q[0-9]+))"
+
         query_s = query_s + '?' + 'w1'
         query_body = query_body + 'OPTIONAL{{?' + 'w1 '+ 'rdfs:label' + " \"" + phrase+ "\"" + '@en}UNION{?' + 'w1 ' + 'schema:alternateName' + " \"" + phrase + "\"" + '@en}.'
         for ont in ont_ls:
