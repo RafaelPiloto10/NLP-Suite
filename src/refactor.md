@@ -141,7 +141,7 @@ Scroll to bottom to see notes.
 | `          TensorFlow_semantic_analysis.py` |    No    |   N/A    |
 | `                             TIPS_util.py` |   Yes    | 2/6/2022 |
 | `            topic_modeling_gensim_main.py` |    No    |   N/A    |
-| `            topic_modeling_gensim_util.py` |    No    |   N/A    |
+| `            topic_modeling_gensim_util.py` |   Yes    | 2/9/2022 |
 | `            topic_modeling_mallet_main.py` |   Yes    | 2/5/2022 |
 | `            topic_modeling_mallet_util.py` |   Yes    | 2/5/2022 |
 | `                           update_util.py` |    No    |   N/A    |

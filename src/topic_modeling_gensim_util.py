@@ -10,7 +10,9 @@ import sys
 import GUI_util
 import IO_libraries_util
 
-if IO_libraries_util.install_all_packages(GUI_util.window,"topic_modeling_gensim_util.py",['nltk','os','tkinter','pandas','gensim','spacy','pyLDAvis','matplotlib','logging','IPython'])==False:
+if not IO_libraries_util.install_all_packages(GUI_util.window, "topic_modeling_gensim_util.py",
+                                              ['nltk', 'os', 'tkinter', 'pandas', 'gensim', 'spacy', 'pyLDAvis',
+                                               'matplotlib', 'logging', 'IPython']):
     sys.exit(0)
 
 import os
@@ -18,7 +20,7 @@ import tkinter.messagebox as mb
 import pandas as pd
 from pprint import pprint
 
-#Gensim
+# Gensim
 import gensim
 import gensim.corpora as corpora
 from gensim.utils import simple_preprocess
@@ -27,98 +29,112 @@ from gensim.models import CoherenceModel
 # necessary to avoid having to do Ctrl+C to kill pyLDAvis to continue running the code
 from _thread import start_new_thread
 
-#spacy for lemmatization
+# spacy for lemmatization
 import spacy
 
-#plotting tools
+# plotting tools
 import pyLDAvis
 import pyLDAvis.gensim
 import matplotlib
-matplotlib.use('TkAgg') # may be necessary for your system
+
+matplotlib.use('TkAgg')  # may be necessary for your system
 import matplotlib.pyplot as plt
 
-#enable logging for gensim
+# enable logging for gensim
 import logging
+
 logging.basicConfig(format='%(asctime)s : %(levelname)s : %(message)s', level=logging.ERROR)
-import warnings 
-warnings.filterwarnings("ignore",category=DeprecationWarning)
+import warnings
+
+warnings.filterwarnings("ignore", category=DeprecationWarning)
 
 import IO_files_util
 import IO_user_interface_util
 import Excel_util
 import reminders_util
 
-#whether stopwordst were already downloaded can be tested, see stackoverflow
-#	https://stackoverflow.com/questions/23704510/how-do-i-test-whether-an-nltk-resource-is-already-installed-on-the-machine-runni
-#	see also caveats
+# whether stopwordst were already downloaded can be tested, see StackOverflow page
+# https://stackoverflow.com/questions/23704510
+# Important: see also caveats
 # check stopwords
-IO_libraries_util.import_nltk_resource(GUI_util.window,'corpora/stopwords','stopwords')
+IO_libraries_util.import_nltk_resource(GUI_util.window, 'corpora/stopwords', 'stopwords')
 
 from nltk.corpus import stopwords
 
-#https://spacy.io/usage/models OTHER LANGUAGES ARE AVAILABLE; CHECK WEBSITE!
+# https://spacy.io/usage/models OTHER LANGUAGES ARE AVAILABLE; CHECK WEBSITE!
 try:
     spacy.load('en_core_web_sm')
-except:
-    mb.showerror(title='Library error', message='The Gensim Topic modeling tool could not find the English language spacy library. This needs to be installed. At command promp type:\npython -m spacy download en_core_web_sm\n\nYOU MAY HAVE TO RUN THE COMMAND AS ADMINISTRATOR.\n\nHOW DO YOU DO THAT?'
-        '\n\nIn Mac, at terminal, type sudo python -m spacy download en_core_web_sm'
-        '\n\nIn Windows, click on left-hand start icon in task bar'
-        '\n  Scroll down to Anaconda' 
-        '\n  Click on the dropdown arrow to display available options'
-        '\n  Right click on Anaconda Prompt'
-        '\n  Click on More'
-        '\n  Click on Run as Administrator'
-        '\n  At the command prompt, Enter "conda activate NLP" (if NLP is your environment)'
-        '\n  Then enter: "python -m spacy download en_core_web_sm" and Return'
-        '\n\nThis imports the package.')
+except BaseException:
+    mb.showerror(title='Library error',
+                 message='The Gensim Topic modeling tool could not find the English language spacy library. '
+                         'This needs to be installed. At command prompt type:\n'
+                         'python -m spacy download en_core_web_sm\n\n'
+                         'YOU MAY HAVE TO RUN THE COMMAND AS ADMINISTRATOR.\n\nHOW DO YOU DO THAT?'
+                         '\n\nIn Mac, at terminal, type sudo python -m spacy download en_core_web_sm'
+                         '\n\nIn Windows, click on left-hand start icon in task bar'
+                         '\n  Scroll down to Anaconda'
+                         '\n  Click on the dropdown arrow to display available options'
+                         '\n  Right click on Anaconda Prompt'
+                         '\n  Click on More'
+                         '\n  Click on Run as Administrator'
+                         '\n  At the command prompt, Enter "conda activate NLP" (if NLP is your environment)'
+                         '\n  Then enter: "python -m spacy download en_core_web_sm" and Return'
+                         '\n\nThis imports the package.')
     sys.exit(0)
 
 
 # find the optimal number of topics for LDA
 def compute_coherence_values(MalletDir, dictionary, corpus, texts, start, limit, step):
-    startTime=IO_user_interface_util.timed_alert(GUI_util.window, 2000, 'Analysis start', 'Started computing the coherence value for each topic')
+    start_time = IO_user_interface_util.timed_alert(GUI_util.window, 2000, 'Analysis start',
+                                                    'Started computing the coherence value for each topic')
     coherence_values = []
     model_list = []
     for num_topics in range(start, limit, step):
-        startTime=IO_user_interface_util.timed_alert(GUI_util.window, 2000, 'Analysis start',
-                                           'Computing coherence value for topic number ' + str(num_topics))
-        model = gensim.models.wrappers.LdaMallet(MalletDir,corpus=corpus, num_topics=num_topics, id2word=dictionary)
+        start_time = IO_user_interface_util.timed_alert(GUI_util.window, 2000, 'Analysis start',
+                                                        'Computing coherence value for topic number ' + str(num_topics))
+        model = gensim.models.wrappers.LdaMallet(MalletDir, corpus=corpus, num_topics=num_topics, id2word=dictionary)
         model_list.append(model)
-        coherencemodel = CoherenceModel(model=model, texts=texts, dictionary=dictionary, coherence='c_v')
-        coherence_values.append(coherencemodel.get_coherence())
-    IO_user_interface_util.timed_alert(GUI_util.window, 2000, 'Analysis end', 'Finished computing the coherence value for each topic')
+        coherence_model = CoherenceModel(model=model, texts=texts, dictionary=dictionary, coherence='c_v')
+        coherence_values.append(coherence_model.get_coherence())
+    IO_user_interface_util.timed_alert(GUI_util.window, 2000, 'Analysis end',
+                                       'Finished computing the coherence value for each topic')
     return model_list, coherence_values
 
+
 # Finding the Dominance Topic in each sentence
-def format_topics_sentences(ldamodel, corpus, texts):
+def format_topics_sentences(lda_model, corpus, texts):
     # Init output
     sent_topics_df = pd.DataFrame()
 
     # Get main topic in each document
-    for i, row in enumerate(ldamodel[corpus]):
+    for i, row in enumerate(lda_model[corpus]):
         row = sorted(row, key=lambda x: (x[1]), reverse=True)
         # Get the Dominant topic, Perc Contribution and Keywords for each document
         for j, (topic_num, prop_topic) in enumerate(row):
             if j == 0:  # =>  topic
-                wp = ldamodel.show_topic(topic_num)
+                wp = lda_model.show_topic(topic_num)
                 topic_keywords = ", ".join([word for word, prop in wp])
-                sent_topics_df = sent_topics_df.append(pd.Series([int(topic_num), round(prop_topic,4), topic_keywords]), ignore_index=True)
+                sent_topics_df = sent_topics_df.append(
+                    pd.Series([int(topic_num), round(prop_topic, 4), topic_keywords]), ignore_index=True)
             else:
                 break
     sent_topics_df.columns = ['Dominant topic', '% contribution', 'Topic keywords']
 
     # Add original text to the end of the output
-# 	    print("Type of texts: ",type(texts))
+    # 	    print("Type of texts: ",type(texts))
     contents = pd.Series(texts)
     sent_topics_df = pd.concat([sent_topics_df, contents], axis=1)
     return sent_topics_df
 
-def malletModelling(MalletDir, outputDir, createExcelCharts, corpus,num_topics, id2word,data_lemmatized, lda_model, data):
-    startTime=IO_user_interface_util.timed_alert(GUI_util.window, 2000, 'Analysis start', 'Started running Mallet LDA topic modeling at',True)
-    config_filename='topic_modeling_gensim_config.csv'
+
+def malletModelling(mallet_dir, output_dir, create_excel_charts, corpus, num_topics, id2word, data_lemmatized,
+                    lda_model, data):
+    start_time = IO_user_interface_util.timed_alert(GUI_util.window, 2000, 'Analysis start',
+                                                    'Started running Mallet LDA topic modeling at', True)
+    config_filename = 'topic_modeling_gensim_config.csv'
     try:
-        ldamallet = gensim.models.wrappers.LdaMallet(MalletDir, corpus=corpus, num_topics=num_topics, id2word=id2word)
-    except:
+        lda_mallet = gensim.models.wrappers.LdaMallet(mallet_dir, corpus=corpus, num_topics=num_topics, id2word=id2word)
+    except BaseException:
         routine_options = reminders_util.getReminders_list(config_filename)
         reminders_util.checkReminder(config_filename,
                                      reminders_util.title_options_gensim_release,
@@ -128,31 +144,35 @@ def malletModelling(MalletDir, outputDir, createExcelCharts, corpus,num_topics, 
         return
 
     # Show Topics
-    pprint(ldamallet.show_topics(formatted=False))
+    pprint(lda_mallet.show_topics(formatted=False))
 
-    if num_topics>40:
-        limit=40
+    if num_topics > 40:
+        limit = 40
     else:
         limit = num_topics
 
     # Compute Coherence value
-    coherence_model_ldamallet = CoherenceModel(model=ldamallet, texts=data_lemmatized, dictionary=id2word, coherence='c_v')
-    startTime=IO_user_interface_util.timed_alert(GUI_util.window, 2000, 'Analysis start', 'Compute Mallet LDA coherence values for each topic.\n\nPlease, be patient...')
-    coherence_ldamallet = coherence_model_ldamallet.get_coherence()
-    print('\nCoherence value: ', coherence_ldamallet)
-    model_list, coherence_values = compute_coherence_values(MalletDir, dictionary=id2word, corpus=corpus, texts=data_lemmatized, start=2, limit=limit, step=6)
-    startTime=IO_user_interface_util.timed_alert(GUI_util.window, 2000, 'Analysis start', 'Compute graph of optimal topics number.')
-    limit=limit; start=2; step=6;
+    coherence_model_lda_mallet = CoherenceModel(model=lda_mallet, texts=data_lemmatized, dictionary=id2word,
+                                                coherence='c_v')
+    start_time = IO_user_interface_util.timed_alert(GUI_util.window, 2000, 'Analysis start',
+                                                    'Compute Mallet LDA coherence values for each topic.\n\n'
+                                                    'Please, be patient...')
+    coherence_lda_mallet = coherence_model_lda_mallet.get_coherence()
+    print('\nCoherence value: ', coherence_lda_mallet)
+    model_list, coherence_values = compute_coherence_values(mallet_dir, dictionary=id2word, corpus=corpus,
+                                                            texts=data_lemmatized, start=2, limit=limit, step=6)
+    start_time = IO_user_interface_util.timed_alert(GUI_util.window, 2000, 'Analysis start',
+                                                    'Compute graph of optimal topics number.')
+    start, step = 2, 6
     x = range(start, limit, step)
     plt.plot(x, coherence_values)
     plt.xlabel("Number of topics")
     plt.ylabel("Coherence value")
-    plt.legend(("coherence_values"), loc='best')
+    plt.legend("coherence_values", loc='best')
     # plt.show()
-    fileName=os.path.join(outputDir, "NLP_Gensim_optimal_topics_number.jpg")
-    plt.savefig(fileName)
-    filesToOpen.append(fileName)
-
+    file_name = os.path.join(output_dir, "NLP_Gensim_optimal_topics_number.jpg")
+    plt.savefig(file_name)
+    files_to_open.append(file_name)
 
     # Print the coherence values
     optimal_coherence = float("-inf")
@@ -170,27 +190,29 @@ def malletModelling(MalletDir, outputDir, createExcelCharts, corpus,num_topics, 
     model_topics = optimal_model.show_topics(formatted=False)
     pprint(optimal_model.print_topics(num_words=10))
 
-    # When you include a corpus that has \n symbol, the \n symbol, as stated by the csv standard, is treated as a "start a new row" symbol.
+    # When you include a corpus that has \n symbol,
+    # the \n symbol, as stated by the csv standard, is treated as a "start a new row" symbol.
     # As a result, the corpus text takes up many rows and corrupts the csv file.
-    # Note that \n symbol does not correspond to a new sentence. It is just a line breaker that makes the text easier to read.
+    # Note that \n symbol does not correspond to a new sentence.
+    # It is just a line breaker that makes the text easier to read.
     text: str
     for index, text in enumerate(data):
         data[index] = text.replace('\n', ' ')
 
-    df_topic_sents_keywords = format_topics_sentences(ldamodel=optimal_model, corpus=corpus, texts=data)
+    df_topic_sents_keywords = format_topics_sentences(lda_model=optimal_model, corpus=corpus, texts=data)
 
     # Format
     df_dominant_topic = df_topic_sents_keywords.reset_index()
-    df_dominant_topic.columns = ['Document ID','Dominant topic', 'Topic % contribution', 'Topic keywords', 'Text']
+    df_dominant_topic.columns = ['Document ID', 'Dominant topic', 'Topic % contribution', 'Topic keywords', 'Text']
 
     # Save csv file
-    fileName=os.path.join(outputDir, "NLP_Gensim_dominant_topic.csv")
-    df_dominant_topic.to_csv(fileName, index=False)
-    filesToOpen.append(fileName)
+    file_name = os.path.join(output_dir, "NLP_Gensim_dominant_topic.csv")
+    df_dominant_topic.to_csv(file_name, index=False)
+    files_to_open.append(file_name)
 
     # columns_to_be_plotted = [[1, 3]]
     # hover_label = 'Topic_Keywords'
-    # inputFilename = fileName
+    # inputFilename = file_name
     # Excel_outputFilename = Excel_util.run_all(columns_to_be_plotted, inputFilename, outputDir,
     #                                           outputFileLabel='TM_Gensim',
     #                                           chart_type_list=["bar"],
@@ -199,7 +221,7 @@ def malletModelling(MalletDir, outputDir, createExcelCharts, corpus,num_topics, 
     #                                           hover_info_column_list=hover_label)
     #
     # if Excel_outputFilename != "":
-    #     filesToOpen.append(Excel_outputFilename)
+    #     files_to_open.append(Excel_outputFilename)
 
     # Find the most representative document for each topic
     # Group top 5 sentences under each topic
@@ -209,8 +231,8 @@ def malletModelling(MalletDir, outputDir, createExcelCharts, corpus,num_topics, 
 
     for i, grp in sent_topics_outdf_grpd:
         sent_topics_sorteddf_mallet = pd.concat([sent_topics_sorteddf_mallet,
-                                             grp.sort_values(['% contribution'], ascending=[0]).head(1)],
-                                            axis=0)
+                                                 grp.sort_values(['% contribution'], ascending=[0]).head(1)],
+                                                axis=0)
 
     # Reset Index
     sent_topics_sorteddf_mallet.reset_index(drop=True, inplace=True)
@@ -219,13 +241,13 @@ def malletModelling(MalletDir, outputDir, createExcelCharts, corpus,num_topics, 
     sent_topics_sorteddf_mallet.columns = ['Topic number', "Topic % contribution", "Topic keywords", "Text"]
 
     # Save csv file
-    fileName=os.path.join(outputDir, "NLP_Gensim_representative_document.csv")
-    sent_topics_sorteddf_mallet.to_csv(fileName,index=False)
-    filesToOpen.append(fileName)
+    file_name = os.path.join(output_dir, "NLP_Gensim_representative_document.csv")
+    sent_topics_sorteddf_mallet.to_csv(file_name, index=False)
+    files_to_open.append(file_name)
 
     # columns_to_be_plotted = [[1, 2]]
     # hover_label = 'Topic keywords'
-    # inputFilename = fileName
+    # inputFilename = file_name
     # Excel_outputFilename = Excel_util.run_all(columns_to_be_plotted, inputFilename, outputDir,
     #                                           outputFileLabel='TM_Gensim',
     #                                           chart_type_list=["bar"],
@@ -234,7 +256,7 @@ def malletModelling(MalletDir, outputDir, createExcelCharts, corpus,num_topics, 
     #                                           hover_info_column_list=hover_label)
     #
     # if Excel_outputFilename != "":
-    #     filesToOpen.append(Excel_outputFilename)
+    #     files_to_open.append(Excel_outputFilename)
 
     # Topic distribution across documents
     # Number of Documents for Each Topic
@@ -244,32 +266,32 @@ def malletModelling(MalletDir, outputDir, createExcelCharts, corpus,num_topics, 
     print("Type of topic count: ")
     print(type(topic_counts))
     print()
-    
+
     # Percentage of Documents for Each Topic
-    topic_contribution = round(topic_counts/topic_counts.sum(), 4)
+    topic_contribution = round(topic_counts / topic_counts.sum(), 4)
     print("Topic contribution: ")
     print(topic_contribution)
     print("Type of topic contribution: ")
     print(type(topic_contribution))
     print()
-    
+
     # Topic Number and Keywords
     topic_num_keywords = df_topic_sents_keywords[['Dominant topic', 'Topic keywords']]
 
     # Concatenate Column wise
-# 	df_dominant_topics = pd.concat([topic_num_keywords, topic_counts, topic_contribution], axis=1)
-    
+    # 	df_dominant_topics = pd.concat([topic_num_keywords, topic_counts, topic_contribution], axis=1)
+
     # Change Column names
 
-    df_dominant_topics = topic_num_keywords 
+    df_dominant_topics = topic_num_keywords
 
     num_row = df_dominant_topics.shape[0]
     topic_order_list = df_dominant_topics["Dominant topic"]
-# 	print(topic_order_list)
-# 	print(type(topic_order_list))
+    # 	print(topic_order_list)
+    # 	print(type(topic_order_list))
     num_docs = []
     perc_documents = []
-# 	print()
+    # 	print()
     for i in range(num_row):
         topic = topic_order_list.get(i)
         num_docs.append(topic_counts.get(topic))
@@ -285,13 +307,13 @@ def malletModelling(MalletDir, outputDir, createExcelCharts, corpus,num_topics, 
     print("Number of rows of topic_distribution.csv: ", df_dominant_topics.shape[0])
     print("Number of columns of topic_distribution.csv: ", df_dominant_topics.shape[1])
     # Save csv file
-    fileName=os.path.join(outputDir, "NLP_Gensim_topic_distribution.csv")
-    df_dominant_topics.to_csv(fileName, index=False)
-    filesToOpen.append(fileName)
+    file_name = os.path.join(output_dir, "NLP_Gensim_topic_distribution.csv")
+    df_dominant_topics.to_csv(file_name, index=False)
+    files_to_open.append(file_name)
 
     # columns_to_be_plotted = [[1, 2]]
     # hover_label = 'Topic keywords'
-    # inputFilename = fileName
+    # inputFilename = file_name
     # Excel_outputFilename = Excel_util.run_all(columns_to_be_plotted, inputFilename, outputDir,
     #                                           outputFileLabel='TM_Gensim',
     #                                           chart_type_list=["bar"],
@@ -300,42 +322,50 @@ def malletModelling(MalletDir, outputDir, createExcelCharts, corpus,num_topics, 
     #                                           hover_info_column_list=hover_label)
     #
     # if Excel_outputFilename != "":
-    #     filesToOpen.append(Excel_outputFilename)
+    #     files_to_open.append(Excel_outputFilename)
+
+    IO_user_interface_util.timed_alert(GUI_util.window, 2000, 'Analysis end',
+                                       'Finished running Mallet LDA topic modeling at', True, '', True, start_time)
 
 
-    IO_user_interface_util.timed_alert(GUI_util.window, 2000, 'Analysis end', 'Finished running Mallet LDA topic modeling at',True, '', True, startTime)
+def run_Gensim(window, input_dir, output_dir, num_topics, remove_stopwords_var,
+               lemmatize, nouns_only, run_mallet, open_output_files, create_excel_charts):
+    global files_to_open
+    files_to_open = []
 
-def run_Gensim(window, inputDir, outputDir, num_topics, remove_stopwords_var,
-                                      lemmatize, nounsOnly, run_Mallet, openOutputFiles,createExcelCharts):
-    global filesToOpen
-    filesToOpen=[]
-
-    numFiles = IO_files_util.GetNumberOfDocumentsInDirectory(inputDir, 'txt')
+    numFiles = IO_files_util.GetNumberOfDocumentsInDirectory(input_dir, 'txt')
     if numFiles == 0:
         mb.showerror(title='Number of files error',
-                     message='The selected input directory does NOT contain any file of txt type.\n\nPlease, select a different directory and try again.')
+                     message='The selected input directory does NOT contain any file of txt type.\n\n'
+                             'Please, select a different directory and try again.')
         return
     elif numFiles == 1:
         mb.showerror(title='Number of files error', message='The selected input directory contains only ' + str(
-            numFiles) + ' file of txt type.\n\nTopic modeling requires a large number of files to produce valid results. That is true even if the available file contains several different documents morged together.')
+            numFiles) + ' file of txt type.\n\n'
+                        'Topic modeling requires a large number of files to produce valid results. '
+                        'That is true even if the available file contains several different documents morged together.')
         return
     elif numFiles < 50:
         result = mb.askyesno(title='Number of files', message='The selected input directory contains only ' + str(
-            numFiles) + ' files of txt type.\n\nTopic modeling requires a large number of files (in the hundreds at least; read TIPS file) to produce valid results.\n\nAre you sure you want to continue?',
+            numFiles) + ' files of txt type.\n\n'
+                        'Topic modeling requires a large number of files (in the hundreds at least; read TIPS file) '
+                        'to produce valid results.\n\nAre you sure you want to continue?',
                              default='no')
-        if result == False:
+        if not result:
             return
 
-    startTime=IO_user_interface_util.timed_alert(GUI_util.window, 4000, 'Analysis start',
-                                       'Started running Gensim Topic modeling at ', True,
-                                       "Depending upon corpus size, computations may take a while... Please, be patient...")
+    start_time = IO_user_interface_util.timed_alert(GUI_util.window, 4000, 'Analysis start',
+                                                    'Started running Gensim Topic modeling at ', True,
+                                                    "Depending upon corpus size, computations may take a while..."
+                                                    "Please, be patient...")
 
-    outputFilename = IO_files_util.generate_output_file_name('', inputDir, outputDir, '.html', 'Gensim_topic_modeling')
+    outputFilename = IO_files_util.generate_output_file_name('', input_dir, output_dir, '.html',
+                                                             'Gensim_topic_modeling')
 
     content = []
-    for fileName in os.listdir(inputDir):
+    for fileName in os.listdir(input_dir):
         if fileName.endswith('.txt'):
-            with open(os.path.join(inputDir, fileName), 'r', encoding='utf-8', errors='ignore') as file:
+            with open(os.path.join(input_dir, fileName), 'r', encoding='utf-8', errors='ignore') as file:
                 content.append(file.read())
             file.close()
 
@@ -357,7 +387,7 @@ def run_Gensim(window, inputDir, outputDir, num_topics, remove_stopwords_var,
     # tokenize, clean up, deacc true is removing the punctuation
     def sent_to_words(sentences):
         for sentence in sentences:
-            yield (gensim.utils.simple_preprocess(str(sentence), deacc=True))
+            yield gensim.utils.simple_preprocess(str(sentence), deacc=True)
 
     data_words = list(sent_to_words(data))
 
@@ -382,8 +412,10 @@ def run_Gensim(window, inputDir, outputDir, num_topics, remove_stopwords_var,
     def make_trigrams(texts):
         return [trigram_mod[bigram_mod[doc]] for doc in texts]
 
-    def lemmatization(texts, lemmatize=True, allowed_postags=['NOUN', 'ADJ', 'VERB', 'ADV']):
+    def lemmatization(texts, lemmatize=True, allowed_postags=None):
         """https://spacy.io/api/annotation"""
+        if allowed_postags is None:
+            allowed_postags = ['NOUN', 'ADJ', 'VERB', 'ADV']
         texts_out = []
         for sent in texts:
             doc = nlp(" ".join(sent))
@@ -394,7 +426,7 @@ def run_Gensim(window, inputDir, outputDir, num_topics, remove_stopwords_var,
         return texts_out
 
     # Remove Stop Words
-    if remove_stopwords_var == True:
+    if remove_stopwords_var:
         data_words_nostops = remove_stopwords(data_words)
     else:
         data_words_nostops = data_words
@@ -407,13 +439,13 @@ def run_Gensim(window, inputDir, outputDir, num_topics, remove_stopwords_var,
     nlp = spacy.load('en_core_web_sm', disable=['parser', 'ner'])
 
     if lemmatize:
-        if nounsOnly == True:
+        if nouns_only:
             # Do lemmatization keeping only noun
             data_lemmatized = lemmatization(data_words_bigrams, lemmatize, allowed_postags=['NOUN'])
         else:
             # Do lemmatization keeping only noun, adj, vb, adv
             data_lemmatized = lemmatization(data_words_bigrams, lemmatize,
-                                        allowed_postags=['NOUN', 'ADJ', 'VERB', 'ADV'])
+                                            allowed_postags=['NOUN', 'ADJ', 'VERB', 'ADV'])
     else:
         data_lemmatized = data_words_bigrams
 
@@ -476,11 +508,15 @@ def run_Gensim(window, inputDir, outputDir, num_topics, remove_stopwords_var,
     pyLDAvis.prepared_data_to_html(vis)
     try:
         pyLDAvis.save_html(vis, outputFilename)
-    except:
+    except BaseException:
         mb.showerror(title='Output html file error', message='Gensim failed to generate the html output file.')
         return
 
-    IO_user_interface_util.timed_alert(GUI_util.window, 2000, 'Analysis end', 'Finished running Gensim topic modeling at',True,'\n\nThe file ' + outputFilename + ' was created. The results will display shortly on the web browser.')
+    IO_user_interface_util.timed_alert(GUI_util.window, 2000, 'Analysis end',
+                                       'Finished running Gensim topic modeling at', True,
+                                       '\n\nThe file ' + outputFilename + ' was created.'
+                                       'The results will display shortly on the web browser.')
+
     # \n\nYou now need to exit the server.\n\nAt command prompt, enter Ctrl+C, perhaps repeatedly, to exit the server.'
 
     # open and display on web
@@ -492,20 +528,21 @@ def run_Gensim(window, inputDir, outputDir, num_topics, remove_stopwords_var,
     # necessary to avoid having to do Ctrl+C to kill pyLDAvis to continue running the code
     start_new_thread(show_web, (vis,))
 
-    if run_Mallet==True:
-        # check that the MalletDir as been setup
-        MalletDir, missing_external_software = IO_libraries_util.get_external_software_dir('topic_modeling_gensim', 'Mallet')
-        if MalletDir==None:
+    if run_mallet:
+        # check that the mallet_dir as been setup
+        mallet_dir, missing_external_software = IO_libraries_util.get_external_software_dir('topic_modeling_gensim',
+                                                                                            'Mallet')
+        if mallet_dir is None:
             return
 
-        MalletDir = os.path.join(MalletDir, "bin/mallet")
+        mallet_dir = os.path.join(mallet_dir, "bin/mallet")
 
         # building LDA Mallet Model
-        malletModelling(MalletDir, outputDir, createExcelCharts, corpus, num_topics, id2word, data_lemmatized,
-                                                   lda_model, data)
-    
-    if openOutputFiles==True:
-            IO_files_util.OpenOutputFiles(GUI_util.window, openOutputFiles, filesToOpen)
-            filesToOpen=[] # to avoid opening files twice, here and in calling function
+        malletModelling(mallet_dir, output_dir, create_excel_charts, corpus, num_topics, id2word, data_lemmatized,
+                        lda_model, data)
 
-    return filesToOpen
+    if open_output_files:
+        IO_files_util.OpenOutputFiles(GUI_util.window, open_output_files, files_to_open)
+        files_to_open = []  # to avoid opening files twice, here and in calling function
+
+    return files_to_open
