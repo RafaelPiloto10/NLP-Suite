@@ -19,7 +19,7 @@ Scroll to bottom to see notes.
 | `       CoNLL_table_search_main_WEI_DAI.py` |    No    |   N/A    |
 | `               CoNLL_table_search_util.py` |   Yes    | 2/6/2022 |
 | `                            CoNLL_util.py` |    No    |   N/A    |
-| `              CoNLL_verb_analysis_util.py` |    No    |   N/A    |
+| `              CoNLL_verb_analysis_util.py` |   Yes    | 2/9/2022 |
 | `                        constants_util.py` |    No    |   N/A    |
 | `                     data_manager_main.py` |    No    |   N/A    |
 | `                     data_manager_util.py` |    No    |   N/A    |
