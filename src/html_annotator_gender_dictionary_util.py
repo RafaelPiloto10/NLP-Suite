@@ -13,6 +13,7 @@ from tkinter import messagebox as mb
 from stanfordcorenlp import StanfordCoreNLP
 from nltk import tokenize
 from nltk.tokenize import word_tokenize
+from stanza_functions import stanzaPipeLine, word_tokenize_stanza, sent_tokenize_stanza
 IO_libraries_util.import_nltk_resource(GUI_util.window,'tokenizers/punkt','punkt')
 import csv
 
@@ -36,7 +37,8 @@ def text_generate(inputFilename, inputDir):
                 print("  Processing file:",filename)
                 with open(os.path.join(folder, filename), 'r', encoding='utf-8', errors='ignore') as src:
                     text = src.read().replace("\n", " ")
-                sentences = tokenize.sent_tokenize(text)
+                # sentences = tokenize.sent_tokenize(text)
+                sentences = sentences = sent_tokenize_stanza(stanzaPipeLine(text))
                 # articles.append([sentences, filename])
                 articles.append([sentences, IO_csv_util.dressFilenameForCSVHyperlink(filename)])
                 # name, sentence, sentenceID, documentID, documentName
@@ -48,7 +50,8 @@ def text_generate(inputFilename, inputDir):
         else:
             with open(inputFilename,  'r', encoding='utf-8', errors='ignore') as src:
                 text = src.read().replace("\n", " ")
-            sentences = tokenize.sent_tokenize(text)
+            # sentences = tokenize.sent_tokenize(text)
+            sentences = sent_tokenize_stanza(stanzaPipeLine(text))
             articles.append([sentences, inputFilename])
     return articles, inputDir
 
@@ -96,7 +99,8 @@ def dictionary_annotate(config_filename, inputFilename, inputDir, outputDir, ope
                     if ner[1] == 'PERSON':
                         people.append([ner[0], sentence, sentence_num + 1, article_num + 1, article[1]])
                 if personal_pronouns_var:
-                    tokens = word_tokenize(sentence)
+                    # tokens = word_tokenize(sentence)
+                    tokens = word_tokenize_stanza(stanzaPipeLine(sentence))
                     for token in tokens:
                         if token in ['his','His','He','he','Him','him']:
                             people.append([token, 'Male', sentence, sentence_num+1,article_num+1,article[1]])

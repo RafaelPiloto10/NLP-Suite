@@ -38,6 +38,7 @@ from nltk.corpus import wordnet as wn
 from nltk.corpus import sentiwordnet as swn
 from nltk import tokenize
 from nltk import word_tokenize, pos_tag
+from stanza_functions import stanzaPipeLine, word_tokenize_stanza, sent_tokenize_stanza, lemmatize_stanza
 
 # if SentiWordNet fails, run: "python -m nltk.downloader all"
 
@@ -92,7 +93,8 @@ def analyzefile(inputFilename, outputDir, output_file, mode, documentID, documen
         print('Empty file ', inputFilename)
         return
 
-    sentences = tokenize.sent_tokenize(fulltext)  # split text into sentences
+    # sentences = tokenize.sent_tokenize(fulltext)  # split text into sentences
+    sentences = sent_tokenize_stanza(stanzaPipeLine(fulltext))
 
     # SentiWordNet Interface http://www.nltk.org/howto/sentiwordnet.html
     # SentiSynsets
@@ -103,7 +105,8 @@ def analyzefile(inputFilename, outputDir, output_file, mode, documentID, documen
     # analyze each sentence s for sentiment
     sentenceID = 1
     for s in sentences:
-        tagged_sentence = pos_tag(word_tokenize(s))
+        # tagged_sentence = pos_tag(word_tokenize(s))
+        tagged_sentence = pos_tag(word_tokenize_stanza(stanzaPipeLine(s)))
         sentiment = 0
         tokens_count = 0
         label = ""
@@ -112,7 +115,8 @@ def analyzefile(inputFilename, outputDir, output_file, mode, documentID, documen
             if wn_tag not in (wn.NOUN, wn.ADJ, wn.ADV):
                 continue
 
-            lemma = lemmatizer.lemmatize(word, pos=wn_tag)
+            # lemma = lemmatizer.lemmatize(word, pos=wn_tag)
+            lemma = lemmatize_stanza(stanzaPipeLine(word))
             if not lemma:
                 continue
 

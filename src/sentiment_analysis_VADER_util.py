@@ -49,6 +49,7 @@ import tkinter.messagebox as mb
 from nltk.sentiment.vader import SentimentIntensityAnalyzer
 from nltk import tokenize
 from nltk import word_tokenize
+from stanza_functions import stanzaPipeLine, word_tokenize_stanza, sent_tokenize_stanza, lemmatize_stanza
 
 import GUI_IO_util
 import IO_csv_util
@@ -109,7 +110,8 @@ def analyzefile(input_file, output_dir, output_file, mode, Document_ID, Document
         print('Empty file ', input_file)
         return
 
-    sentences = tokenize.sent_tokenize(fulltext)  # split text into sentences
+    # sentences = tokenize.sent_tokenize(fulltext)  # split text into sentences
+    sentences = sent_tokenize_stanza(stanzaPipeLine(fulltext))
     sid = SentimentIntensityAnalyzer()  # create sentiment analyzer
     i = 1  # to store sentence index
 
@@ -155,7 +157,8 @@ def analyzefile(input_file, output_dir, output_file, mode, Document_ID, Document
         #     label=label_median
 
         # search for each valid word's sentiment in VADER database
-        words = word_tokenize(s.lower())
+        # words = word_tokenize(s.lower())
+        words = word_tokenize_stanza(stanzaPipeLine(s.lower()))
         filtered_words = [word for word in words if word.isalpha()]  # strip out words with punctuation
         for index, w in enumerate(filtered_words):
             # don't process stops
@@ -172,10 +175,11 @@ def analyzefile(input_file, output_dir, output_file, mode, Document_ID, Document
 
             # lemmatize word
 
-            lmtzr = WordNetLemmatizer()
-            lemma = lmtzr.lemmatize(w, pos='v')
-            if lemma == w:
-                lemma = lmtzr.lemmatize(w, pos='n')
+            # lmtzr = WordNetLemmatizer()
+            # lemma = lmtzr.lemmatize(w, pos='v')
+            # if lemma == w:
+            #     lemma = lmtzr.lemmatize(w, pos='n')
+            lemma = lemmatize_stanza(stanzaPipeLine(w))
 
         writer.writerow({'Document ID': Document_ID, 'Document': IO_csv_util.dressFilenameForCSVHyperlink(Document), 'Sentence ID': i,
                             'Sentence': s,

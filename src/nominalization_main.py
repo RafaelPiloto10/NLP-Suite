@@ -22,6 +22,7 @@ IO_libraries_util.import_nltk_resource(GUI_util.window,'tokenizers/punkt','punkt
 IO_libraries_util.import_nltk_resource(GUI_util.window,'corpora/WordNet','WordNet')
 
 from nltk import tokenize
+from stanza_functions import stanzaPipeLine, sent_tokenize_stanza
 # MUST use this  version or code will break no longer true; pywsd~=1.2.4 pip install pywsd~=1.2.4; even try pip install pywsd=1.2.2
 #   or this version pip install pywsd==1.0.2
 # https://github.com/alvations/pywsd/issues/65
@@ -52,7 +53,9 @@ import GUI_IO_util
 #count #includes word='NO NOMINALIZATION'
 #count1 #excludes word='NO NOMINALIZATION'
 def nominalized_verb_detection(docID,doc,sent):
-    sentences = tokenize.sent_tokenize(sent)
+    # sentences = tokenize.sent_tokenize(sent)
+    sentences = sent_tokenize_stanza(stanzaPipeLine(sent))
+
     result = []
     result1 = []
     verbs = []
