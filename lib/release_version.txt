@@ -1,5 +1,9 @@
 <<<<<<< HEAD
+<<<<<<< HEAD
 2.5.3
 =======
 2.5.4
 >>>>>>> 2d7f1921 (1. Fixed a variable name bug in NLP_setup_update;)
+=======
+2.5.3
+>>>>>>> dd84484a (1. Fixed bugs in NLP_setup_update;)
