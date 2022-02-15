@@ -2,7 +2,7 @@ import sys
 import GUI_util
 import IO_libraries_util
 
-if not IO_libraries_util.install_all_packages(GUI_util.window,"Stanford_CoreNLP_clause_util",['tkinter','nltk','time','pandas','stanfordcorenlp','subprocess']):
+if not IO_libraries_util.install_all_packages(GUI_util.window,"Stanford_CoreNLP_clause_util",['tkinter','time','pandas','stanfordcorenlp','subprocess']):
     sys.exit(0)
 
 import subprocess
@@ -11,10 +11,7 @@ import os
 import pandas as pd
 from tkinter import messagebox as mb
 from stanfordcorenlp import StanfordCoreNLP
-from nltk import tokenize
-from nltk.tokenize import word_tokenize
 from stanza_functions import stanzaPipeLine, word_tokenize_stanza, sent_tokenize_stanza
-IO_libraries_util.import_nltk_resource(GUI_util.window,'tokenizers/punkt','punkt')
 import csv
 
 import GUI_IO_util

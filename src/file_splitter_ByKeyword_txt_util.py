@@ -17,9 +17,6 @@ if IO_libraries_util.install_all_packages(GUI_util.window,"file_splitter_ByKeywo
 import os
 import pandas as pd
 import csv
-from nltk.data import load
-# from nltk import tokenize
-from nltk.tokenize import sent_tokenize, word_tokenize
 from stanza_functions import stanzaPipeLine, word_tokenize_stanza, sent_tokenize_stanza, lemmatize_stanza
 
 from nltk.corpus import wordnet#lemmatization

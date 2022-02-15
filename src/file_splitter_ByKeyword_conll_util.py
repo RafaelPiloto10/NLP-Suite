@@ -12,33 +12,29 @@ import sys
 import GUI_util
 import IO_libraries_util
 
-if IO_libraries_util.install_all_packages(GUI_util.window,"file_splitter_ByKeyword_conll",['os','tkinter','nltk','pandas'])==False:
+if IO_libraries_util.install_all_packages(GUI_util.window,"file_splitter_ByKeyword_conll",['os','tkinter','pandas'])==False:
     sys.exit(0)
 
 import csv
 import os
 import pandas as pd
 
-from nltk.data import load
-from nltk.tokenize.mwe import MWETokenizer
-# from nltk import tokenize
-from nltk.tokenize import sent_tokenize, word_tokenize
 from stanza_functions import stanzaPipeLine, word_tokenize_stanza
 
 
 #https://stackoverflow.com/questions/18902608/generating-the-plural-form-of-a-noun/19018986#comment27903114_18902608
-def sent_tokenize(text, language="english"):#tokenize a paragraph --> sentences
-    """
-    Return a sentence-tokenized copy of *text*,
-    using NLTK's recommended sentence tokenizer
-    (currently :class:`.PunktSentenceTokenizer`
-    for the specified language).
+# def sent_tokenize(text, language="english"):#tokenize a paragraph --> sentences
+#     """
+#     Return a sentence-tokenized copy of *text*,
+#     using NLTK's recommended sentence tokenizer
+#     (currently :class:`.PunktSentenceTokenizer`
+#     for the specified language).
 
-    :param text: text to split into sentences
-    :param language: the model name in the Punkt corpus
-    """
-    tokenizer = load("tokenizers/punkt/{0}.pickle".format(language))
-    return tokenizer.tokenize(text)
+#     :param text: text to split into sentences
+#     :param language: the model name in the Punkt corpus
+#     """
+#     tokenizer = load("tokenizers/punkt/{0}.pickle".format(language))
+#     return tokenizer.tokenize(text)
 
 
 

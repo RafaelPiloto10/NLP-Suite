@@ -22,10 +22,10 @@ import IO_user_interface_util
 import Excel_util
 
 # check WordNet
-IO_libraries_util.import_nltk_resource(GUI_util.window,'corpora/WordNet','WordNet')
-from nltk.stem.wordnet import WordNetLemmatizer
-
-lemmatizer = WordNetLemmatizer()
+# IO_libraries_util.import_nltk_resource(GUI_util.window,'corpora/WordNet','WordNet')
+# from nltk.stem.wordnet import WordNetLemmatizer
+# lemmatizer = WordNetLemmatizer()
+from stanza_functions import stanzaPipeLine, lemmatize_stanza
 
 #This fuction reads the social actor list from the same directory
 #and save that into a set called "my_soc_actors"
@@ -61,7 +61,8 @@ def get_article_soc_actors_NER(dir_path, soc_acts, nlp, keywords, printing):
             # find out all the nouns
             if (pos == 'NN' or pos == 'NNS' ):
                 # lemma_word to check if is social actor
-                lemma_word = lemmatizer.lemmatize(word.lower())
+                # lemma_word = lemmatizer.lemmatize(word.lower())
+                lemma_word = lemmatize_stanza(stanzaPipeLine(word.lower()))
                 if lemma_word in soc_acts:
                     #add into the list. 
                     if lemma_word in keywords[fileName]:
@@ -72,7 +73,8 @@ def get_article_soc_actors_NER(dir_path, soc_acts, nlp, keywords, printing):
                         keywords[fileName][lemma_word] = 1
         for wordNER, pos in nlp.ner(fcontent):
             if (pos == 'LOCATION' or pos == 'DATE' or pos == 'ORGANIZATION' or pos == 'PERSON'):
-                lemma_NER = lemmatizer.lemmatize(wordNER.lower())
+                # lemma_NER = lemmatizer.lemmatize(wordNER.lower())
+                lemma_NER = lemmatize_stanza(stanzaPipeLine(wordNER.lower()))
                 if lemma_NER not in postag_seen:
                     if lemma_NER in keywords[fileName]:
                         keywords[fileName][lemma_NER] = keywords[fileName][lemma_NER] + 1

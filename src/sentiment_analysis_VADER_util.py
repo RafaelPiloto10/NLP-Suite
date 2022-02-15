@@ -47,8 +47,8 @@ import time
 import argparse
 import tkinter.messagebox as mb
 from nltk.sentiment.vader import SentimentIntensityAnalyzer
-from nltk import tokenize
-from nltk import word_tokenize
+# from nltk import tokenize
+# from nltk import word_tokenize
 from stanza_functions import stanzaPipeLine, word_tokenize_stanza, sent_tokenize_stanza, lemmatize_stanza
 
 import GUI_IO_util
@@ -56,14 +56,17 @@ import IO_csv_util
 
 # if VADER fails, run: "python -m nltk.downloader all"
 
-IO_libraries_util.import_nltk_resource(GUI_util.window,'tokenizers/punkt','punkt')
+# IO_libraries_util.import_nltk_resource(GUI_util.window,'tokenizers/punkt','punkt')
 # check WordNet
-IO_libraries_util.import_nltk_resource(GUI_util.window,'corpora/WordNet','WordNet')
-from nltk.stem.wordnet import WordNetLemmatizer
+# IO_libraries_util.import_nltk_resource(GUI_util.window,'corpora/WordNet','WordNet')
+# from nltk.stem.wordnet import WordNetLemmatizer
 # check stopwords
-IO_libraries_util.import_nltk_resource(GUI_util.window,'corpora/stopwords','stopwords')
-from nltk.corpus import stopwords
-stops = set(stopwords.words("english"))
+# IO_libraries_util.import_nltk_resource(GUI_util.window,'corpora/stopwords','stopwords')
+# from nltk.corpus import stopwords
+# stops = set(stopwords.words("english"))
+fin = open('../lib/wordLists/stopwords.txt', 'r')
+stops = set(fin.read().splitlines())
+
 vader = GUI_IO_util.sentiment_libPath + os.sep + "vader_lexicon.txt"
 if not os.path.isfile(vader):
     print("The file './lib/vader_lexicon.txt' could not be found. The VADER sentiment analysis routine expects a txt dictionary file 'vader_lexicon.txt' in a directory 'lib' expected to be a subdirectory of the directory where the sentiment_analysis_VADER.py script is stored.\n\nPlease, check your lib directory and try again.")

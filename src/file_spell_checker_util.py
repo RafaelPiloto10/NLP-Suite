@@ -15,12 +15,9 @@ if not IO_libraries_util.install_all_packages(GUI_util.window,"spell_checker_uti
     sys.exit(0)
 
 import os
-from nltk.stem import WordNetLemmatizer
 from tkinter import filedialog
-from nltk import tokenize
-from stanza_functions import stanzaPipeLine, word_tokenize_stanza, sent_tokenize_stanza
+from stanza_functions import stanzaPipeLine, word_tokenize_stanza, sent_tokenize_stanza, lemmatize_stanza
 import nltk
-IO_libraries_util.import_nltk_resource(GUI_util.window,'tokenizers/punkt','punkt')
 import pandas
 import pandas as pd
 from stanfordcorenlp import StanfordCoreNLP
@@ -57,8 +54,9 @@ def lemmatizing(word):#edited by Claude Hu 08/2020
     for p in pos:
         # if lemmatization with any postag gives different result from the word itself
         # that lemmatization is returned as result
-        lemmatizer = WordNetLemmatizer()
-        lemma = lemmatizer.lemmatize(word, p)
+        #lemmatizer = WordNetLemmatizer()
+        #lemma = lemmatizer.lemmatize(word, p)
+        lemma = lemmatize_stanza(stanzaPipeLine(word))
         if lemma != word:
             result = lemma
             break

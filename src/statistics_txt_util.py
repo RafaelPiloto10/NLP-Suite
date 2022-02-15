@@ -26,14 +26,14 @@ import IO_user_interface_util
 #   see also caveats
 
 # check stopwords
-IO_libraries_util.import_nltk_resource(GUI_util.window,'corpora/stopwords','stopwords')
+# IO_libraries_util.import_nltk_resource(GUI_util.window,'corpora/stopwords','stopwords')
 # check punkt
-IO_libraries_util.import_nltk_resource(GUI_util.window,'tokenizers/punkt','punkt')
+# IO_libraries_util.import_nltk_resource(GUI_util.window,'tokenizers/punkt','punkt')
 
 from nltk.corpus import stopwords
-from nltk.tokenize import sent_tokenize, word_tokenize
-from nltk.stem import WordNetLemmatizer
-from nltk.util import ngrams
+# from nltk.tokenize import sent_tokenize, word_tokenize
+# from nltk.stem import WordNetLemmatizer
+# from nltk.util import ngrams
 from nltk.corpus import wordnet
 from stanza_functions import stanzaPipeLine, word_tokenize_stanza, sent_tokenize_stanza, lemmatize_stanza
 # from gensim.utils import lemmatize
@@ -96,8 +96,9 @@ def lemmatizing(word):#edited by Claude Hu 08/2020
     for p in pos:
         # if lemmatization with any postag gives different result from the word itself
         # that lemmatization is returned as result
-        lemmatizer = WordNetLemmatizer()
-        lemma = lemmatizer.lemmatize(word, p)
+        # lemmatizer = WordNetLemmatizer()
+        # lemma = lemmatizer.lemmatize(word, p)
+        lemma = lemmatize_stanza(stanzaPipeLine(word))
         if lemma != word:
             result = lemma
             break
@@ -116,7 +117,9 @@ def word_count(text):
 
 
 def excludeStopWords_list(words):
-    stop_words = stopwords.words('english')
+    # stop_words = stopwords.words('english')
+    fin = open('../lib/wordLists/stopwords.txt', 'r')
+    stop_words = set(fin.read().splitlines())   
     # since stop_words are lowercase exclude initial-capital words (He, I)
     words_excludeStopwords = [word for word in words if not word.lower() in stop_words]
     words = words_excludeStopwords
@@ -273,11 +276,13 @@ def compute_corpus_statistics(window,inputFilename,inputDir,outputDir,openOutput
                 words = excludeStopWords_list(words)
 
             if lemmatizeWords:
-                lemmatizer = WordNetLemmatizer()
+                # lemmatizer = WordNetLemmatizer()
                 text_vocab = []
                 for w in words:
                     if w.isalpha():
-                        text_vocab.append(lemmatizer.lemmatize(w.lower()))
+                        # text_vocab.append(lemmatizer.lemmatize(w.lower()))
+                        text_vocab.append(lemmatize_stanza(stanzaPipeLine(w.lower())))
+
                 words = text_vocab
 
             word_counts = Counter(words)
@@ -903,7 +908,9 @@ def process_words(window,inputFilename,inputDir,outputDir, openOutputFiles, crea
 def n_most_common_words(n,text):
     cleaned_words, common_words = [], []
     for word in text.split():
-        if word not in stopwords and '\'' not in word and '\"' not in word:
+        fin = open('../lib/wordLists/stopwords.txt', 'r')
+        stop_words = set(fin.read().splitlines())   
+        if word not in stop_words and '\'' not in word and '\"' not in word:
             cleaned_words.append(word)
     print(cleaned_words)
     counts = Counter(cleaned_words)
