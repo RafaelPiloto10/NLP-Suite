@@ -1,0 +1,5 @@
+I/O configuration label,Path
+Input txt filename with path,
+Input files directory,/Users/minocha/Desktop/python/NLP-Suite/lib/sampleData/newspaperArticles
+Input files secondary directory,
+Output files directory,/Users/minocha/Desktop/python/output_NLP-Suite
