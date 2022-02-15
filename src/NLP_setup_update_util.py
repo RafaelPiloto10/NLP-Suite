@@ -43,6 +43,21 @@ def update_self(window,GitHub_release_version):
     except:
         if not IO_libraries_util.open_url('Git', url, ask_to_open=True, message_title='Git installation', message=message_Git):
             return
+<<<<<<< HEAD
+=======
+
+        # answer = tk.messagebox.askyesno("Git installation",
+        #                                 message_Git)
+        # if answer:
+        #     status_code = requests.get(url).status_code
+        #     if status_code != 200:
+        #         mb.showwarning(title='Warning',
+        #                        message='Oops! The Git website could not be opened. Please, try aggain later.')
+        #         return
+        #     webbrowser.open_new_tab(url)
+        # else:
+        #     return
+>>>>>>> 0439287a (changes)
     try:
         if Repository('.').head.shorthand == 'current-stable':
             print("Updating the NLP Suite...")
@@ -53,9 +68,18 @@ def update_self(window,GitHub_release_version):
                            message=message_update)
             print(message_update)
         else:
+<<<<<<< HEAD
             print("\nYou are not working on the 'current-stable' branch of the NLP Suite. You are on the '" + Repository('.').head.shorthand + "' branch. Update aborted to avoid overwriting your branch.")
     except Exception as e:
         print('Git fatal error :' + e)
         # mb.warning(e);  # or print(e)
         mb.showwarning(title='Git fatal error',
                    message="Git encountered an error in executing the command 'Repository('.').head.shorthand.\n\nError: " + e + "\n\nUpdate aborted.")
+=======
+            print("You are not working on the 'current-stable' branch of the NLP Suite. You are on the '" + Repository('.').head.shorthand + "' branch'. Update aborted to avoid overwriting your branch.")
+            # mb.showwarning(title='Warning',
+            #                message="You are not on the current stable branch of the NLP Suite.\n\nYou are on " + Repository('.').head.shorthand + ".\n\nThe automatic update only works from current stable.\n\nUpdate aborted to avoid overwriting your branch.")
+    except:
+        mb.showwarning(title='Warning',
+                       message="Git encountered an error in executing the command 'Repository('.').head.shorthand.\n\nUpdate aborted.")
+>>>>>>> 0439287a (changes)

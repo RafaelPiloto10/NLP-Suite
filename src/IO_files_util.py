@@ -13,7 +13,11 @@ import tkinter.messagebox as mb
 import tkinter as tk
 from tkinter import filedialog
 # import nltk
+<<<<<<< HEAD
 import webbrowser
+=======
+# import webbrowser
+>>>>>>> 0439287a (changes)
 import re
 import datetime
 import subprocess
@@ -65,6 +69,7 @@ def make_directory(newDirectory):
 def getFileList_SubDir(inputFilename, inputDir, fileType='.*', silent=False):
     files = []
     if inputDir!='':
+<<<<<<< HEAD
         if not checkDirectory(inputDir):
             return files
         for path in Path(inputDir).rglob('*' + fileType):
@@ -72,6 +77,11 @@ def getFileList_SubDir(inputFilename, inputDir, fileType='.*', silent=False):
     else:
         if not checkFile(inputFilename):
             return files
+=======
+        for path in Path(inputDir).rglob('*' + fileType):
+            files.append(str(path))
+    else:
+>>>>>>> 0439287a (changes)
         if inputFilename.endswith(fileType):
             files = [inputFilename]
         else:
@@ -108,16 +118,22 @@ def getFileList_SubDir(inputFilename, inputDir, fileType='.*', silent=False):
 def getFileList(inputFile, inputDir, fileType='.*',silent=False):
     files = []
     if inputDir != '':
+<<<<<<< HEAD
         if not checkDirectory(inputDir):
             return files
+=======
+>>>>>>> 0439287a (changes)
         for path in Path(inputDir).glob('*' + fileType):
             files.append(str(path))
         if len(files) == 0:
             mb.showwarning(title='Input files error',
                            message='No files of type ' + fileType + ' found in the directory ' + inputDir)
     else:
+<<<<<<< HEAD
         if not checkFile(inputFile):
             return files
+=======
+>>>>>>> 0439287a (changes)
         if inputFile.endswith(fileType):
             files = [inputFile]
         else:
@@ -324,7 +340,10 @@ def OpenOutputFiles(window, openOutputFiles, filesToOpen):
         return
     if len(filesToOpen) == 0:
         return
+<<<<<<< HEAD
     filesToOpen = list(set(filesToOpen))
+=======
+>>>>>>> 0439287a (changes)
     if len(filesToOpen) == 1:
         singularPlural = 'file'
     else:
@@ -570,11 +589,21 @@ def runScript_fromMenu_option(script_to_run, IO_values, inputFilename, input_mai
     if len(script_to_run) == 0:
         return
     if script_to_run == "Gender guesser":
+<<<<<<< HEAD
         import IO_internet_util
         # check internet connection
         if not IO_internet_util.check_internet_availability_warning("Gender guesser"):
             return
         webbrowser.open('http://www.hackerfactor.com/GenderGuesser.php#About')
+=======
+        url = 'http://www.hackerfactor.com/GenderGuesser.php#About'
+        IO_libraries_util.open_url('Gender guesser', url)
+        # import IO_internet_util
+        # # check internet connection
+        # if not IO_internet_util.check_internet_availability_warning("Gender guesser"):
+        #     return
+        # webbrowser.open_new_tab('http://www.hackerfactor.com/GenderGuesser.php#About')
+>>>>>>> 0439287a (changes)
     elif script_to_run.endswith('.py'):  # with GUI
         if IO_libraries_util.check_inputPythonJavaProgramFile(script_to_run) == False:
             return
