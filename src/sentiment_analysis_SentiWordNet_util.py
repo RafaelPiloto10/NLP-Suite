@@ -36,21 +36,23 @@ import IO_files_util
 
 from nltk.corpus import wordnet as wn
 from nltk.corpus import sentiwordnet as swn
-from nltk import tokenize
+# from nltk import tokenize
 from nltk import word_tokenize, pos_tag
 from stanza_functions import stanzaPipeLine, word_tokenize_stanza, sent_tokenize_stanza, lemmatize_stanza
 
 # if SentiWordNet fails, run: "python -m nltk.downloader all"
 
-IO_libraries_util.import_nltk_resource(GUI_util.window,'tokenizers/punkt','punkt')
+# IO_libraries_util.import_nltk_resource(GUI_util.window,'tokenizers/punkt','punkt')
 # check WordNet
-IO_libraries_util.import_nltk_resource(GUI_util.window,'corpora/WordNet','WordNet')
-from nltk.stem.wordnet import WordNetLemmatizer
-lemmatizer = WordNetLemmatizer()
+# IO_libraries_util.import_nltk_resource(GUI_util.window,'corpora/WordNet','WordNet')
+# from nltk.stem.wordnet import WordNetLemmatizer
+# lemmatizer = WordNetLemmatizer()
 # check stopwords
-IO_libraries_util.import_nltk_resource(GUI_util.window,'corpora/stopwords','stopwords')
-from nltk.corpus import stopwords
-stops = set(stopwords.words("english"))
+# IO_libraries_util.import_nltk_resource(GUI_util.window,'corpora/stopwords','stopwords')
+# from nltk.corpus import stopwords
+# stops = set(stopwords.words("english"))
+fin = open('../lib/wordLists/stopwords.txt', 'r')
+stops = set(fin.read().splitlines())
 
 def penn_to_wn(tag):
     """

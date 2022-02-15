@@ -16,13 +16,14 @@ import IO_libraries_util
 import collections
 
 if IO_libraries_util.install_all_packages(GUI_util.window, "file_search_byWord_util.py",
-                                          ['os', 'tkinter', 'nltk']) == False:
+                                          ['os', 'tkinter']) == False:
     sys.exit(0)
 
 import os
 import csv
 import tkinter.messagebox as mb
-from nltk.tokenize import sent_tokenize, word_tokenize
+# from nltk.tokenize import sent_tokenize, word_tokenize
+from stanza_functions import stanzaPipeLine, word_tokenize_stanza, sent_tokenize_stanza
 
 # https://wordnet.princeton.edu/documentation/morphy7wn
 # https://stackoverflow.com/questions/31016540/lemmatize-plural-nouns-using-nltk-and-wordnet
@@ -105,7 +106,8 @@ def run(inputFilename, inputDir, outputDir, search_by_dictionary, search_by_sear
             docText = f.read()
             f.close()
             if search_within_sentence:
-                sentences_ = sent_tokenize(docText)  # the list of sentences in corpus
+                # sentences_ = sent_tokenize(docText)  # the list of sentences in corpus
+                sentences_ = sent_tokenize_stanza(stanzaPipeLine(docText))
                 sentence_index = 0
                 for sent in sentences_:
                     if len(sent) == 0:
@@ -114,7 +116,8 @@ def run(inputFilename, inputDir, outputDir, search_by_dictionary, search_by_sear
                     sentence_index += 1
                     if not case_sensitive:
                         sent = sent.lower()
-                    tokens_ = word_tokenize(sent)
+                    # tokens_ = word_tokenize(sent)
+                    tokens_ = word_tokenize_stanza(stanzaPipeLine(sent))
                     for keyword in search_keyword:
                         if keyword in sent:
                             if isFirstOcc:
@@ -168,7 +171,8 @@ def run(inputFilename, inputDir, outputDir, search_by_dictionary, search_by_sear
             else:
                 if not case_sensitive:
                     docText = docText.lower()
-                words_ = word_tokenize(docText)  # the list of sentences in corpus
+                # words_ = word_tokenize(docText)  # the list of sentences in corpus
+                words_ = word_tokenize_stanza(stanzaPipeLine(docText))
                 wordCounter = collections.Counter(words_)
                 # print("this is word counter!!!! \n", wordCounter)
                 for keyword in search_keyword:

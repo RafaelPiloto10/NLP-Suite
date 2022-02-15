@@ -32,7 +32,7 @@ import GUI_util
 import IO_libraries_util
 
 if IO_libraries_util.install_all_packages(GUI_util.window, "Concreteness Analysis",
-										  ['nltk', 'os', 'csv', 'statistics', 'argparse', 'pandas', 'tkinter',
+										  ['os', 'csv', 'statistics', 'argparse', 'pandas', 'tkinter',
 										   'time']) == False:
 	sys.exit(0)
 
@@ -44,26 +44,15 @@ import argparse
 import pandas as pd
 import tkinter.messagebox as mb
 
-from nltk import tokenize
-from nltk import word_tokenize
-
-# check Punkt
-IO_libraries_util.import_nltk_resource(GUI_util.window, 'tokenizers/punkt', 'punkt')
-# check WordNet
-IO_libraries_util.import_nltk_resource(GUI_util.window, 'corpora/WordNet', 'WordNet')
-from nltk.stem.wordnet import WordNetLemmatizer
-
-# check stopwords
-IO_libraries_util.import_nltk_resource(GUI_util.window, 'corpora/stopwords', 'stopwords')
-
-from nltk.corpus import stopwords
 
 from stanza_functions import stanzaPipeLine, word_tokenize_stanza, sent_tokenize_stanza, lemmatize_stanza
 
 import GUI_IO_util
 import IO_csv_util
 
-stops = set(stopwords.words("english"))
+fin = open('../lib/wordLists/stopwords.txt', 'r')
+stops = set(fin.read().splitlines())
+
 ratings = GUI_IO_util.concreteness_libPath + os.sep + "Concreteness_ratings_Brysbaert_et_al_BRM.csv"
 if not os.path.isfile(ratings):
 	print(

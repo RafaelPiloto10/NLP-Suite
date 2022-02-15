@@ -24,12 +24,10 @@ import IO_files_util
 import IO_csv_util
 
 # check WordNet
-IO_libraries_util.import_nltk_resource(GUI_util.window,'corpora/WordNet','WordNet')
-from nltk.stem.wordnet import WordNetLemmatizer
-
-lemmatizer = WordNetLemmatizer()
-
-lemmatizer = WordNetLemmatizer()
+# IO_libraries_util.import_nltk_resource(GUI_util.window,'corpora/WordNet','WordNet')
+# from nltk.stem.wordnet import WordNetLemmatizer
+# lemmatizer = WordNetLemmatizer()
+# lemmatizer = WordNetLemmatizer()
 from stanza_functions import stanzaPipeLine, lemmatize_stanza
 filesToOpen = []
 

@@ -36,21 +36,23 @@ import statistics
 import time
 import argparse
 import tkinter.messagebox as mb
-from nltk import tokenize
-from nltk import word_tokenize
+# from nltk import tokenize
+# from nltk import word_tokenize
 from stanza_functions import stanzaPipeLine, word_tokenize_stanza, sent_tokenize_stanza, lemmatize_stanza
 
 import IO_csv_util
 import GUI_IO_util
 
-IO_libraries_util.import_nltk_resource(GUI_util.window,'tokenizers/punkt','punkt')
+# IO_libraries_util.import_nltk_resource(GUI_util.window,'tokenizers/punkt','punkt')
 # check WordNet
-IO_libraries_util.import_nltk_resource(GUI_util.window,'corpora/WordNet','WordNet')
-from nltk.stem.wordnet import WordNetLemmatizer
+# IO_libraries_util.import_nltk_resource(GUI_util.window,'corpora/WordNet','WordNet')
+# from nltk.stem.wordnet import WordNetLemmatizer
 # check stopwords
-IO_libraries_util.import_nltk_resource(GUI_util.window,'corpora/stopwords','stopwords')
-from nltk.corpus import stopwords
-stops = set(stopwords.words("english"))
+# IO_libraries_util.import_nltk_resource(GUI_util.window,'corpora/stopwords','stopwords')
+# from nltk.corpus import stopwords
+# stops = set(stopwords.words("english"))
+fin = open('../lib/wordLists/stopwords.txt', 'r')
+stops = set(fin.read().splitlines())
 database = GUI_IO_util.sentiment_libPath + os.sep + "hedonometer.json"
 if not os.path.isfile(database):
     print("The file './lib/hedonometer.json' could not be found. The hedonemeter sentiment analysis routine expects a JSON dictionary file 'hedonometer.json' in a directory 'lib' expected to be a subdirectory of the directory where the sentiment_analysis_hedonometer.py script is stored.\n\nPlease, check your lib directory and try again.")
