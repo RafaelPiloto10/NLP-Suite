@@ -260,10 +260,13 @@ def display_release():
     else:
         mb.showwarning(title='GitHub release version',message="The GitHub release version is displayed on the top left-hand corner of the GUI as 0.0.0.\n\nWithout internet the newest release available on GitHub cannnot be retrieved.")
 <<<<<<< HEAD
+<<<<<<< HEAD
     return local_release_version, GitHub_newest_release
 
 =======
 >>>>>>> 0439287a (changes)
+=======
+>>>>>>> origin/mino
 def selectFile_set_options(window, IsInputFile,checkCoNLL,inputFilename,input_main_dir_path,title,fileType,extension):
     currentFilename=inputFilename.get()
     if len(currentFilename)>0:
@@ -801,6 +804,7 @@ def GUI_bottom(config_filename, config_input_output_numeric_options, y_multiplie
         config_input_output_alphabetic_options.append(input_secondary_dir_path.get())
         config_input_output_alphabetic_options.append(output_dir_path.get())
 <<<<<<< HEAD
+<<<<<<< HEAD
         global local_release_version
         # def exit_handler():
         #     global local_release_version
@@ -834,6 +838,8 @@ def GUI_bottom(config_filename, config_input_output_numeric_options, y_multiplie
     close_button.place(x=GUI_IO_util.close_button_x_coordinate,y=GUI_IO_util.get_basic_y_coordinate()+GUI_IO_util.get_y_step()*y_multiplier_integer)
     #
 =======
+=======
+>>>>>>> origin/mino
 
         def exit_handler():
             global local_release_version
@@ -859,11 +865,15 @@ def GUI_bottom(config_filename, config_input_output_numeric_options, y_multiplie
     close_button = tk.Button(window, text='CLOSE', width=10,height=2, command=lambda: _close_window())
     close_button.place(x=GUI_IO_util.close_button_x_coordinate,y=GUI_IO_util.get_basic_y_coordinate()+GUI_IO_util.get_y_step()*y_multiplier_integer)
 <<<<<<< HEAD
+<<<<<<< HEAD
 
 >>>>>>> 0439287a (changes)
 =======
     #
 >>>>>>> 16c08813 (1. Fixed bugs in NLP_setup_update;)
+=======
+    #
+>>>>>>> origin/mino
     # Any message should be displayed after the whole GUI has been displayed
 
     # although the release version appears in the top part of the GUI,

@@ -45,6 +45,7 @@ def update_self(window,GitHub_release_version):
             return
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
 =======
 
         # answer = tk.messagebox.askyesno("Git installation",
@@ -61,6 +62,8 @@ def update_self(window,GitHub_release_version):
 >>>>>>> 0439287a (changes)
 =======
 >>>>>>> 16c08813 (1. Fixed bugs in NLP_setup_update;)
+=======
+>>>>>>> origin/mino
     try:
         if Repository('.').head.shorthand == 'current-stable':
             print("Updating the NLP Suite...")
@@ -71,6 +74,7 @@ def update_self(window,GitHub_release_version):
                            message=message_update)
             print(message_update)
         else:
+<<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
             print("\nYou are not working on the 'current-stable' branch of the NLP Suite. You are on the '" + Repository('.').head.shorthand + "' branch. Update aborted to avoid overwriting your branch.")
@@ -90,3 +94,9 @@ def update_self(window,GitHub_release_version):
         mb.showwarning(title='Warning',
                        message="Git encountered an error in executing the command 'Repository('.').head.shorthand.\n\nUpdate aborted.")
 >>>>>>> 0439287a (changes)
+=======
+            print("\nYou are not working on the 'current-stable' branch of the NLP Suite. You are on the '" + Repository('.').head.shorthand + "' branch'. Update aborted to avoid overwriting your branch.")
+    except:
+        mb.showwarning(title='Warning',
+                       message="Git encountered an error in executing the command 'Repository('.').head.shorthand.\n\nUpdate aborted.")
+>>>>>>> origin/mino

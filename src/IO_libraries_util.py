@@ -134,6 +134,7 @@ def check_avaialable_memory(software):
 
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
 # originally written to check for Java jdk version
 # could be used for something else
 # def check_environment_variables_path():
@@ -150,6 +151,11 @@ def check_java_installation(script):
 # could be used for something else
 # def check_environment_variables_path():
 >>>>>>> 16c08813 (1. Fixed bugs in NLP_setup_update;)
+=======
+# originally written to check for Java jdk version
+# could be used for something else
+# def check_environment_variables_path():
+>>>>>>> origin/mino
     # if platform == "win32" and 'CoreNLP' in script:
     #     for x in os.environ:
     #         if x == 'PATH':
@@ -167,6 +173,7 @@ def check_java_installation(script):
     #                             mb.showwarning(title='Warning',
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
     #                                            message='Oops! The Java website could not be opened. Please, try again later.')
 =======
     #                                            message='Oops! The Java website could not be opened. Please, try aggain later.')
@@ -174,6 +181,9 @@ def check_java_installation(script):
 =======
     #                                            message='Oops! The Java website could not be opened. Please, try again later.')
 >>>>>>> 16c08813 (1. Fixed bugs in NLP_setup_update;)
+=======
+    #                                            message='Oops! The Java website could not be opened. Please, try again later.')
+>>>>>>> origin/mino
     #                             return
     #                         webbrowser.open_new_tab(url)
     #                     else:
@@ -191,6 +201,9 @@ def check_java_installation(script):
 
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
+=======
+>>>>>>> origin/mino
 
 # return errorFound, error_code, system_output
 def check_java_installation(script):
@@ -233,6 +246,7 @@ def check_java_installation(script):
                 '\n\nJAVA IS NOT INSTALLED IN YOUR MACHINE.\n\n'
         message = message + script + ' is a Java script that requires the freeware Java (by Oracle) installed on our machine.\n\n' \
                 'THE ROGRAM WILL EXIT.' \
+<<<<<<< HEAD
                 '\n\nTo download Java from the Oracle website, you will need to sign in in your Oracle account (you must create a FREE Oracle account if you do not have one).'\
                 '\n\nSelect the most current Java SE version then download the JDK suited for your machine (Mac/Windows) and finally run the downloaded executable.' \
                 '\n\nDO YOU WANT TO OPEN THE JAVA DOWNLOAD WEBSITE AND INSTALL JAVA NOW? (You must be connected to the internet)'
@@ -296,6 +310,8 @@ def check_java_installation(script):
                 '\n\nJAVA IS NOT INSTALLED IN YOUR MACHINE.\n\n'
         message = message + script + ' is a Java script that requires the freeware Java (by Oracle) installed on our machine.\n\n' \
                 'THE ROGRAM WILL EXIT.' \
+=======
+>>>>>>> origin/mino
                 '\n\nTo download Java from the Oracle website, you will need to sign in in your Oracle account (you must create a fFREE Oracle account if you do not have one).'\
                 '\n\nSelect the most current Java SE version then download the JDK suited for your machine (Mac/Windows) and run the dowanloaded executable.' \
                 '\n\nDO YOU WANT TO OPEN THE JAVA DOWNLOAD WEBSITE AND INSTALL JAVA NOW? (You must be connected to the internet)'
@@ -306,11 +322,15 @@ def check_java_installation(script):
 
     if system_output != '':
         # checking for 64 bits windows machines
+<<<<<<< HEAD
 >>>>>>> 16c08813 (1. Fixed bugs in NLP_setup_update;)
+=======
+>>>>>>> origin/mino
         if platform == "win32" and 'CoreNLP' in script:
             for info in system_output.split(" "):
                 if "-Bit" in info:  # find the information about bit
                     if info[:2] != "64":  # check if it's 64 bit
+<<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
                         message = 'You are not using JAVA 64-Bit version.\n\nThis will cause an error running Stanford CoreNLP: Could not create the Java Virtual Machine.\n\nPlease, read carefully the TIPS_NLP_Stanford CoreNLP memory issues.pdf.\n\nAfter checking the Java version installed in your machine, if 32-Bit you will need to uninstall it and download and install the Java 64-Bit version,\n\nTHE PROGRAM WILL EXIT.\n\nDo you want to open the TIPS file now?'
@@ -319,12 +339,16 @@ def check_java_installation(script):
 =======
                         message = 'You are not using JAVA 64-Bit version.\n\nThis will cause an error running Stanford CoreNLP: Could not create the Java Virtual Machine.\n\nPlease, read carefully the TIPS_NLP_Stanford CoreNLP memory issues.pdf.\n\nAfter checking the Java version installed in your machine, if 32-Bit you will need to uninstall it and download and install the Java 64-Bit version,\n\nTHE PROGRAM WILL EXIT.\n\nDo you want to open the TIPS file now?'
 >>>>>>> 16c08813 (1. Fixed bugs in NLP_setup_update;)
+=======
+                        message = 'You are not using JAVA 64-Bit version.\n\nThis will cause an error running Stanford CoreNLP: Could not create the Java Virtual Machine.\n\nPlease, read carefully the TIPS_NLP_Stanford CoreNLP memory issues.pdf.\n\nAfter checking the Java version installed in your machine, if 32-Bit you will need to uninstall it and download and install the Java 64-Bit version,\n\nTHE PROGRAM WILL EXIT.\n\nDo you want to open the TIPS file now?'
+>>>>>>> origin/mino
                         answer = tk.messagebox.askyesno("Java version Error",
                                                         "You are not using JAVA 64-Bit version.\n\nThis will cause an error running Stanford CoreNLP: Could not create the Java Virtual Machine.\n\nPlease, configure your machine to use JAVA 64-Bit.\n\nPlease, read carefully the TIPS_NLP_Stanford CoreNLP memory issues.pdf.\n\nDo you want to open the TIPS file now?")
                         if answer:
                             TIPS_util.open_TIPS('TIPS_NLP_Stanford CoreNLP memory issues.pdf')
                         errorFound = True
 
+<<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
 =======
@@ -342,6 +366,8 @@ def check_java_installation(script):
 >>>>>>> 0439287a (changes)
 =======
 >>>>>>> 16c08813 (1. Fixed bugs in NLP_setup_update;)
+=======
+>>>>>>> origin/mino
     return errorFound, error_code, system_output
 
 
@@ -363,6 +389,7 @@ SENNA_download = "https://ronan.collobert.com/senna/download.html"
 WordNet_download = "https://wordnet.princeton.edu/download/current-version"
 
 <<<<<<< HEAD
+<<<<<<< HEAD
 # the function checks that if Stanford CoreNLP version matches with the latest downloadable version
 def check_CoreNLPVersion(CoreNLPdir,calling_script=''):
     # get latest downloadable version
@@ -383,6 +410,8 @@ def check_CoreNLPVersion(CoreNLPdir,calling_script=''):
 
 =======
 >>>>>>> 0439287a (changes)
+=======
+>>>>>>> origin/mino
 # the function checks that external programs (e.g., Gephi, StanfordCoreNLP) have been properly installed
 def check_inputExternalProgramFile(calling_script, software_dir, programName):
 
@@ -486,6 +515,7 @@ def open_url(website_name, url, ask_to_open = False, message_title='', message='
         mb.showwarning(title='Warning',
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
                        message='Oops! The ' + website_name + ' website could not be opened.\n\nPlease, check the url or try again later.')
 =======
                        message='Oops! The ' + website_name + ' website could not be opened. Please, check the url or try aggain later.')
@@ -493,15 +523,22 @@ def open_url(website_name, url, ask_to_open = False, message_title='', message='
 =======
                        message='Oops! The ' + website_name + ' website could not be opened.\n\nPlease, check the url or try again later.')
 >>>>>>> 16c08813 (1. Fixed bugs in NLP_setup_update;)
+=======
+                       message='Oops! The ' + website_name + ' website could not be opened.\n\nPlease, check the url or try again later.')
+>>>>>>> origin/mino
         return False
     webbrowser.open_new_tab(url)
     return True
 
 <<<<<<< HEAD
+<<<<<<< HEAD
 def initialize_software_config_fields(existing_software_config: list) -> list:
 =======
 def update_software_config_fields(existing_software_config: list) -> list:
 >>>>>>> 0439287a (changes)
+=======
+def update_software_config_fields(existing_software_config: list) -> list:
+>>>>>>> origin/mino
     """
 
     @param existing_software_config: current csv file in list format, similar to sample_csv below
@@ -521,6 +558,7 @@ def update_software_config_fields(existing_software_config: list) -> list:
     return existing_software_config
 
 <<<<<<< HEAD
+<<<<<<< HEAD
 def delete_software_config(existing_software_config, software):
     for (index, row) in enumerate(existing_software_config):
         if row[0] == software:
@@ -530,6 +568,8 @@ def delete_software_config(existing_software_config, software):
 
 =======
 >>>>>>> 0439287a (changes)
+=======
+>>>>>>> origin/mino
 def get_existing_software_config():
     software_config = GUI_IO_util.configPath + os.sep + 'software_config.csv'
     # FIXED: must insert the new package into software-config.csv when the package is missing in the user csv file
@@ -539,10 +579,14 @@ def get_existing_software_config():
     except:
         existing_software_config = list()
 <<<<<<< HEAD
+<<<<<<< HEAD
         existing_software_config = initialize_software_config_fields(existing_software_config)
 =======
     update_software_config_fields(existing_software_config)
 >>>>>>> 0439287a (changes)
+=======
+    update_software_config_fields(existing_software_config)
+>>>>>>> origin/mino
     return existing_software_config
 
 # gets a list of the external software: CoreNLP, SENNA, WordNet, MALLET, Google Earth Pro, Gephi
@@ -563,10 +607,14 @@ def get_missing_external_software_list(calling_script, existing_software_config)
     return missing_software
 
 <<<<<<< HEAD
+<<<<<<< HEAD
 def save_software_config(new_csv, package):
 =======
 def save_software_config(new_csv,package):
 >>>>>>> 0439287a (changes)
+=======
+def save_software_config(new_csv,package):
+>>>>>>> origin/mino
     software_config = GUI_IO_util.configPath + os.sep + 'software_config.csv'
     with open(software_config, 'w+', newline='') as csv_file:
         writer = csv.writer(csv_file)
@@ -653,6 +701,7 @@ def get_external_software_dir(calling_script, package, silent=False, only_check_
 
         if (not errorFound) and (package!='') and (calling_script=='NLP_menu'):
 <<<<<<< HEAD
+<<<<<<< HEAD
             if package == 'Stanford CoreNLP':
                 check_CoreNLPVersion(software_dir, calling_script)
                 # software_dir = ''
@@ -668,13 +717,18 @@ def get_external_software_dir(calling_script, package, silent=False, only_check_
                 if (package!=''):
                     return software_dir, missing_software
 =======
+=======
+>>>>>>> origin/mino
 
             mb.showwarning(title=package,
                            message='The external software ' + package + ' is up-to-date and correctly installed at ' + software_dir)
             # if you are checking for a specific package and that is found return the appropriate directory
             if (package!=''):
                 return software_dir, missing_software
+<<<<<<< HEAD
 >>>>>>> 0439287a (changes)
+=======
+>>>>>>> origin/mino
 
     # check for missing external software
     if len(missing_software) > 0:
@@ -706,6 +760,7 @@ def get_external_software_dir(calling_script, package, silent=False, only_check_
 
 # Setup user messages for the various types of external software and platforms
 <<<<<<< HEAD
+<<<<<<< HEAD
                     # in Mac, Gephi and Google Earth Pro are installed in Applications
                     if platform == 'darwin' and (software_name != 'Google Earth Pro' and software_name != 'Gephi'):
                         message2 = "You will be asked next to select the directory (NOT Mac Applications!) where the software " + software_name.upper() + " was installed after downloading; you can press CANCEL or ESC if you have not downloaded the software yet."
@@ -714,6 +769,10 @@ def get_external_software_dir(calling_script, package, silent=False, only_check_
 
                     if platform == 'darwin':
 >>>>>>> 0439287a (changes)
+=======
+
+                    if platform == 'darwin':
+>>>>>>> origin/mino
                         message2 = "You will be asked next to select the Mac Applications directory where the software " + software_name.upper() + " was installed after downloading; you can press CANCEL or ESC if you have not downloaded the software yet."
                     if platform == 'win32':
                         message2 = "You will be asked next to select the directory where the software " + software_name.upper() + " was installed after downloading; you can press CANCEL or ESC if you have not downloaded the software yet."
@@ -783,6 +842,7 @@ def get_external_software_dir(calling_script, package, silent=False, only_check_
                         open_url(software_name, software_download)
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
 =======
                         # check internet connection
                         # if not IO_internet_util.check_internet_availability_warning('NLP_menu_main'):
@@ -793,12 +853,15 @@ def get_external_software_dir(calling_script, package, silent=False, only_check_
 >>>>>>> 0439287a (changes)
 =======
 >>>>>>> 16c08813 (1. Fixed bugs in NLP_setup_update;)
+=======
+>>>>>>> origin/mino
 
 # DOWNLOAD JAVA for CoreNLP, Gephi, MALLET
 
                         if software_name == 'Stanford CoreNLP' or software_name == 'Gephi' or software_name == 'MALLET':
                             # since Stanford CoreNLP and Gephi need Java, check for Java installation
                             errorFound, error_code, system_output = check_java_installation(software_name)
+<<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
                             url = 'https://www.oracle.com/java/technologies/downloads/archive/'
@@ -814,10 +877,14 @@ def get_external_software_dir(calling_script, package, silent=False, only_check_
 =======
                             url = 'https://www.oracle.com/java/technologies/downloads/archive/'
 >>>>>>> 16c08813 (1. Fixed bugs in NLP_setup_update;)
+=======
+                            url = 'https://www.oracle.com/java/technologies/downloads/archive/'
+>>>>>>> origin/mino
                             # errorFound=True # for testing
                             if errorFound:
                                 Java_required = software_name + ' requires the freeware Java (by Oracle) installed on our machine.\n\nTo download Java from the Oracle website, you will need to sign in in your Oracle account (you must create a FREE Oracle account if you do not have one).\n\nThe NLP Suite will open the Java download website.\n\nSelect the most current Java SE version then download the JDK suited for your machine (Mac/Windows) and run the dowanloaded executable.'
                                 open_url('Java', url, ask_to_open = True, message_title = 'Java', message = Java_required)
+<<<<<<< HEAD
 <<<<<<< HEAD
                                 # mb.showwarning(title='Java',
                                 #                 message=Java_required)
@@ -825,6 +892,8 @@ def get_external_software_dir(calling_script, package, silent=False, only_check_
 >>>>>>> 0439287a (changes)
 =======
 >>>>>>> 16c08813 (1. Fixed bugs in NLP_setup_update;)
+=======
+>>>>>>> origin/mino
 
 # DOWNLOAD Microsoft Visual Studio C++ for SENNA
 
@@ -838,6 +907,7 @@ def get_external_software_dir(calling_script, package, silent=False, only_check_
                                 open_url(title, url, ask_to_open = True, message_title = title, message = message)
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
 =======
                                 # answer = tk.messagebox.askyesnocancel(title, message)
                                 # if answer:
@@ -847,6 +917,8 @@ def get_external_software_dir(calling_script, package, silent=False, only_check_
 >>>>>>> 0439287a (changes)
 =======
 >>>>>>> 16c08813 (1. Fixed bugs in NLP_setup_update;)
+=======
+>>>>>>> origin/mino
 
 # INSTALLING -------------------------------------------------------------------------------
 #                   if not answer:  # answer = True downloading and installing; you have already warned the user
