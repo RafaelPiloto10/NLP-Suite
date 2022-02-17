@@ -38,6 +38,7 @@ import argparse
 import tkinter.messagebox as mb
 from nltk import tokenize
 from nltk import word_tokenize
+from stanza_functions import stanzaPipeLine, word_tokenize_stanza, sent_tokenize_stanza, lemmatize_stanza
 
 import IO_csv_util
 import GUI_IO_util
@@ -80,7 +81,9 @@ def analyzefile(input_file, output_dir, output_file, mode, Document_ID, Document
         return
 
     # otherwise, split into sentences
-    sentences = tokenize.sent_tokenize(fulltext)
+    # sentences = tokenize.sent_tokenize(fulltext)
+    sentences = sent_tokenize_stanza(stanzaPipeLine(fulltext))
+
     i = 1 # to store sentence index
     # check each word in sentence for sentiment and write to output_file
     # analyze each sentence for sentiment
@@ -91,7 +94,8 @@ def analyzefile(input_file, output_dir, output_file, mode, Document_ID, Document
         v_list = []  # holds valence scores
 
         # search for each valid word's sentiment in hedonometer database
-        words = word_tokenize(s.lower())
+        # words = word_tokenize(s.lower())
+        words = word_tokenize_stanza(stanzaPipeLine(s.lower()))
         filtered_words = [word for word in words if word.isalpha()]  # strip out words with punctuation
         for index, w in enumerate(filtered_words):
             # don't process stops
@@ -107,10 +111,11 @@ def analyzefile(input_file, output_dir, output_file, mode, Document_ID, Document
                 j -= 1
 
             # lemmatize word
-            lmtzr = WordNetLemmatizer()
-            lemma = lmtzr.lemmatize(w, pos='v')
-            if lemma == w:
-                lemma = lmtzr.lemmatize(w, pos='n')
+            # lmtzr = WordNetLemmatizer()
+            # lemma = lmtzr.lemmatize(w, pos='v')
+            # if lemma == w:
+            #     lemma = lmtzr.lemmatize(w, pos='n')
+            lemma = lemmatize_stanza(stanzaPipeLine(w))
 
             total_words += 1
 

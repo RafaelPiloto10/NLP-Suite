@@ -15,6 +15,7 @@ import nltk
 from nltk import tokenize
 from nltk import word_tokenize
 # from gensim.utils import lemmatize
+from stanza_functions import stanzaPipeLine, word_tokenize_stanza, sent_tokenize_stanza
 from itertools import groupby
 import pandas as pd
 
@@ -56,12 +57,14 @@ def dictionary_items_bySentenceID(window,inputFilename,inputDir, outputDir,creat
             text = (open(file, "r", encoding="utf-8",errors='ignore').read())
             #Process each word in txt
             Sentence_ID = 0
-            sentences = tokenize.sent_tokenize(text)
+            # sentences = tokenize.sent_tokenize(text)
+            sentences = sent_tokenize_stanza(stanzaPipeLine(text))
             # word  frequency sentenceID DocumentID FileName
             for each_sentence in sentences:
                 In = []
                 Sentence_ID += 1
-                token=nltk.word_tokenize(each_sentence)
+                # token=nltk.word_tokenize(each_sentence)
+                token = word_tokenize_stanza(stanzaPipeLine(each_sentence))
                 for word in token:
                     for dict_word in dic:
                         if word == dict_word[0].rstrip():
@@ -93,12 +96,14 @@ def dictionary_items_bySentenceID(window,inputFilename,inputDir, outputDir,creat
             text = (open(file, "r", encoding="utf-8", errors='ignore').read())
             # Process each word in txt
             Sentence_ID = 0
-            sentences = tokenize.sent_tokenize(text)
+            # sentences = tokenize.sent_tokenize(text)
+            sentences = sent_tokenize_stanza(stanzaPipeLine(text))
             # word  frequency sentenceID DocumentID FileName
             for each_sentence in sentences:
                 In = []
                 Sentence_ID += 1
-                token = nltk.word_tokenize(each_sentence)
+                # token = nltk.word_tokenize(each_sentence)
+                token = word_tokenize_stanza(stanzaPipeLine(each_sentence))
                 for word in token:
                     for dict_word in dic_value:
                         if word == dict_word.rstrip():

@@ -35,6 +35,7 @@ from nltk.tokenize import sent_tokenize, word_tokenize
 from nltk.stem import WordNetLemmatizer
 from nltk.util import ngrams
 from nltk.corpus import wordnet
+from stanza_functions import stanzaPipeLine, word_tokenize_stanza, sent_tokenize_stanza, lemmatize_stanza
 # from gensim.utils import lemmatize
 from itertools import groupby
 import textstat
@@ -165,13 +166,14 @@ def read_line(window, inputFilename, inputDir, outputDir,openOutputFiles,createE
                     print('   ',line)
                     # continue
                 while line:
-                   lineID += 1
-                   words = nltk.word_tokenize(line)
-                   # print("Line {}: Length (in characters) {} Length (in words) {}".format(lineID, len(line), len(words)))
-                   currentLine = [
-                       [documentID, IO_csv_util.dressFilenameForCSVHyperlink(doc), len(line), len(words),lineID,line.strip()]]
-                   writer.writerows(currentLine)
-                   line = file.readline()
+                    lineID += 1
+                    # words = nltk.word_tokenize(line)
+                    words = word_tokenize_stanza(stanzaPipeLine(line))
+                    # print("Line {}: Length (in characters) {} Length (in words) {}".format(lineID, len(line), len(words)))
+                    currentLine = [
+                        [documentID, IO_csv_util.dressFilenameForCSVHyperlink(doc), len(line), len(words),lineID,line.strip()]]
+                    writer.writerows(currentLine)
+                    line = file.readline()
     csvfile.close()
 
     IO_user_interface_util.timed_alert(GUI_util.window, 2000, 'Analysis end', 'Finished running line length analysis at', True, '', True, startTime, True)
@@ -264,7 +266,8 @@ def compute_corpus_statistics(window,inputFilename,inputDir,outputDir,openOutput
             #print('TOTAL number of Syllables: ',Nsyllables)
 
             # words = fullText.split()
-            words = nltk.word_tokenize(fullText)
+            # words = nltk.word_tokenize(fullText)
+            words = word_tokenize_stanza(stanzaPipeLine(fullText))
 
             if excludeStopWords:
                 words = excludeStopWords_list(words)
@@ -540,15 +543,18 @@ def get_ngramlist(inputFilename,ngramsNumber=4, wordgram=1, excludePunctuation=F
     char_tokens = []
     text = (open(inputFilename, "r", encoding="utf-8", errors='ignore').read())
     # split into sentences
-    sentences = nltk.sent_tokenize(text)
+    # sentences = nltk.sent_tokenize(text)
+    sentences = sent_tokenize_stanza(stanzaPipeLine(text))
     for each_sentence in sentences:
         if excludePunctuation:
             each_sentence = each_sentence.translate(str.maketrans('', '', string.punctuation))
         Sentence_ID += 1
         if wordgram==0: # character ngrams
-            char_tokens.append([''.join(nltk.word_tokenize(each_sentence)),Sentence_ID])
+            # char_tokens.append([''.join(nltk.word_tokenize(each_sentence)),Sentence_ID])
+            char_tokens.append([''.join(word_tokenize_stanza(stanzaPipeLine(each_sentence))),Sentence_ID])
         else:
-            for tk in nltk.word_tokenize(each_sentence):
+            # for tk in nltk.word_tokenize(each_sentence):
+            for tk in word_tokenize_stanza(stanzaPipeLine(each_sentence)):
                 tokens.append([tk, Sentence_ID, each_sentence])
     # 1:
     if wordgram==1: # word ngrams
@@ -941,13 +947,16 @@ def convert_txt_file(window,inputFilename,inputDir,outputDir,openOutputFiles,exc
             #print('TOTAL number of Syllables: ',Nsyllables)
 
             # words = fullText.split()
-            words = nltk.word_tokenize(fullText)
+            # words = nltk.word_tokenize(fullText)
+            words = word_tokenize_stanza(stanzaPipeLine(fullText))
 
             if excludeStopWords:
                 words = excludeStopWords_list(words)
 
             if lemmatizeWords:
-                lemmatizer = WordNetLemmatizer()
-                text_vocab = set(lemmatizer.lemmatize(w.lower()) for w in fullText.split(" ") if w.isalpha())
+                # lemmatizer = WordNetLemmatizer()
+                # text_vocab = set(lemmatizer.lemmatize(w.lower()) for w in fullText.split(" ") if w.isalpha())
+                # words = set(lemmatizing(w.lower()) for w in words if w.isalpha()) # fullText.split(" ") if w.isalpha())
+                text_vocab = set(lemmatize_stanza(stanzaPipeLine(w.lower())) for w in fullText.split(" ") if w.isalpha())
                 words = set(lemmatizing(w.lower()) for w in words if w.isalpha()) # fullText.split(" ") if w.isalpha())
 
