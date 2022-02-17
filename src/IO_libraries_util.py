@@ -133,6 +133,7 @@ def check_avaialable_memory(software):
     return mem_GB
 
 <<<<<<< HEAD
+<<<<<<< HEAD
 # originally written to check for Java jdk version
 # could be used for something else
 # def check_environment_variables_path():
@@ -144,6 +145,11 @@ def check_java_installation(script):
     system_output = '' # This is what you see when you run "java -version" in your command line
 
 >>>>>>> 0439287a (changes)
+=======
+# originally written to check for Java jdk version
+# could be used for something else
+# def check_environment_variables_path():
+>>>>>>> 16c08813 (1. Fixed bugs in NLP_setup_update;)
     # if platform == "win32" and 'CoreNLP' in script:
     #     for x in os.environ:
     #         if x == 'PATH':
@@ -160,10 +166,14 @@ def check_java_installation(script):
     #                         if status_code != 200:
     #                             mb.showwarning(title='Warning',
 <<<<<<< HEAD
+<<<<<<< HEAD
     #                                            message='Oops! The Java website could not be opened. Please, try again later.')
 =======
     #                                            message='Oops! The Java website could not be opened. Please, try aggain later.')
 >>>>>>> 0439287a (changes)
+=======
+    #                                            message='Oops! The Java website could not be opened. Please, try again later.')
+>>>>>>> 16c08813 (1. Fixed bugs in NLP_setup_update;)
     #                             return
     #                         webbrowser.open_new_tab(url)
     #                     else:
@@ -179,6 +189,7 @@ def check_java_installation(script):
     #                         errorFound = True
     #                         return errorFound, error_code, system_output
 
+<<<<<<< HEAD
 <<<<<<< HEAD
 
 # return errorFound, error_code, system_output
@@ -237,32 +248,84 @@ def check_java_installation(script):
     error_code = java_output.returncode  # Should be 0 if java installed
     system_output = java_output.stderr.decode(
         'utf-8')  # This is what you see when you run "java -version" in your command line
+=======
+>>>>>>> 16c08813 (1. Fixed bugs in NLP_setup_update;)
 
-    if not system_output:
-        # Java issues do not seem to be a problem with Mac
-        if platform == "win32" and 'CoreNLP' in script:
-            title_options = ['Java JDK version']
-            message = 'You are running ' + system_output.split("\r\n""", 1)[
-                0] + '.\n\nStanford CoreNLP works best with Java version JDK 8 on Windows machines.\n\nIf you run into problems with Stanford CoreNLP, you may wish to uninstall the Java version you are currently running and install Java JDK 8. Please, read the installation instructions on the NLP Suite GitHub wiki pages at\nhttps://github.com/NLP-Suite/NLP-Suite/wiki/Install-External-Software#JAVA-JDK.'
-            reminders_util.checkReminder('Stanford-CoreNLP_config.csv', title_options,
-                                         message, True)
+# return errorFound, error_code, system_output
+def check_java_installation(script):
+    errorFound = False
+    config_filename = ''
+    reminder_title = ''
+    reminder_message = ''
+    error_code = 1 # should be 0 if Java is installed
+    system_output = '' # This is what you see when you run "java -version" in your command line
 
+<<<<<<< HEAD
     if system_output:
 >>>>>>> 0439287a (changes)
+=======
+    try:
+        # if you are testing new Java install/uninstall ...
+        #   YOU MUST CLOSE PyCharm to run correctly the next command
+        java_output = subprocess.run(['java', '-version'], capture_output=True)
+        error_code = java_output.returncode  # Should be 0 if java installed
+        system_output = java_output.stderr.decode(
+            'utf-8')  # This is what you see when you run "java -version" in your command line
+        
+        # for now the java_version as a single version number, e.g., 8 or 17, is not used
+        # java_version = system_output.split('\r\n')[0]
+        # java_version = java_version.split(' ')[2]
+        # java_version = java_version.split('.')[0]
+        # java_version = java_version.replace("\"","")
+    except:
+        error_code = 1
+
+    url = 'https://www.oracle.com/java/technologies/downloads/archive/'
+    title = 'Java error'
+
+    if error_code != 0 and ("not recognized" in system_output or system_output == ''):
+        message = 'A test for Java returned a non-zero error code ' + str(
+                error_code) + ' and Java not recognized (You can check this in command line by typing Java -version).'
+
+        if system_output != '':
+            message = message + ' with the following system error: ' + system_output + '\n\n'
+            message = message + \
+                '\n\nJAVA MAY NOT BE CORRECTLY INSTALLED IN YOUR MACHINE.\n\n'
+        else:
+            message = message + \
+                '\n\nJAVA IS NOT INSTALLED IN YOUR MACHINE.\n\n'
+        message = message + script + ' is a Java script that requires the freeware Java (by Oracle) installed on our machine.\n\n' \
+                'THE ROGRAM WILL EXIT.' \
+                '\n\nTo download Java from the Oracle website, you will need to sign in in your Oracle account (you must create a fFREE Oracle account if you do not have one).'\
+                '\n\nSelect the most current Java SE version then download the JDK suited for your machine (Mac/Windows) and run the dowanloaded executable.' \
+                '\n\nDO YOU WANT TO OPEN THE JAVA DOWNLOAD WEBSITE AND INSTALL JAVA NOW? (You must be connected to the internet)'
+        errorFound = True
+
+    if errorFound:
+        open_url(title, url, ask_to_open=True, message_title=title, message=message, reminder_title=reminder_title, reminder_message=reminder_message)
+
+    if system_output != '':
+        # checking for 64 bits windows machines
+>>>>>>> 16c08813 (1. Fixed bugs in NLP_setup_update;)
         if platform == "win32" and 'CoreNLP' in script:
             for info in system_output.split(" "):
                 if "-Bit" in info:  # find the information about bit
                     if info[:2] != "64":  # check if it's 64 bit
 <<<<<<< HEAD
+<<<<<<< HEAD
                         message = 'You are not using JAVA 64-Bit version.\n\nThis will cause an error running Stanford CoreNLP: Could not create the Java Virtual Machine.\n\nPlease, read carefully the TIPS_NLP_Stanford CoreNLP memory issues.pdf.\n\nAfter checking the Java version installed in your machine, if 32-Bit you will need to uninstall it and download and install the Java 64-Bit version,\n\nTHE PROGRAM WILL EXIT.\n\nDo you want to open the TIPS file now?'
 =======
 >>>>>>> 0439287a (changes)
+=======
+                        message = 'You are not using JAVA 64-Bit version.\n\nThis will cause an error running Stanford CoreNLP: Could not create the Java Virtual Machine.\n\nPlease, read carefully the TIPS_NLP_Stanford CoreNLP memory issues.pdf.\n\nAfter checking the Java version installed in your machine, if 32-Bit you will need to uninstall it and download and install the Java 64-Bit version,\n\nTHE PROGRAM WILL EXIT.\n\nDo you want to open the TIPS file now?'
+>>>>>>> 16c08813 (1. Fixed bugs in NLP_setup_update;)
                         answer = tk.messagebox.askyesno("Java version Error",
                                                         "You are not using JAVA 64-Bit version.\n\nThis will cause an error running Stanford CoreNLP: Could not create the Java Virtual Machine.\n\nPlease, configure your machine to use JAVA 64-Bit.\n\nPlease, read carefully the TIPS_NLP_Stanford CoreNLP memory issues.pdf.\n\nDo you want to open the TIPS file now?")
                         if answer:
                             TIPS_util.open_TIPS('TIPS_NLP_Stanford CoreNLP memory issues.pdf')
                         errorFound = True
 
+<<<<<<< HEAD
 <<<<<<< HEAD
 =======
     if error_code != 0 and "not recognized" in system_output:
@@ -277,6 +340,8 @@ def check_java_installation(script):
         errorFound = True
 
 >>>>>>> 0439287a (changes)
+=======
+>>>>>>> 16c08813 (1. Fixed bugs in NLP_setup_update;)
     return errorFound, error_code, system_output
 
 
@@ -420,10 +485,14 @@ def open_url(website_name, url, ask_to_open = False, message_title='', message='
     if status_code != 200:
         mb.showwarning(title='Warning',
 <<<<<<< HEAD
+<<<<<<< HEAD
                        message='Oops! The ' + website_name + ' website could not be opened.\n\nPlease, check the url or try again later.')
 =======
                        message='Oops! The ' + website_name + ' website could not be opened. Please, check the url or try aggain later.')
 >>>>>>> 0439287a (changes)
+=======
+                       message='Oops! The ' + website_name + ' website could not be opened.\n\nPlease, check the url or try again later.')
+>>>>>>> 16c08813 (1. Fixed bugs in NLP_setup_update;)
         return False
     webbrowser.open_new_tab(url)
     return True
@@ -713,6 +782,7 @@ def get_external_software_dir(calling_script, package, silent=False, only_check_
 
                         open_url(software_name, software_download)
 <<<<<<< HEAD
+<<<<<<< HEAD
 =======
                         # check internet connection
                         # if not IO_internet_util.check_internet_availability_warning('NLP_menu_main'):
@@ -721,12 +791,15 @@ def get_external_software_dir(calling_script, package, silent=False, only_check_
                         # # open software download website
                         # webbrowser.open_new_tab(software_download)
 >>>>>>> 0439287a (changes)
+=======
+>>>>>>> 16c08813 (1. Fixed bugs in NLP_setup_update;)
 
 # DOWNLOAD JAVA for CoreNLP, Gephi, MALLET
 
                         if software_name == 'Stanford CoreNLP' or software_name == 'Gephi' or software_name == 'MALLET':
                             # since Stanford CoreNLP and Gephi need Java, check for Java installation
                             errorFound, error_code, system_output = check_java_installation(software_name)
+<<<<<<< HEAD
 <<<<<<< HEAD
                             url = 'https://www.oracle.com/java/technologies/downloads/archive/'
                             # errorFound=True # for testing
@@ -738,14 +811,20 @@ def get_external_software_dir(calling_script, package, silent=False, only_check_
                                 url = 'https://www.oracle.com/java/technologies/downloads/#java8-windows'
                             else:
                                 url = 'https://www.oracle.com/java/technologies/downloads/#java8-mac'
+=======
+                            url = 'https://www.oracle.com/java/technologies/downloads/archive/'
+>>>>>>> 16c08813 (1. Fixed bugs in NLP_setup_update;)
                             # errorFound=True # for testing
                             if errorFound:
-                                Java_required=software_name + ' requires the freeware Java (by Oracle) installed on our machine.\n\nTo dowanload Java from the Oracle website, you will need to sign in in your Oracle account (you must create a free Oracle account if you do not have one).\n\nThe NLP Suite will now open the Java website on JDK8... JDK8 seems to work best with Stanford CoreNP on some machines. But on most machines higher Java releases also work.\n\nWhichever Java version you install, you need the JDK version, Java Development Kit.\n\nDownload Java JDK and run the executable.'
+                                Java_required = software_name + ' requires the freeware Java (by Oracle) installed on our machine.\n\nTo download Java from the Oracle website, you will need to sign in in your Oracle account (you must create a FREE Oracle account if you do not have one).\n\nThe NLP Suite will open the Java download website.\n\nSelect the most current Java SE version then download the JDK suited for your machine (Mac/Windows) and run the dowanloaded executable.'
                                 open_url('Java', url, ask_to_open = True, message_title = 'Java', message = Java_required)
+<<<<<<< HEAD
                                 # mb.showwarning(title='Java',
                                 #                 message=Java_required)
                                 # webbrowser.open_new_tab(java_download)
 >>>>>>> 0439287a (changes)
+=======
+>>>>>>> 16c08813 (1. Fixed bugs in NLP_setup_update;)
 
 # DOWNLOAD Microsoft Visual Studio C++ for SENNA
 
@@ -758,6 +837,7 @@ def get_external_software_dir(calling_script, package, silent=False, only_check_
                                 message = 'SENNA (and Python WordCloud) require the freeware Visual Studio C++ (Community edition) installed on our Windows machine. If you haven\'t already installed it, please do so now.\n\nThe downloaded file is an executable file that opens an installer.\n\nDo you want to install Visual Studio C++?'
                                 open_url(title, url, ask_to_open = True, message_title = title, message = message)
 <<<<<<< HEAD
+<<<<<<< HEAD
 =======
                                 # answer = tk.messagebox.askyesnocancel(title, message)
                                 # if answer:
@@ -765,6 +845,8 @@ def get_external_software_dir(calling_script, package, silent=False, only_check_
                                 #
                                 #     webbrowser.open_new_tab(download_studio)
 >>>>>>> 0439287a (changes)
+=======
+>>>>>>> 16c08813 (1. Fixed bugs in NLP_setup_update;)
 
 # INSTALLING -------------------------------------------------------------------------------
 #                   if not answer:  # answer = True downloading and installing; you have already warned the user

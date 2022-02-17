@@ -44,6 +44,7 @@ def update_self(window,GitHub_release_version):
         if not IO_libraries_util.open_url('Git', url, ask_to_open=True, message_title='Git installation', message=message_Git):
             return
 <<<<<<< HEAD
+<<<<<<< HEAD
 =======
 
         # answer = tk.messagebox.askyesno("Git installation",
@@ -58,6 +59,8 @@ def update_self(window,GitHub_release_version):
         # else:
         #     return
 >>>>>>> 0439287a (changes)
+=======
+>>>>>>> 16c08813 (1. Fixed bugs in NLP_setup_update;)
     try:
         if Repository('.').head.shorthand == 'current-stable':
             print("Updating the NLP Suite...")
@@ -69,6 +72,7 @@ def update_self(window,GitHub_release_version):
             print(message_update)
         else:
 <<<<<<< HEAD
+<<<<<<< HEAD
             print("\nYou are not working on the 'current-stable' branch of the NLP Suite. You are on the '" + Repository('.').head.shorthand + "' branch. Update aborted to avoid overwriting your branch.")
     except Exception as e:
         print('Git fatal error :' + e)
@@ -79,6 +83,9 @@ def update_self(window,GitHub_release_version):
             print("You are not working on the 'current-stable' branch of the NLP Suite. You are on the '" + Repository('.').head.shorthand + "' branch'. Update aborted to avoid overwriting your branch.")
             # mb.showwarning(title='Warning',
             #                message="You are not on the current stable branch of the NLP Suite.\n\nYou are on " + Repository('.').head.shorthand + ".\n\nThe automatic update only works from current stable.\n\nUpdate aborted to avoid overwriting your branch.")
+=======
+            print("\nYou are not working on the 'current-stable' branch of the NLP Suite. You are on the '" + Repository('.').head.shorthand + "' branch'. Update aborted to avoid overwriting your branch.")
+>>>>>>> 16c08813 (1. Fixed bugs in NLP_setup_update;)
     except:
         mb.showwarning(title='Warning',
                        message="Git encountered an error in executing the command 'Repository('.').head.shorthand.\n\nUpdate aborted.")

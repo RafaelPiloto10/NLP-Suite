@@ -9,17 +9,24 @@ if IO_libraries_util.install_all_packages(GUI_util.window,"Wordclouds",['os','tk
 
 import os
 <<<<<<< HEAD
+<<<<<<< HEAD
 =======
 # import webbrowser
 >>>>>>> 0439287a (changes)
+=======
+>>>>>>> 16c08813 (1. Fixed bugs in NLP_setup_update;)
 import tkinter as tk
 import tkinter.ttk as ttk
 import tkinter.messagebox as mb
 # import requests
 <<<<<<< HEAD
+<<<<<<< HEAD
 # import webbrowser
 =======
 >>>>>>> 0439287a (changes)
+=======
+# import webbrowser
+>>>>>>> 16c08813 (1. Fixed bugs in NLP_setup_update;)
 
 import IO_internet_util
 import IO_files_util
