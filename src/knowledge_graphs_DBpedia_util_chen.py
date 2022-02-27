@@ -16,20 +16,39 @@ stannlp = stanza.Pipeline(lang='en', processors='tokenize,ner,mwt,pos,lemma')
 
 punksAndNum = string.punctuation + '1' + '2' + '3' + '4' + '5' + '6' + '7' + '8' + '9' + '0'
 
+tA1 = ['<span>', '</span>\n']
+tA2 = ['<a href=\"',
+       '\">',
+       '</a>\n']
 
-# def DBpedia_annotate(inputFile, inputDir, outputDir, annotationTypes, color1, colorls):
-def DBpedia_annotate(contents, annotationTypes):
-    # contents = open(inputFile, 'r', encoding='utf-8', errors='ignore').read()
+cache = {}
+
+def DBpedia_annotate(inputFile, inputDir, outputDir, annotationTypes):
+    # TODO: handle input DIR
+    #       handle multiple annotationTypes
+    #       Files to open
+    fileName = inputFile.split('/')[-1]
+    filesToOpen = []
+
+    contents = open(inputFile, 'r', encoding='utf-8', errors='ignore').read()
     contents = preprocessing(contents)
-    html_str = annotate(contents, annotationTypes)
+    ontology_type = annotationTypes[0]  # extract string from the list
+    html_str = annotate(contents, ontology_type)
+
+    outFilename = os.path.join(outputDir,
+                               "NLP_DBpedia_annotated_" + str(fileName.split('.txt')[0]) + '.html')
+    out = open(outFilename, 'w+', encoding="utf-8", errors='ignore')
+    out.write(html_str)
+    filesToOpen.append(outFilename)
+    out.close()
     # TODO: create file
-    return html_str
+    return filesToOpen
 
 
 def annotate(contents, annotationTypes):
     """
     annotate the input contents. Using stanford annotator to filter out words.
-    NNP and NNPs will be grouped together if they are directly followed by each other
+    NNP and NNPs will be grouped together if they are directly followed by each other. (prev_og and prev_tr are used to cache the NNPs)
 
     Parameters
     ----------
@@ -52,11 +71,6 @@ def annotate(contents, annotationTypes):
     #        '\">',
     #        '</a> ']
 
-    tA1 = ['<span>', '</span> ']
-    tA2 = ['<a href=\"',
-           '\">',
-           '</a> ']
-
     annotated_doc = stanford_annotator(contents)
     for sent_id in range(len(annotated_doc.sentences)):
         sent = annotated_doc.sentences[sent_id]
@@ -73,25 +87,56 @@ def annotate(contents, annotationTypes):
                 prev_tr = prev_tr + word.lemma + " "
                 prev_og = prev_og + word.text + " "
             else:  # annotate the Proper noun cached previously and the current word
-                query_and_html(prev_og[:-1], prev_tr[:-1], annotationTypes)
-                prev_og = ""
-                prev_tr = ""
-                if check_eligible(str(word.text)) and pos:
-                    query_and_html(str(word.text), str(word.lemma), annotationTypes)
+                if prev_og:  # if prev_og is not empty, then annotate it
+                    html_str = query_and_html(prev_og[:-1], prev_tr[:-1], annotationTypes, html_str)
+                    prev_og = ""
+                    prev_tr = ""
+                    #TODO: if (word.id == 1)
+                if check_eligible(str(word.text)) and pos:  # query and update html
+                    html_str = query_and_html(str(word.text), str(word.lemma), annotationTypes, html_str)
+                else:  # update html without querying
+                    html_str = html_without_query(str(word.text), html_str)
+
+    if prev_og:  # if the last word in the document is NNP, query the last word
+        html_str = query_and_html(prev_og[:-1], prev_tr[:-1], annotationTypes, html_str)
 
     return html_str + html_str_end
 
 
-def query_and_html(phrase_og, phrase_tr, cats, html_str, tA1, tA2):
+def query_and_html(phrase_og, phrase_tr, cats, html_str):
+    '''
+
+    Parameters
+    ----------
+    phrase_og
+    phrase_tr
+    cats
+    html_str
+
+    Returns
+    -------
+
+    '''
+    new_html_str = search_dict(html_str, phrase_og, phrase_tr)
+    if new_html_str: # if the word has been queried
+        return new_html_str
+
     query = form_query_string(phrase_tr, cats)
     res = get_result(query)
     if not res:  # no url returned normal html, no annotation
+        cache[phrase_tr] = "None"
         html_str += tA1[0] + phrase_og + tA1[1]
     else:  # annotate with the url
         url = res[0]
+        cache[phrase_tr] = str(url)
         html_str += tA2[0] + str(url) + tA2[1] + phrase_og + tA2[2]
         ## TODO choose the best link
 
+    return html_str
+
+
+def html_without_query(phrase_og, html_str):
+    html_str += tA1[0] + phrase_og + tA1[1]
     return html_str
 
 
@@ -118,12 +163,13 @@ def form_query_string(phrase, ont_ls):
               + 'PREFIX dc: <http://purl.org/dc/elements/1.1/>' + '\n' \
               + 'PREFIX : <http://dbpedia.org/resource/>' + '\n' \
               + 'PREFIX dbpedia: <http://dbpedia.org/>' + '\n' \
-              + 'PREFIX skos: <http://www.w3.org/2004/02/skos/core#>' + '\n' \
+              + 'PREFIX dbo: <http://dbpedia.org/ontology/>' + '\n' \
               + 'SELECT DISTINCT'
 
+    # TODO: query sub class
     query_s = query_s + ' ?' + 'w1'  # SELECT DISTINCT w1
     query_body = query_body + '?' + 'w1 ' + 'rdfs:label' + " \"" + phrase + "\"" + '@en'
-    query_body = query_body + ".\n" + "?w1 rdf:type " + ont_ls
+    query_body = query_body + ".\n" + "?w1 rdf:type " + "dbo:" + ont_ls
     query_s = query_s + "\nWHERE { "
     query_s = query_s + query_body
     query_s = query_s + "}"
@@ -132,14 +178,15 @@ def form_query_string(phrase, ont_ls):
 
 def get_result(query):
     """
-    send query request and get the result
+    send query request and get the result, extract all the links and return as a list
+
     Parameters
     ----------
-    query: a string of query
+    query: query string
 
     Returns
     -------
-    results a list of urls
+    results: a list of urls
     """
     sparql.setQuery(query)
     sparql.setReturnFormat(JSON)
@@ -151,12 +198,26 @@ def get_result(query):
                        message='Take a look at your command line/prompt. An HTTP error of 500 means that the YAGO server failed. Please, check command line/prompt for "Operation timed out" error\n\nTry running the script later, when the server may be be less busy.')
         return None
 
-    # TODO process the result?
+    # TODO process the result in dataframe?
     bindings = results['results']['bindings']  # [{w1: {type: uri, value: "http:/xxx"}}]
     url_list = []
     for link in bindings:
         url_list.append(link['w1']['value'])
     return url_list
+
+
+def search_dict(html_str, phrase_og, phrase_tr):
+    # Search global cached url to skip querying the same word again.
+    if phrase_tr in cache:
+        if cache[phrase_tr] != 'None': # annotate with previous url
+            url = cache[phrase_tr]
+            html_str += tA2[0] + str(url) + tA2[1] + phrase_og + tA2[2]
+        else: # no result from query, no annotation
+            html_str += tA1[0] + phrase_og + tA1[1]
+
+        return html_str
+    else:
+        return None
 
 
 def check_eligible(phrase):
@@ -175,7 +236,7 @@ def preprocessing(contents):
 
     Returns
     -------
-    contents: cleaned
+    contents: cleaned string of content
     """
     contents = ' '.join(contents.split())  # reformat content
     contents = contents.replace('\0', '')  # remove null bytes
@@ -192,13 +253,15 @@ def stanford_annotator(content):
 
 # Testing
 if __name__ == '__main__':
-    contents = "I went to NewYork. I am from China"
-    annotationTypes = "dbo:Place"
+    contents = "I went to Atlanta. I am from China"
+    annotationTypes = ['Place']
+    inputFile = '/Users/gongchen/Emory_NLP/NLP-Suite/Various_files/news.txt' # new copy.txt
+    outputDir = '/Users/gongchen/Emory_NLP/NLP-Suite/test_output'
+    inputDir = ''
     # phrase = "China"
     # query = form_query_string(phrase, annotationTypes)
     # res = get_result(query)
     # data = res['results']['bindings']
     # print(type(res))
-    html_str = DBpedia_annotate(contents, annotationTypes)
+    html_str = DBpedia_annotate(inputFile, inputDir, outputDir, annotationTypes)
     print(html_str)
-
