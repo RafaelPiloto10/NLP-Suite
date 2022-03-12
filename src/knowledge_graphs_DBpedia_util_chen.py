@@ -8,6 +8,7 @@ from re import split
 from urllib import request, error
 import stanza
 from SPARQLWrapper import SPARQLWrapper, JSON, XML
+import IO_files_util
 
 sparql = SPARQLWrapper("http://dbpedia.org/sparql")
 
@@ -21,27 +22,46 @@ tA2 = ['<a href=\"',
        '\">',
        '</a>\n']
 
-cache = {}
+cache = {}  # cache the queried result
 
 def DBpedia_annotate(inputFile, inputDir, outputDir, annotationTypes):
-    # TODO: handle input DIR
-    #       handle multiple annotationTypes
-    #       Files to open
-    fileName = inputFile.split('/')[-1]
+    """
+    the main function for DBpedia annotation, create annotated html files
+    Parameters
+    ----------
+    inputFile: input file path String
+    inputDir: input directory path String
+    outputDir: output directory path String
+    annotationTypes: a list of ontology class
+
+    Returns
+    -------
+    files to open: a list of annotated html files
+    """
     filesToOpen = []
+    inputFiles = []
+    files = IO_files_util.getFileList(inputFile, inputDir, '.txt')
+    nFile = len(files)
+    if nFile == 0:
+        print("No input file\n");
+        return
+    file_count = 1
+    for file in files:
+        fileName = file.split('/')[-1]
+        print("processing file:", fileName, "\nFile: ", file_count, "/", nFile)
+        contents = open(file, 'r', encoding='utf-8', errors='ignore').read()
+        contents = preprocessing(contents)
+        # ontology_type = annotationTypes[0]  # extract string from the list
+        ontology_type = annotationTypes
+        html_str = annotate(contents, ontology_type)
 
-    contents = open(inputFile, 'r', encoding='utf-8', errors='ignore').read()
-    contents = preprocessing(contents)
-    ontology_type = annotationTypes[0]  # extract string from the list
-    html_str = annotate(contents, ontology_type)
+        outFilename = os.path.join(outputDir,
+                                   "NLP_DBpedia_annotated_" + str(fileName.split('.txt')[0]) + '.html')
+        out = open(outFilename, 'w+', encoding="utf-8", errors='ignore')
+        out.write(html_str)
+        filesToOpen.append(outFilename)
+        out.close()
 
-    outFilename = os.path.join(outputDir,
-                               "NLP_DBpedia_annotated_" + str(fileName.split('.txt')[0]) + '.html')
-    out = open(outFilename, 'w+', encoding="utf-8", errors='ignore')
-    out.write(html_str)
-    filesToOpen.append(outFilename)
-    out.close()
-    # TODO: create file
     return filesToOpen
 
 
@@ -57,7 +77,7 @@ def annotate(contents, annotationTypes):
 
     Returns
     -------
-
+    annotated html string
 
     """
     color1 = 'black'
@@ -105,16 +125,18 @@ def annotate(contents, annotationTypes):
 
 def query_and_html(phrase_og, phrase_tr, cats, html_str):
     '''
+    query the input phrase and update the html based on the query result
 
     Parameters
     ----------
     phrase_og
     phrase_tr
-    cats
-    html_str
+    cats:      ontology classes
+    html_str:  the current html string
 
     Returns
     -------
+    updated html string
 
     '''
     new_html_str = search_dict(html_str, phrase_og, phrase_tr)
@@ -142,34 +164,36 @@ def html_without_query(phrase_og, html_str):
 
 def form_query_string(phrase, ont_ls):
     """
+    construct the query string
 
     Parameters
     ----------
-    phrase
-    ont_ls
+    phrase: lemma
+    ont_ls: ontology list
 
     Returns
     -------
-
+    query string
     """
     query_body = ''
     # "PREFIX https://dbpedia.org/snorql/"
     # + 'PREFIX dbpedia2: <http://dbpedia.org/property/>' + '\n' \
-    query_s = 'PREFIX owl: <http://www.w3.org/2002/07/owl#>' + '\n' \
-              + 'PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>' + '\n' \
+    query_s = 'PREFIX schema: <http://schema.org/>' + '\n' \
               + 'PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>' + '\n' \
               + 'PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>' + '\n' \
-              + 'PREFIX foaf: <http://xmlns.com/foaf/0.1/>' + '\n' \
-              + 'PREFIX dc: <http://purl.org/dc/elements/1.1/>' + '\n' \
-              + 'PREFIX : <http://dbpedia.org/resource/>' + '\n' \
-              + 'PREFIX dbpedia: <http://dbpedia.org/>' + '\n' \
               + 'PREFIX dbo: <http://dbpedia.org/ontology/>' + '\n' \
               + 'SELECT DISTINCT'
-
+                # + 'PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>' + '\n' \
+                # + 'PREFIX dbpedia: <http://dbpedia.org/>' + '\n' \
+                 # + 'PREFIX : <http://dbpedia.org/resource/>' + '\n' \
+                # 'PREFIX owl: <http://www.w3.org/2002/07/owl#>' + '\n' \
     # TODO: query sub class
     query_s = query_s + ' ?' + 'w1'  # SELECT DISTINCT w1
-    query_body = query_body + '?' + 'w1 ' + 'rdfs:label' + " \"" + phrase + "\"" + '@en'
-    query_body = query_body + ".\n" + "?w1 rdf:type " + "dbo:" + ont_ls
+    query_body = query_body + '?' + 'w1 ' + 'rdfs:label' + " \"" + phrase + "\"" + '@en.\n'
+    # query_body = query_body  + "?w1 rdf:type " + "dbo:" + ont_ls[0]
+    for ont in ont_ls:
+        query_body = query_body + " { ?w1 rdf:type " + "dbo:" + ont + ' } UNION'
+    query_body = query_body[:-5] # remove the last UNION
     query_s = query_s + "\nWHERE { "
     query_s = query_s + query_body
     query_s = query_s + "}"
@@ -191,7 +215,10 @@ def get_result(query):
     sparql.setQuery(query)
     sparql.setReturnFormat(JSON)
     try:
+        print("Waiting for DBpedia response...")
+        # print(query)
         results = sparql.query().convert()
+        print("Received")
     except error.HTTPError:
         # this may occasionally give time out error depending upon server's traffic
         mb.showwarning(title='Warning',
@@ -253,15 +280,19 @@ def stanford_annotator(content):
 
 # Testing
 if __name__ == '__main__':
-    contents = "I went to Atlanta. I am from China"
+    contents = "Atlanta. I am from China"
     annotationTypes = ['Place']
-    inputFile = '/Users/gongchen/Emory_NLP/NLP-Suite/Various_files/news.txt' # new copy.txt
-    outputDir = '/Users/gongchen/Emory_NLP/NLP-Suite/test_output'
+    inputFile = '/Users/gongchen/Emory_NLP/NLP-Suite/DBpedia_in/news.txt' # new copy.txt
+    outputDir = '/Users/gongchen/Emory_NLP/NLP-Suite/DBpedia_out'
     inputDir = ''
+
+    ### TEST query ####
     # phrase = "China"
     # query = form_query_string(phrase, annotationTypes)
     # res = get_result(query)
-    # data = res['results']['bindings']
     # print(type(res))
+
+
+    #########
     html_str = DBpedia_annotate(inputFile, inputDir, outputDir, annotationTypes)
     print(html_str)
