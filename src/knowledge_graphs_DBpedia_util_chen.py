@@ -189,14 +189,17 @@ def form_query_string(phrase, ont_ls):
                 # 'PREFIX owl: <http://www.w3.org/2002/07/owl#>' + '\n' \
     # TODO: check dbo:wikiPageDisambiguates for similar expression
     query_s = query_s + ' ?' + 'w1'  # SELECT DISTINCT w1
-    query_body = query_body + '?' + 'w1 ' + 'rdfs:label' + " \"" + phrase + "\"" + '@en.\n'
+    query_body = query_body + '{?w1 ' + 'rdfs:label \"' + phrase + '\" @en.}'
+    # query_body = query_body + ' UNION' + '{?w1 rdfs:label \"' + phrase + ' (disambiguation)\" @en.}\n'
+    query_body = query_body + 'OPTIONAL{?w1 dbo:wikiPageDisambiguates ?s1.}'
+    query_body = query_body + 'OPTIONAL{?w1 a ?type. ?s1 a ?type2}\n'
     # query_body = query_body  + "?w1 rdf:type " + "dbo:" + ont_ls[0]
     for ont in ont_ls:
-        query_body = query_body + " { ?w1 a " + "dbo:" + ont + ' } UNION' + '{?w1 a ?type.\n ?type rdfs:subClassOf*  owl:' + ont+ '} UNION'
+        query_body = query_body + '{?s1 a schema:' + ont + ' } UNION { ?w1 a dbo:' + ont + ' } UNION' + '{?type rdfs:subClassOf*  dbo:' + ont + '} UNION' + '{?type2 rdfs:subClassOf*  dbo:' + ont + '} UNION'
     query_body = query_body[:-5] # remove the last UNION
-    query_s = query_s + "\nWHERE { "
+    query_s = query_s + "\nWHERE {\n"
     query_s = query_s + query_body
-    query_s = query_s + "}"
+    query_s = query_s + "\n}"
     print(query_s)
     return query_s
 
@@ -282,7 +285,7 @@ def stanford_annotator(content):
 # Testing
 if __name__ == '__main__':
     contents = "Atlanta. I am from China"
-    annotationTypes = ['Thing']
+    annotationTypes = ['Place']
     inputFile = '/Users/gongchen/Emory_NLP/NLP-Suite/DBpedia_in/news copy.txt' # new copy.txt
     outputDir = '/Users/gongchen/Emory_NLP/NLP-Suite/DBpedia_out'
     inputDir = ''
