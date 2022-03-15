@@ -46,6 +46,7 @@ def DBpedia_annotate(inputFile, inputDir, outputDir, annotationTypes):
         print("No input file\n");
         return
     file_count = 1
+    annotationTypes = check_ontology(annotationTypes)
     for file in files:
         fileName = file.split('/')[-1]
         print("processing file:", fileName, "\nFile: ", file_count, "/", nFile)
@@ -64,6 +65,15 @@ def DBpedia_annotate(inputFile, inputDir, outputDir, annotationTypes):
 
     return filesToOpen
 
+def check_ontology(annotationTypes):
+    res = []
+    for type in annotationTypes:
+        if type == 'Thing':
+            type = 'owl:' + type
+        else:
+            type = 'dbo:' + type
+        res.append(type)
+    return res
 
 def annotate(contents, annotationTypes):
     """
@@ -91,6 +101,8 @@ def annotate(contents, annotationTypes):
     #        '\">',
     #        '</a> ']
 
+
+
     annotated_doc = stanford_annotator(contents)
     for sent_id in range(len(annotated_doc.sentences)):
         sent = annotated_doc.sentences[sent_id]
@@ -112,7 +124,9 @@ def annotate(contents, annotationTypes):
                     prev_og = ""
                     prev_tr = ""
                     #TODO: if (word.id == 1)
-                if check_eligible(str(word.text)) and pos:  # query and update html
+                # if check_eligible(str(word.text)) and pos:  # query and update html
+                if word.pos == 'NN' or word.pos == 'NNS' and pos:
+                    # print(word.pos)
                     html_str = query_and_html(str(word.text), str(word.lemma), annotationTypes, html_str)
                 else:  # update html without querying
                     html_str = html_without_query(str(word.text), html_str)
@@ -192,11 +206,11 @@ def form_query_string(phrase, ont_ls):
     query_body = query_body + '?' + 'w1 ' + 'rdfs:label' + " \"" + phrase + "\"" + '@en.\n'
     # query_body = query_body  + "?w1 rdf:type " + "dbo:" + ont_ls[0]
     for ont in ont_ls:
-        query_body = query_body + " { ?w1 a " + "dbo:" + ont + ' } UNION' + '{?w1 a ?type.\n ?type rdfs:subClassOf*  owl:' + ont+ '} UNION'
+        query_body = query_body + " { ?w1 a " + ont + ' } UNION' + '{?w1 a ?type.\n ?type rdfs:subClassOf* ' + ont+ '} UNION'
     query_body = query_body[:-5] # remove the last UNION
-    query_s = query_s + "\nWHERE { "
+    query_s = query_s + "\nWHERE { OPTIONAL{"
     query_s = query_s + query_body
-    query_s = query_s + "}"
+    query_s = query_s + "}}"
     print(query_s)
     return query_s
 
@@ -229,8 +243,10 @@ def get_result(query):
     # TODO process the result in dataframe?
     bindings = results['results']['bindings']  # [{w1: {type: uri, value: "http:/xxx"}}]
     url_list = []
-    for link in bindings:
-        url_list.append(link['w1']['value'])
+    # print(len(bindings))
+    if len(bindings) > 1: # has returned link
+        for link in bindings:
+            url_list.append(link['w1']['value'])
     return url_list
 
 
@@ -282,8 +298,8 @@ def stanford_annotator(content):
 # Testing
 if __name__ == '__main__':
     contents = "Atlanta. I am from China"
-    annotationTypes = ['Thing']
-    inputFile = '/Users/gongchen/Emory_NLP/NLP-Suite/DBpedia_in/news copy.txt' # new copy.txt
+    annotationTypes = ['Place']
+    inputFile = '/Users/gongchen/Emory_NLP/NLP-Suite/DBpedia_in/news.txt' # new copy.txt
     outputDir = '/Users/gongchen/Emory_NLP/NLP-Suite/DBpedia_out'
     inputDir = ''
 
